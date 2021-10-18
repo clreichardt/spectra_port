@@ -13,13 +13,30 @@ class UnbiasedMultisetPspec:
     def take_and_reformat_shts(mapfile, processedshtfile,
                                nside,lmax,
                                cmbweighting = True, 
-                               kmask = None
+                               kmask = None,
+                               ram_limit = None
                               ) -> 'May be done in Fortran - output is a file':
+        ''' 
+        Output is expected to be CL (Dl if cmbweighting=Trure) * mask normalization factor * kweights
+        Output ordering is expected to 
+        '''
+        if ram_limit is None:
+            ram_limit = 16 * 2**30 # 16 GB
+
+        # number of bytes in a Dcomplex: 16
+        # number of arrays we need to make to do this efficiently: 6 or less
+        # number of pixels in an fft: winsize^2
+        ram_required=16*6*lmax**2
+        parallelism = int(np.ceil(ram_limit/ram_required))
+
+        #ie do parallelism SHTs at once...
+
         pass
 
     
     def generate_jackknife_shts( processedshtfile, jackknifeshtfile, nside, lmax
                                  setdef) -> 'Does differencing to make SHT equiv file for nulls':
+        
         pass
 
 
