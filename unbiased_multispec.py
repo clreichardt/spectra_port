@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 
-AlmType = np.complex64
+AlmType = np.dtype(np.complex64)
 
 def printinplace(myString):
     digits = len(myString)
@@ -62,12 +62,12 @@ class UnbiasedMultisetPspec:
                 #32 bit floats/64b complex should be fine for this. will need to bump up by one for aggregation
                 ((alms.astype(AlmType)).tofile(fp)
 
-        pass
 
     
     def generate_jackknife_shts( processed_shtfile, jackknife_shtfile,  lmax
-                                 setdef) -> 'Does differencing to make SHT equiv file for nulls':
-        buffersize=healpy.sphtfunc.Alm.getsize(lmax)
+                                 setdef) -> 'Does differencing to make SHT equiv file for nulls, returns new setdef':
+        buffer_size = healpy.sphtfunc.Alm.getsize(lmax)
+        buffer_bytes= buffer_size * AlmType.nbytes
         buffera = np.zeros(buffersize,dtype=AlmType)
         bufferb = np.zeros(buffersize,dtype=AlmType)
         setsize = setdef.shape[0]
@@ -75,26 +75,19 @@ class UnbiasedMultisetPspec:
 
         with open(processed_shtfile,'rb') as fin, open(jackknife_shtfile,'wb') as fout:
             for i in range(setsize):
-                j = setdef[i,0]
-                k = setdef[i,1]
                 #need to do stuff here
 
+                fin.seek( setdef[i,0] * buffer_bytes )
+                buffera  = np.fromfile(fin,dtype=AlmType,count=buffer_size)
+                fin.seek( setdef[i,1] * buffer_bytes )
+                bufferb  = np.fromfile(fin,dtype=AlmType,count=buffer_size)
 
-for i=0, setsize-1 do begin
-    ; read the two relevant files
-    point_lun, lun_in, setdef[i, 0]*ulong64(winsize)^2 * 16
-    readu, lun_in, buffera
-    point_lun, lun_in, setdef[i, 1]*ulong64(winsize)^2 * 16
-    readu, lun_in, bufferb
-    mapout=(buffera-bufferb)/2
-    writeu, lun_out, mapout
-endfor
-free_lun, lun_in
-free_lun, lun_out
-setdef=reform(lindgen(setsize), setsize, 1)
-end
+                buffera -= bufferb
+                buffera *= 0.5
+                fout.seek( i * buffer_bytes )
+                buffera.tofile(fout)
 
-        pass
+        return(np.arange(setsize,dtype=np.int32))
 
 
     def take_all_cross_spectra( processedshtfile, lmax,
