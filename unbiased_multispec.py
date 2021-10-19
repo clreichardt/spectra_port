@@ -1,4 +1,7 @@
 import sys
+import numpy as np
+
+AlmType = np.complex64
 
 def printinplace(myString):
     digits = len(myString)
@@ -18,6 +21,7 @@ class UnbiasedMultisetPspec:
     def take_and_reformat_shts(mapfile, processedshtfile,
                                nside,lmax,
                                cmbweighting = True, 
+                               mask  = None,
                                kmask = None,
                                ram_limit = None
                               ) -> 'May be done in Fortran - output is a file':
@@ -35,19 +39,66 @@ class UnbiasedMultisetPspec:
         parallelism = int(np.ceil(ram_limit/ram_required))
 
         #ie do parallelism SHTs at once...
+        size = healpy.sphtfunc.Alm.getsize(lmax)
+        with open(processedshtfile,'wb') as fp:
+
+            for i in range(nmap):
+                #TBD get a map
+
+                # if not already masked, apply mask
+                #may need to change the next line based on formatting
+                map  = mask*map
+
+                #gets alms
+                alms = healpy.sphtfunc.map2alm(map,lmax = lmax, pol=False, use_pixel_weights=True, verbose=False)
+
+                #apply weighting:
+                alms = alms * kmask
+
+                #TBD, possibly adjust for mask factor here
+
+                #write to disk
+                #need to check sizing
+                #32 bit floats/64b complex should be fine for this. will need to bump up by one for aggregation
+                ((alms.astype(AlmType)).tofile(fp)
 
         pass
 
     
-    def generate_jackknife_shts( processedshtfile, jackknifeshtfile, nside, lmax
+    def generate_jackknife_shts( processed_shtfile, jackknife_shtfile,  lmax
                                  setdef) -> 'Does differencing to make SHT equiv file for nulls':
-        
+        buffersize=healpy.sphtfunc.Alm.getsize(lmax)
+        buffera = np.zeros(buffersize,dtype=AlmType)
+        bufferb = np.zeros(buffersize,dtype=AlmType)
+        setsize = setdef.shape[0]
+        nsets   = setdef.shape[1]
+
+        with open(processed_shtfile,'rb') as fin, open(jackknife_shtfile,'wb') as fout:
+            for i in range(setsize):
+                j = setdef[i,0]
+                k = setdef[i,1]
+                #need to do stuff here
+
+
+for i=0, setsize-1 do begin
+    ; read the two relevant files
+    point_lun, lun_in, setdef[i, 0]*ulong64(winsize)^2 * 16
+    readu, lun_in, buffera
+    point_lun, lun_in, setdef[i, 1]*ulong64(winsize)^2 * 16
+    readu, lun_in, bufferb
+    mapout=(buffera-bufferb)/2
+    writeu, lun_out, mapout
+endfor
+free_lun, lun_in
+free_lun, lun_out
+setdef=reform(lindgen(setsize), setsize, 1)
+end
+
         pass
 
 
-    def take_all_cross_spectra( processedshtfile, nside, lmax,
+    def take_all_cross_spectra( processedshtfile, lmax,
                                 setdef, banddef, ram_limit=None, auto = False) -> 'Returns set of all x-spectra, binned':
-
         '''
         ;; Step 1, copy all of the fft files and apply scalings masks etc
         
@@ -80,12 +131,9 @@ class UnbiasedMultisetPspec:
         # number of arrays we need to make to do this efficiently: 6 or less
         # number of pixels in an fft: winsize^2
         ram_required=16*6*lmax**2
-        parallelism = int(np.ceil(ram_limit/ram_required))
-
         max_nmodes=ram_limit/nshts/32 #64 b complex 
 
-
-        code=reverse_linefeed_code()
+        #code=reverse_linefeed_code()
 
         i=0 # i is the last bin to have finished. initially 0
         while (i < nbands):
@@ -128,16 +176,14 @@ class UnbiasedMultisetPspec:
                         else:
                             idx=lindgen(setsize)
                             tmpresult=np.sum(/double,real_part(banddata[setdef[:, j],:]*conj(banddata[setdef[:, k],:])), 1)/(nmodes) # had been in flatsky: *reso^2*winsize^2)
-                            allspectra_out[iprime, spectrum_idx, *]=tmpresult
-                        spectrum_idx++
+                            allspectra_out[iprime, spectrum_idx, :]=tmpresult
+                        spectrum_idx+=1
 
             i=istop
-
-
         return(allspectra_out)
 
 
-    def process_all_cross_spectra(allspectra, nbands, nsets,setsize,
+    def process_all_cross_spectra(allspectra, nbands, nsets,setsize, 
                                   auto=False) -> 'Returns mean and covarariance estimates':
 
         print("Correlating Cross Spectra")
