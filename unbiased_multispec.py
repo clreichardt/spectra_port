@@ -1,5 +1,10 @@
+import sys
 
-
+def printinplace(myString):
+    digits = len(myString)
+    delete = "\b" * (digits)
+    print("{0}{1:{2}}".format(delete, myString, digits), end="")
+    sys.stdout.flush()
 
 # holder class
 class UnbiasedMultisetPspec:
@@ -69,79 +74,68 @@ class UnbiasedMultisetPspec:
         allspectra_out = np.zeros([nbands,nspectra,nrealizations],dtype=np.float64)
         nmodes_out     = np.zeros(nbands, dtype = np.int32)
         
+        tmpresult = np.zeros([setsize,setsize],dtype=np.float64)
+
         # number of bytes in a Dcomplex: 16
         # number of arrays we need to make to do this efficiently: 6 or less
         # number of pixels in an fft: winsize^2
         ram_required=16*6*lmax**2
         parallelism = int(np.ceil(ram_limit/ram_required))
 
-
+        max_nmodes=ram_limit/nshts/32 #64 b complex 
 
 
         code=reverse_linefeed_code()
 
+        i=0 # i is the last bin to have finished. initially 0
+        while (i < nbands):
+            istop = np.where((band_start_idx - band_start_idx[i]) < max_nmodes)[-1]
 
-print, ''
+            if istop <= i:
+                raise Exception("Insufficient ram for processing even a single bin")
 
-tmpresult=dblarr(setsize, setsize)
+            print('take_all_cross_spectra: loading bands {} {}'.format(i,istop-1))
+            # technical: delete the last iteration of banddata_big first
+            banddata_big=0
+            # get data for as many bins as will fit in our ramlimit
+            banddata_big=load_cross_spectra_data_from_disk(processedshtfile, 
+                                                            nshts,   
+                                                            start=bandstartidx[i],
+                                                            stop=bandstartidx[istop]-1)
+            #process this data
+            for iprime=range(i, istop):
+                printinplace('processing band {}    '.format(iprime))
+                    '
+                nmodes=(bandstartidx[iprime+1]-bandstartidx[iprime])
+                nmodes_out[iprime]=nmodes
+                aidx=bandstartidx[iprime]-bandstartidx[i]
+                banddata=banddata_big[:,aidx:(aidx+nmodes-1)] # first index SHT; second index alm
 
-i=0
-while i lt nbands do begin 
-    
-    maxnmodes=ramlimit/nffts/16/2
+                spectrum_idx=0
+                for j in range(nsets):
+                    for k in range(j, nsets):
+                        if not auto:
+                            tmpresult  = np.real(np.matmult(banddata[setdef[:,j],:],banddata[setdef[:,k],:].T)) #need to check dims -- intended to end up for 3 freqs with 3x3 matrix
+                            tmpresult += tmpresult.T # imposing the ab + ba condition
+                            tmpresult /= (2*nmodes)
+                            #it had a factor of 1/(reso**2 winsize**2) 
+                            # leaving this out for curved sky
+                            a=0
+                            for l=range(setsize-1):
+                                rowlength=setsize-l-1
+                                allspectra_out[iprime, spectrum_idx, a:(a+rowlength-1)]=tmpresult[l, l+1:setsize-1]
+                                a+=rowlength
+                        else:
+                            idx=lindgen(setsize)
+                            tmpresult=np.sum(/double,real_part(banddata[setdef[:, j],:]*conj(banddata[setdef[:, k],:])), 1)/(nmodes) # had been in flatsky: *reso^2*winsize^2)
+                            allspectra_out[iprime, spectrum_idx, *]=tmpresult
+                        spectrum_idx++
 
-    istop=max(where((bandstartidx-bandstartidx[i]) lt maxnmodes))
+            i=istop
 
-    if istop le i then begin
-        message, 'Insufficient ram for processing even a single bin'
-    endif
 
-    print, code+'loading bands '+strtrim(string(i), 2)$
-      +' through '+strtrim(string(istop-1), 2)+'              '
-    ; technical: delete the last iteration of banddata_big first
-    banddata_big=0
-    ;get data for as many bins as will fit in our ramlimit
-    banddata_big=load_cross_spectra_data_from_disk(fftfile, winsize, $
-                                                   nffts, $
-                                                   start=bandstartidx[i],$
-                                                   stop=bandstartidx[istop]-1)
-    ;process this data
-    for iprime=i, istop-1 do begin
-        print, code+'processing band '+strtrim(string(iprime), 2)+'                 '
-        nmodes=(bandstartidx[iprime+1]-bandstartidx[iprime])
-        nmodes_out[iprime]=nmodes
-        aidx=bandstartidx[iprime]-bandstartidx[i]
-        banddata=banddata_big[aidx:(aidx+nmodes-1), *]
+        return(allspectra_out)
 
-        spectrum_idx=0
-        for j=0, nsets-1 do begin
-            for k=j, nsets-1 do begin
-                if not keyword_set(auto) then begin
-                    tmpresult=real_part(banddata[*, setdef[*, j]]##transpose(conj(banddata[*, setdef[*, k]])))/(nmodes*reso^2*winsize^2)
-                    ;; symmetrize the result
-                    tmpresult/=2
-                    tmpresult+=transpose(tmpresult)
-                    a=0
-                    for l=0, setsize-2 do begin
-                        rowlength=setsize-l-1
-                        allspectra_out[iprime, spectrum_idx, a:(a+rowlength-1)]=$
-                          tmpresult[l, l+1:setsize-1]
-                        a+=rowlength
-                    endfor
-                endif else begin
-                    idx=lindgen(setsize)
-                    tmpresult=total(/double,real_part(banddata[*, setdef[*, j]]*conj(banddata[*, setdef[*, k]])), 1)/(nmodes*reso^2*winsize^2)
-                    allspectra_out[iprime, spectrum_idx, *]=tmpresult
-                endelse
-                spectrum_idx++
-            endfor
-        endfor
-    endfor
-    i=istop
-endwhile
-
-return, allspectra_out
-        pass
 
     def process_all_cross_spectra(allspectra, nbands, nsets,setsize,
                                   auto=False) -> 'Returns mean and covarariance estimates':
