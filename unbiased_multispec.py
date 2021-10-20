@@ -52,6 +52,9 @@ class UnbiasedMultisetPspec:
                 #gets alms
                 alms = healpy.sphtfunc.map2alm(map,lmax = lmax, pol=False, use_pixel_weights=True, verbose=False)
 
+                #possibly downsample alms to save later CPUs
+                # TBD
+
                 #apply weighting:
                 alms = alms * kmask
 
