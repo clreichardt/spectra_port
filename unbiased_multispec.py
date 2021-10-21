@@ -55,7 +55,11 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
     size = healpy.sphtfunc.Alm.getsize(lmax)
     with open(processedshtfile,'wb') as fp:
 
+        count = 0 
         for file in mapfilelist:
+            printinplace('SHT map: {}'.format(count))
+            count += 1
+
             #TBD get a map
             ring_indices, map_tmp = load_spt3g_healpix_ring_map(file)
 
