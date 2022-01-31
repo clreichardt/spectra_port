@@ -1,6 +1,9 @@
 import sys
 import numpy as np
+sys.path=["/home/creichardt/.local/lib/python3.7/site-packages/","/home/creichardt/spt3g_software/build","/home/creichardt/.local/lib/python3.7/site-packages/healpy-1.15.0-py3.7-linux-x86_64.egg"]+sys.path
 import healpy
+
+import os
 from spt3g import core,maps, calibration
 import pickle as pkl
 AlmType = np.dtype(np.complex64)
@@ -53,6 +56,8 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
 
     #ie do parallelism SHTs at once...
     size = healpy.sphtfunc.Alm.getsize(lmax)
+
+    print('Warning: not using pixel weights in SHT')
     with open(processedshtfile,'wb') as fp:
 
         count = 0 
@@ -72,7 +77,8 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
                 map_scratch  = mask*map_scratch
 
             #gets alms
-            alms = healpy.sphtfunc.map2alm(map_scratch,lmax = lmax, pol=False, use_pixel_weights=True, verbose=False)
+
+            alms = healpy.sphtfunc.map2alm(map_scratch,lmax = lmax, pol=False, use_pixel_weights=False, iter = 1,datapath='/sptlocal/user/creichardt/healpy-data/')
 
             #possibly downsample alms to save later CPU cycles
             # TBD if worthwhile
@@ -87,11 +93,10 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
             #write to disk
             #need to check sizing
             #32 bit floats/64b complex should be fine for this. will need to bump up by one for aggregation
-            ((alms.astype(AlmType)).tofile(fp)
+            (alms.astype(AlmType)).tofile(fp)
 
 
-
-def generate_jackknife_shts( processed_shtfile, jackknife_shtfile,  lmax
+def generate_jackknife_shts( processed_shtfile, jackknife_shtfile,  lmax,
                              setdef) -> 'Does differencing to make SHT equiv file for nulls, returns new setdef':
     buffer_size = healpy.sphtfunc.Alm.getsize(lmax)
     buffer_bytes= buffer_size * AlmType.nbytes
@@ -133,16 +138,17 @@ def take_all_cross_spectra( processedshtfile, lmax,
     # assume do *not* do x-spectra between same observation
     nsets   = setdef.shape[1]
     setsize = setdef.shape[0]
-    nspectra=(nsets*(nsets+1))/2
+    nspectra=np.int((nsets*(nsets+1))/2 + 0.001)
+    print(nsets,setsize,nspectra)
     if auto:
         nrealizations=setsize
     else:
-        nrealizations=(setsize*(setsize-1))/2
+        nrealizations=np.int( (setsize*(setsize-1))/2 + 0.001)
 
     nbands = banddef.shape[0]-1
-    nshts  = np.max(setdef)+1
+    nshts  = np.int(np.max(setdef)+1.001)
 
-    allspectra_out = np.zeros([nbands,nspectra,nrealizations],dtype=np.float64)
+    allspectra_out = np.zeros([nbands,nspectra,nrealizations],dtype=np.float32)
     nmodes_out     = np.zeros(nbands, dtype = np.int32)
 
     tmpresult = np.zeros([setsize,setsize],dtype=np.float64)
@@ -171,7 +177,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
                                                         start=bandstartidx[i],
                                                         stop=bandstartidx[istop]-1)
         #process this data
-        for iprime=range(i, istop):
+        for iprime in range(i, istop):
             printinplace('processing band {}    '.format(iprime))
                 
             nmodes=(bandstartidx[iprime+1]-bandstartidx[iprime])
@@ -189,14 +195,14 @@ def take_all_cross_spectra( processedshtfile, lmax,
                         #it had a factor of 1/(reso**2 winsize**2) 
                         # leaving this out for curved sky
                         a=0
-                        for l=range(setsize-1):
+                        for l in range(setsize-1):
                             rowlength=setsize-l-1
                             allspectra_out[iprime, spectrum_idx, a:(a+rowlength-1)]=tmpresult[l, l+1:setsize-1]
                             a+=rowlength
                     else:
                         idx=lindgen(setsize)
-                        tmpresult=np.sum(/double,real_part(banddata[setdef[:, j],:]*conj(banddata[setdef[:, k],:])), 1)/(nmodes) # had been in flatsky: *reso^2*winsize^2)
-                        allspectra_out[iprime, spectrum_idx, :]=tmpresult
+                        tmpresult=np.sum(np.real(banddata[setdef[:, j],:]*conj(banddata[setdef[:, k],:])), 1,dtype=np.float64) / (nmodes) # had been in flatsky: *reso^2*winsize^2)
+                        allspectra_out[iprime, spectrum_idx, :]=tmpresult.astype(np.float32)
                     spectrum_idx+=1
 
         i=istop
@@ -215,7 +221,7 @@ def process_all_cross_spectra(allspectra, nbands, nsets,setsize,
     if auto:
         nrealizations = setsize
     else:
-        nrealizations=(1l*setsize*(setsize-1))/2
+        nrealizations=(setsize*(setsize-1))/2
 
     allspectra = np.reshape(allspectra, [nbands*nspectra, nrealizations])
     #cov  = np.zeros([nbands*nspectra, nbands*nspectra],dtype=np.float64)
@@ -235,7 +241,7 @@ def process_all_cross_spectra(allspectra, nbands, nsets,setsize,
         for i in range(setsize):
             realization_idx = 0
             for j in range(setsize):
-                for j = range(j+1,setsize):
+                for j in range(j+1,setsize):
                     if (i == j) or (i == k):
                         realization_to_complement[realization_idx, i]=1./(setsize-1)
                     realization_idx += 1
