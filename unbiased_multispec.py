@@ -121,8 +121,13 @@ def get_first_index_ell(l):
     # l = 1 -> 1 (0+1)
     # l = 2 ->  3 (1+2)
     # l = 3 -> 6 (3+3)
-    return int(l*(l+1)/2)
-
+    if type(l) is int:
+        return int(l*(l+1)/2)
+    else if type(l) is numpy.ndarray:
+        return (l*(l+1)/2).astype(np.uint)
+    else:
+        pdb.set_trace()
+        return -1
 
 def generate_jackknife_shts( processed_shtfile, jackknife_shtfile,  lmax,
                              setdef) -> 'Does differencing to make SHT equiv file for nulls, returns new setdef':
@@ -150,6 +155,14 @@ def generate_jackknife_shts( processed_shtfile, jackknife_shtfile,  lmax,
     return(np.arange(setsize,dtype=np.int32))
 
 
+def load_cross_spectra_data_from_disk(shtfilt, nshts, npersht, start, stop):
+    nelems = stop-start + 1 
+    data = np.zeros([nshts,nelems],dtype=np.complex64)
+    for i in range(nshts):
+        data[i,:] = np.fromfile(shtfile,count=nelems,offset=i*npersht+start)
+    return data
+
+
 def take_all_cross_spectra( processedshtfile, lmax,
                             setdef, banddef, ram_limit=None, auto = False) -> 'Returns set of all x-spectra, binned':
     '''
@@ -175,6 +188,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
 
     nbands = banddef.shape[0]-1
     nshts  = np.int(np.max(setdef)+1.001)
+    npersht = healpy.sphtfunc.Alm.getsize(lmax)
 
     allspectra_out = np.zeros([nbands,nspectra,nrealizations],dtype=np.float32)
     nmodes_out     = np.zeros(nbands, dtype = np.int32)
@@ -186,6 +200,12 @@ def take_all_cross_spectra( processedshtfile, lmax,
     # number of pixels in an fft: winsize^2
     ram_required=16*6*lmax**2
     max_nmodes=ram_limit/nshts/32 #64 b complex 
+
+    assert(banddef[0] == 0 and banddef[-1] < lmax)
+    #assumes banddef[0]=0
+    #so first bin goes 1 - banddef[1]
+    # second bin goes banddef[1]+1 - banddef[2], etc
+    band_start_idx = get_first_index_ell(banddef+1)
 
     #code=reverse_linefeed_code()
 
@@ -201,9 +221,9 @@ def take_all_cross_spectra( processedshtfile, lmax,
         banddata_big=0
         # get data for as many bins as will fit in our ramlimit
         banddata_big=load_cross_spectra_data_from_disk(processedshtfile, 
-                                                        nshts,   
-                                                        start=bandstartidx[i],
-                                                        stop=bandstartidx[istop]-1)
+                                                        nshts, npersht,   
+                                                        bandstartidx[i],
+                                                        bandstartidx[istop]-1)
         #process this data
         for iprime in range(i, istop):
             printinplace('processing band {}    '.format(iprime))
@@ -228,7 +248,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
                             allspectra_out[iprime, spectrum_idx, a:(a+rowlength-1)]=tmpresult[l, l+1:setsize-1]
                             a+=rowlength
                     else:
-                        idx=lindgen(setsize)
+                        idx=np.arange(setsize,dtype=np.uint)
                         tmpresult=np.sum(np.real(banddata[setdef[:, j],:]*conj(banddata[setdef[:, k],:])), 1,dtype=np.float64) / (nmodes) # had been in flatsky: *reso^2*winsize^2)
                         allspectra_out[iprime, spectrum_idx, :]=tmpresult.astype(np.float32)
                     spectrum_idx+=1
