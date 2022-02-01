@@ -1,4 +1,5 @@
 import sys
+from turtle import setundobuffer
 import numpy as np
 sys.path=["/home/creichardt/.local/lib/python3.7/site-packages/","/home/creichardt/spt3g_software/build","/home/creichardt/.local/lib/python3.7/site-packages/healpy-1.15.0-py3.7-linux-x86_64.egg"]+sys.path
 import healpy
@@ -33,6 +34,7 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
                            cmbweighting = True, 
                            mask  = None,
                            kmask = None,
+                           ell_reordering=None,
                            ram_limit = None
                           ) -> 'May be done in Fortran - output is a file':
     ''' 
@@ -56,6 +58,20 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
 
     #ie do parallelism SHTs at once...
     size = healpy.sphtfunc.Alm.getsize(lmax)
+    if ell_reordering is None:  # need to make it
+        #have lmax+1 m=0's, followed by lmax-1 m=1's.... (if does do l=0,m=0)
+        # healpy has indexing routines, but they only take 1 at a time...
+        #make dummy vec for use
+        dummy_vec = np.zeros(lmax+1,dtype=np.uint)
+        k=0
+        for i in np.arange(lmax+1):
+            dummy_vec[i] = k
+            k=k+lmax-i
+        ell_reordering = np.zeros(size,dtype=np.uint)
+        k=0
+        for i in range(lmax+1):
+            ell_reordering[k:k+i+1] = dummy_vec[0:i+1] + i
+            k += i+1
 
     print('Warning: not using pixel weights in SHT')
     with open(processedshtfile,'wb') as fp:
@@ -90,10 +106,12 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
             #TBD, possibly adjust for mask factor here
             alms *= inv_mask_factor
 
-            #write to disk
+            # Get reindexing
+
+            #reorder and write to disk
             #need to check sizing
             #32 bit floats/64b complex should be fine for this. will need to bump up by one for aggregation
-            (alms.astype(AlmType)).tofile(fp)
+            (alms[ell_reordering].astype(AlmType)).tofile(fp)
 
 
 def generate_jackknife_shts( processed_shtfile, jackknife_shtfile,  lmax,
