@@ -1,6 +1,7 @@
 import unbiased_multispec as multispec
 import glob,os
-sys.path.append('/home/creichardt/spt3g_software/build')
+import sys
+#sys.path.append('/home/creichardt/spt3g_software/build')
 from spt3g import core,maps, calibration
 import numpy as np
 import pickle as pkl

@@ -78,7 +78,7 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
 
             #gets alms
 
-            alms = healpy.sphtfunc.map2alm(map_scratch,lmax = lmax, pol=False, use_pixel_weights=False, iter = 1,datapath='/sptlocal/user/creichardt/healpy-data/')
+            alms = healpy.sphtfunc.map2alm(map_scratch,lmax = lmax, pol=False, use_weight=True, use_pixel_weights=False, iter = 1,datapath='/sptlocal/user/creichardt/healpy-data/')
 
             #possibly downsample alms to save later CPU cycles
             # TBD if worthwhile
