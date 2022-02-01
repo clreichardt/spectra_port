@@ -35,6 +35,7 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
                            mask  = None,
                            kmask = None,
                            ell_reordering=None,
+                           no_reorder=False,
                            ram_limit = None
                           ) -> 'May be done in Fortran - output is a file':
     ''' 
@@ -93,7 +94,7 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
                 map_scratch  = mask*map_scratch
 
             #gets alms
-            alms = healpy.sphtfunc.map2alm(map_scratch,lmax = lmax, pol=False, use_weight=True, use_pixel_weights=False, iter = 1,datapath='/sptlocal/user/creichardt/healpy-data/')
+            alms = healpy.sphtfunc.map2alm(map_scratch,lmax = lmax, pol=False, use_pixel_weights=False, iter = 1,datapath='/sptlocal/user/creichardt/healpy-data/')
 
             #possibly downsample alms to save later CPU cycles
             # TBD if worthwhile
@@ -110,7 +111,10 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
             #reorder and write to disk
             #need to check sizing
             #32 bit floats/64b complex should be fine for this. will need to bump up by one for aggregation
-            (alms[ell_reordering].astype(AlmType)).tofile(fp)
+            if no_reorder:
+                (alms.astype(AlmType)).tofile(fp)
+            else:
+                (alms[ell_reordering].astype(AlmType)).tofile(fp)
 
 def get_first_index_ell(l):
     # l=0 - 0
