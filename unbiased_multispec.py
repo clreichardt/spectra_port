@@ -7,6 +7,7 @@ import healpy
 import os
 from spt3g import core,maps, calibration
 import pickle as pkl
+import pdb
 AlmType = np.dtype(np.complex64)
 
 def printinplace(myString):
@@ -63,12 +64,12 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
         #have lmax+1 m=0's, followed by lmax-1 m=1's.... (if does do l=0,m=0)
         # healpy has indexing routines, but they only take 1 at a time...
         #make dummy vec for use
-        dummy_vec = np.zeros(lmax+1,dtype=np.uint)
+        dummy_vec = np.zeros(lmax+1,dtype=np.int)
         k=0
         for i in np.arange(lmax+1):
             dummy_vec[i] = k
             k=k+lmax-i
-        ell_reordering = np.zeros(size,dtype=np.uint)
+        ell_reordering = np.zeros(size,dtype=np.int)
         k=0
         for i in range(lmax+1):
             ell_reordering[k:k+i+1] = dummy_vec[0:i+1] + i
@@ -123,8 +124,8 @@ def get_first_index_ell(l):
     # l = 3 -> 6 (3+3)
     if type(l) is int:
         return int(l*(l+1)/2)
-    else if type(l) is numpy.ndarray:
-        return (l*(l+1)/2).astype(np.uint)
+    elif type(l) is np.ndarray:
+        return (l*(l+1)/2).astype(np.int)
     else:
         pdb.set_trace()
         return -1
@@ -132,7 +133,7 @@ def get_first_index_ell(l):
 def generate_jackknife_shts( processed_shtfile, jackknife_shtfile,  lmax,
                              setdef) -> 'Does differencing to make SHT equiv file for nulls, returns new setdef':
     buffer_size = healpy.sphtfunc.Alm.getsize(lmax)
-    buffer_bytes= buffer_size * AlmType.nbytes
+    buffer_bytes= buffer_size * np.zeros(1,dtype=AlmType).nbytes
     buffera = np.zeros(buffersize,dtype=AlmType)
     bufferb = np.zeros(buffersize,dtype=AlmType)
     setsize = setdef.shape[0]
@@ -155,11 +156,15 @@ def generate_jackknife_shts( processed_shtfile, jackknife_shtfile,  lmax,
     return(np.arange(setsize,dtype=np.int32))
 
 
-def load_cross_spectra_data_from_disk(shtfilt, nshts, npersht, start, stop):
-    nelems = stop-start + 1 
-    data = np.zeros([nshts,nelems],dtype=np.complex64)
-    for i in range(nshts):
-        data[i,:] = np.fromfile(shtfile,count=nelems,offset=i*npersht+start)
+def load_cross_spectra_data_from_disk(shtfile, nshts, npersht, start, stop):
+    nelems = stop - start + 1
+    buffer_bytes = np.zeros(1,dtype=AlmType).nbytes
+    data = np.zeros([nshts,nelems],dtype=AlmType)
+    print(nshts,nelems)
+    with open(shtfile,'r') as fp:
+        for i in range(nshts):
+            fp.seek((i*npersht+start) * buffer_bytes)
+            data[i,:] = np.fromfile(fp,count=nelems,dtype=AlmType)
     return data
 
 
@@ -189,7 +194,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
     nbands = banddef.shape[0]-1
     nshts  = np.int(np.max(setdef)+1.001)
     npersht = healpy.sphtfunc.Alm.getsize(lmax)
-
+    pdb.set_trace()
     allspectra_out = np.zeros([nbands,nspectra,nrealizations],dtype=np.float32)
     nmodes_out     = np.zeros(nbands, dtype = np.int32)
 
@@ -211,7 +216,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
 
     i=0 # i is the last bin to have finished. initially 0
     while (i < nbands):
-        istop = np.where((band_start_idx - band_start_idx[i]) < max_nmodes)[-1]
+        istop = np.where((band_start_idx - band_start_idx[i]) < max_nmodes)[0][-1] # get out of tuple, then take last elem of array
 
         if istop <= i:
             raise Exception("Insufficient ram for processing even a single bin")
@@ -220,24 +225,27 @@ def take_all_cross_spectra( processedshtfile, lmax,
         # technical: delete the last iteration of banddata_big first
         banddata_big=0
         # get data for as many bins as will fit in our ramlimit
+
         banddata_big=load_cross_spectra_data_from_disk(processedshtfile, 
-                                                        nshts, npersht,   
-                                                        bandstartidx[i],
-                                                        bandstartidx[istop]-1)
+                                                       nshts, npersht,   
+                                                       band_start_idx[i],
+                                                       band_start_idx[istop]-1 )
         #process this data
         for iprime in range(i, istop):
             printinplace('processing band {}    '.format(iprime))
                 
-            nmodes=(bandstartidx[iprime+1]-bandstartidx[iprime])
+            nmodes=(band_start_idx[iprime+1]-band_start_idx[iprime])
             nmodes_out[iprime]=nmodes
-            aidx=bandstartidx[iprime]-bandstartidx[i]
+            aidx=band_start_idx[iprime]-band_start_idx[i]
             banddata=banddata_big[:,aidx:(aidx+nmodes-1)] # first index SHT; second index alm
 
             spectrum_idx=0
             for j in range(nsets):
                 for k in range(j, nsets):
                     if not auto:
-                        tmpresult  = np.real(np.matmult(banddata[setdef[:,j],:],banddata[setdef[:,k],:].T)) #need to check dims -- intended to end up for 3 freqs with 3x3 matrix
+
+                        tmpresult  = np.real(np.matmul(banddata[setdef[:,j],:],banddata[setdef[:,k],:].T)) #need to check dims -- intended to end up for 3 freqs with 3x3 matrix
+
                         tmpresult += tmpresult.T # imposing the ab + ba condition
                         tmpresult /= (2*nmodes)
                         #it had a factor of 1/(reso**2 winsize**2) 
@@ -248,7 +256,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
                             allspectra_out[iprime, spectrum_idx, a:(a+rowlength-1)]=tmpresult[l, l+1:setsize-1]
                             a+=rowlength
                     else:
-                        idx=np.arange(setsize,dtype=np.uint)
+                        idx=np.arange(setsize,dtype=np.int)
                         tmpresult=np.sum(np.real(banddata[setdef[:, j],:]*conj(banddata[setdef[:, k],:])), 1,dtype=np.float64) / (nmodes) # had been in flatsky: *reso^2*winsize^2)
                         allspectra_out[iprime, spectrum_idx, :]=tmpresult.astype(np.float32)
                     spectrum_idx+=1
