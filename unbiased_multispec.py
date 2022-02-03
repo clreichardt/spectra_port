@@ -76,7 +76,7 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
 
 
     if ell_reordering is None:  # need to make it
-        #have lmax+1 m=0's, followed by lmax-1 m=1's.... (if does do l=0,m=0)
+        #have lmax+1 m=0's, followed by lmax m=1's.... (if does do l=0,m=0)
         # healpy has indexing routines, but they only take 1 at a time...
         #make dummy vec for use
         dummy_vec = np.zeros(lmax+1,dtype=np.int)
