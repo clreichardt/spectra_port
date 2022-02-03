@@ -345,12 +345,34 @@ def process_all_cross_spectra(allspectra, nbands, nsets,setsize,
 Create a class instance to simplify storing all the arguments along with the output
 '''
 class unbiased_multispec:
-    def __init__():
+    def __init__(self,
+                 mapfile, #required -array of map filenames, g3 format
+                 window, # required -- mask to apply for SHT
+                 banddef, # required. [0,lmax_bin1, lmax_bin2, ...]
+                 require_nside=None, #optional -- set if you want to sanity check nside in map files
+                 ramlimit=16 * 2**30, # optional -- set to change default RAM limit from 16gb
+                 setdef=setdef, # optional -- will take from mapfile array dimensions if not provided
+                 resume=True, #optional -- will use existing files if true 
+                 status=None, #optional -- can be filled with an object to track progress and resume in the middle
+                             
+                 lmax=None, #optional, but should be set. Defaults to 2*nside
+                             persistdir=None, # 
+                             basedir=basedir, $
+                             cmbweighting=cmbweighting,  $
+                             nmodes=nmodes, mapname=mapname, winfact=winfact,$
+                             kmask=kmask, nmapsperfile=nmapsperfile,$
+                             maxell=maxell, jackknife=jackknife,jack_cal_sigma=jack_cal_sigma, $
+                             verbose=verbose, no_cross_set=no_cross_set, $
+                             npix=npix, auto=auto, chisq=chisq,$
+                             fftrdonly=fftrdonly, allspectra=allspectra, $
+                             meansub=meansub,$
+                             wt_by_unmasked_modes=wt_by_unmasked_modes, $
+                             est1_cov=cov1, est2_cov=cov2, convol_kernel=convolkern
 
 
 # returns:
 # spectrum, cov
-def unbiased_multispec_pspec(mapfile=None, #required -array of map filenames, g3 format
+def unbiased_multispec_pspec(mapfile=None, 
                              window=None, # required -- mask to apply for SHT
                              require_nside=None, #optional -- set if you want to sanity check nside in map files
                              ramlimit=16 * 2**30, # optional -- set to change default RAM limit from 16gb
