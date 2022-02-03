@@ -60,8 +60,23 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
 
     #ie do parallelism SHTs at once...
     size = healpy.sphtfunc.Alm.getsize(lmax)
+    if kmask is not None:
+        local_kmask = kmask.astype(np.float32)
+    else:
+        local_kmask = np.ones(size,dtype=np.float32)
+
+    if cmbweighting:
+        dummy_vec = np.arange(lmax+1,dtype=np.float32)
+        dummy_vec = (dummy_vec*(dummy_vec+1.))/(2*np.pi)
+        j=0
+        for i in range(lmax+1):
+            nm = lmax+1-i
+            local_kmask[j:j+nm]=dummy_vec[i:]
+            j=j+nm
+
+
     if ell_reordering is None:  # need to make it
-        #have lmax+1 m=0's, followed by lmax-1 m=1's.... (if does do l=0,m=0)
+        #have lmax+1 m=0's, followed by lmax m=1's.... (if does do l=0,m=0)
         # healpy has indexing routines, but they only take 1 at a time...
         #make dummy vec for use
         dummy_vec = np.zeros(lmax+1,dtype=np.int)
@@ -74,6 +89,8 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
         for i in range(lmax+1):
             ell_reordering[k:k+i+1] = dummy_vec[0:i+1] + i
             k += i+1
+
+
 
     print('Warning: not using pixel weights in SHT')
     with open(processedshtfile,'wb') as fp:
@@ -100,9 +117,8 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
             #possibly downsample alms to save later CPU cycles
             # TBD if worthwhile
 
-            #apply weighting:
-            if kmask is not None:
-                alms *= kmask
+            #apply weighting (ie cl-dl) and kmask 
+            alms *= local_kmask
 
             #TBD, possibly adjust for mask factor here
             alms *= inv_mask_factor
@@ -194,7 +210,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
     nbands = banddef.shape[0]-1
     nshts  = np.int(np.max(setdef)+1.001)
     npersht = healpy.sphtfunc.Alm.getsize(lmax)
-    pdb.set_trace()
+    #pdb.set_trace()
     allspectra_out = np.zeros([nbands,nspectra,nrealizations],dtype=np.float32)
     nmodes_out     = np.zeros(nbands, dtype = np.int32)
 
@@ -239,6 +255,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
             aidx=band_start_idx[iprime]-band_start_idx[i]
             banddata=banddata_big[:,aidx:(aidx+nmodes-1)] # first index SHT; second index alm
 
+
             spectrum_idx=0
             for j in range(nsets):
                 for k in range(j, nsets):
@@ -253,7 +270,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
                         a=0
                         for l in range(setsize-1):
                             rowlength=setsize-l-1
-                            allspectra_out[iprime, spectrum_idx, a:(a+rowlength-1)]=tmpresult[l, l+1:setsize-1]
+                            allspectra_out[iprime, spectrum_idx, a:(a+rowlength)]=tmpresult[l, l+1:setsize]
                             a+=rowlength
                     else:
                         idx=np.arange(setsize,dtype=np.int)
@@ -262,7 +279,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
                     spectrum_idx+=1
 
         i=istop
-    return(allspectra_out)
+    return(allspectra_out, nmodes_out)
 
 
 def process_all_cross_spectra(allspectra, nbands, nsets,setsize, 
@@ -322,3 +339,35 @@ def process_all_cross_spectra(allspectra, nbands, nsets,setsize,
     spectrum_dict['cov2']=cov2
 
     return spectrum_dict
+
+
+'''
+Create a class instance to simplify storing all the arguments along with the output
+'''
+class unbiased_multispec:
+    def __init__():
+
+
+# returns:
+# spectrum, cov
+def unbiased_multispec_pspec(mapfile=None, #required -array of map filenames, g3 format
+                             window=None, # required -- mask to apply for SHT
+                             require_nside=None, #optional -- set if you want to sanity check nside in map files
+                             ramlimit=16 * 2**30, # optional -- set to change default RAM limit from 16gb
+                             setdef=setdef, # optional -- will take from mapfile array dimensions if not provided
+                             resume=True, #optional -- will use existing files if true 
+                             status=None, #optional -- can be filled with an object to track progress and resume in the middle
+                             banddef=None, # required. [0,lmax_bin1, lmax_bin2, ...]
+                             lmax=None, #optional, but should be set. Defaults to 2*nside
+                             persistdir=None, # 
+                             basedir=basedir, $
+                             cmbweighting=cmbweighting,  $
+                             nmodes=nmodes, mapname=mapname, winfact=winfact,$
+                             kmask=kmask, nmapsperfile=nmapsperfile,$
+                             maxell=maxell, jackknife=jackknife,jack_cal_sigma=jack_cal_sigma, $
+                             verbose=verbose, no_cross_set=no_cross_set, $
+                             npix=npix, auto=auto, chisq=chisq,$
+                             fftrdonly=fftrdonly, allspectra=allspectra, $
+                             meansub=meansub,$
+                             wt_by_unmasked_modes=wt_by_unmasked_modes, $
+                             est1_cov=cov1, est2_cov=cov2, convol_kernel=convolkern
