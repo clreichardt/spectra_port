@@ -14,8 +14,10 @@ AlmType = np.dtype(np.complex64)
 
 def name_tempdir(basedir):
     while True:
-        rand = np.random.randint(0,1000000)
-        path = "{}/"
+        rand = np.random.randint(0,999999)
+        path = "{}/workdir_{:6d}".format(basedir, rand)
+        if not os.path.exists(path):
+            return path
 
 def printinplace(myString):
     digits = len(myString)
@@ -68,10 +70,13 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
     #ie do parallelism SHTs at once...
     size = healpy.sphtfunc.Alm.getsize(lmax)
     if kmask is not None:
+        if kmask.shape[0] ~= size:
+            raise Exception("kmask provided is wrong size ({} vs {}), exiting".format(size,kmask.shape[0]))
         local_kmask = kmask.astype(np.float32)
     else:
         local_kmask = np.ones(size,dtype=np.float32)
 
+        
     if cmbweighting:
         dummy_vec = np.arange(lmax+1,dtype=np.float32)
         dummy_vec = (dummy_vec*(dummy_vec+1.))/(2*np.pi)
@@ -421,8 +426,23 @@ class unbiased_multispec:
                     print("WARNING -- using {} for scratch".format(self.persistdir))
                     if not os.path.isdir(self.persistdir):
                         os.makedirs(self.persistdir)
+
+                status_file = self.persistdir + '/status.pkl'
+                fft_file = self.persistdir + '/ffts.bin'
+                processed_fft_file = self.persistdir + '/ffts_processed.bin'
+                sum_fft_file = self.persistdir + '/sumffts.bin'
+                xpec_file = self.persistdir + '/xspecs.bin'
                 
-                
+
+                #################
+                # Figure out set def based on structure of map file names, if not provided
+                #################
+                if self.setdef is None:
+                    #may need to change this -- unsure if it's right or transpose
+                    #may also need to make it 2d
+                    #remove warning printout when checked
+                    self.setdef = self.mapfile.shape
+                    print('Warning - check set def: inferred {}'.format(self.setdef)                    
                 
                 #get SHTs done
                 take_and_reformat_shts(self.mapfile, processedshtfile,
