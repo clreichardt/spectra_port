@@ -1,3 +1,4 @@
+from statistics import covariance
 import sys
 from turtle import setundobuffer
 import numpy as np
@@ -330,15 +331,7 @@ def process_all_cross_spectra(allspectra, nbands, nsets,setsize,
     else:
         cov=cov1*(nrealizations) 
 
-
-    spectrum_dict = {}
-    spectrum_dict['spectrum']=spectrum
-    spectrum_dict['allspectra']=allspectra
-    spectrum_dict['cov']=cov
-    spectrum_dict['cov1']=cov1
-    spectrum_dict['cov2']=cov2
-
-    return spectrum_dict
+    return spectrum,cov,cov1,cov2
 
 
 '''
@@ -346,50 +339,102 @@ Create a class instance to simplify storing all the arguments along with the out
 '''
 class unbiased_multispec:
     def __init__(self,
+                 # Maps/SHT flags ################################################
                  mapfile, #required -array of map filenames, g3 format
                  window, # required -- mask to apply for SHT
                  banddef, # required. [0,lmax_bin1, lmax_bin2, ...]
-                 require_nside=None, #optional -- set if you want to sanity check nside in map files
+                 nside, #required. eg 8192
+                 lmax=None, #optional, but should be set. Defaults to 2*nside      
+                 cmbweighting=True, # True ==> return Dl. False ==> Return Cl
+                 kmask = None, #If not none, must be the right size for the Alms. A numpy array/vector
+                 setdef=None, # optional -- will take from mapfile array dimensions if not provided
+                 jackknife = False, #If true, will difference SHTs to do null spectrum
+                 auto=False, #If true will do autospectra instead of cross-spectra
+                 apply_windowfactor = True, #if true, calculate and apply normalization correction for partial sky mask. 
+                 # Run time processing flags ################################################
                  ramlimit=16 * 2**30, # optional -- set to change default RAM limit from 16gb
-                 setdef=setdef, # optional -- will take from mapfile array dimensions if not provided
                  resume=True, #optional -- will use existing files if true 
-                 status=None, #optional -- can be filled with an object to track progress and resume in the middle
-                             
-                 lmax=None, #optional, but should be set. Defaults to 2*nside
-                             persistdir=None, # 
-                             basedir=basedir, $
-                             cmbweighting=cmbweighting,  $
-                             nmodes=nmodes, mapname=mapname, winfact=winfact,$
-                             kmask=kmask, nmapsperfile=nmapsperfile,$
-                             maxell=maxell, jackknife=jackknife,jack_cal_sigma=jack_cal_sigma, $
-                             verbose=verbose, no_cross_set=no_cross_set, $
-                             npix=npix, auto=auto, chisq=chisq,$
-                             fftrdonly=fftrdonly, allspectra=allspectra, $
-                             meansub=meansub,$
-                             wt_by_unmasked_modes=wt_by_unmasked_modes, $
-                             est1_cov=cov1, est2_cov=cov2, convol_kernel=convolkern
+                 status=None, #optional -- will be filled with an object to track progress and resume in the middle    
+                 basedir=None, # strongly suggested. defaults to current directory and can use a lot of disk space
+                 persistdir=None, # optional - can be unset. will create a temp directory within basedir
+                 remove_temporary_files= False, # optional. Defaults to off (user has to do cleanup, but can restart runs later)
+                 verbose = False ): #extra print statements
+                #maybe sometime I'll put in more input file arguments...                  
+                '''
+                 # Outputs ################################################
+                 allspectra -- array of all cross-spectra (binned according to banddef)
+                 cov -- array estimated covariance
+                 est1_cov -- array estimated covariance from estimator 1
+                 est2_cov -- array estimated covariance from estimator 2
+                 nmodes -- array of number of alms per bandpower bin (form banddef)
+                 windowfactor -- value used to normalize spectrum for apodization window. May be 1 (ie not corrected)
+                '''
+                self.mapfile = mapfile
+                self.window = window
+                self.banddef = banddef
+                self.nside = nside
+                self.lmax = lmax
+                if self.lmax is None: 
+                    self.lmax = 2*self.nside
+                self.cmbweighting = cmbweighting
+                self.kmask = kmask
+                self.setdef = setdef
+                self.jackknife = jackknife
+                self.auto = auto
+                self.apply_windowfactor = apply_windowfactor
+                self.ramlimit = ramlimit
+                self.resume = resume
+                self.status = status
+                self.basedir = basedir
+                self.persistdir = persistdir
+                self.remove_temporary_files = remove_temporary_files
+                self.verbose = verbose
+                self.allspectra = None
+                self.spectrum = None
+                self.cov = None
+                self.est1_cov = None
+                self.est2_cov = None
+                self.nmodes = None
+                self.windowfactor = 1.0
+                
 
+                
+                #get SHTs done
+                take_and_reformat_shts(self.mapfile, processedshtfile,
+                           self.nside,self.lmax,
+                           cmbweighting = self.cmbweighting, 
+                           mask  = self.window,
+                           kmask = self.kmask,
+                           ell_reordering=None,
+                           no_reorder=False,
+                           ram_limit = self.ramlimit
+                          )
+                
+                use_setdef  = setdef
+                use_shtfile = processed_shtfile
+                if self.jackknife:
+                    use_setdef = generate_jackknife_shts( processed_shtfile, jackknife_shtfile,  self.lmax, self.setdef)
+                    use_shtfile = jackknife_shtfile
+                self.use_setdef = use_setdef
+                
+                #figure out cross-spectra (or autospectra)
+                allspectra, nmodes= take_all_cross_spectra( use_shtfile, self.lmax,
+                            self.use_setdef, self.banddef, ram_limit=self.ramlimit, auto = self.auto) -> 'Returns set of all x-spectra, binned':
+                self.allspectra = allspectra
+                self.nmodes = nmodes
+                
+                
+                #bring it all together
+                nbands = banddef.shape[0]-1
+                nsets   = use_setdef.shape[1]
+                setsize = use_setdef.shape[0]
 
-# returns:
-# spectrum, cov
-def unbiased_multispec_pspec(mapfile=None, 
-                             window=None, # required -- mask to apply for SHT
-                             require_nside=None, #optional -- set if you want to sanity check nside in map files
-                             ramlimit=16 * 2**30, # optional -- set to change default RAM limit from 16gb
-                             setdef=setdef, # optional -- will take from mapfile array dimensions if not provided
-                             resume=True, #optional -- will use existing files if true 
-                             status=None, #optional -- can be filled with an object to track progress and resume in the middle
-                             banddef=None, # required. [0,lmax_bin1, lmax_bin2, ...]
-                             lmax=None, #optional, but should be set. Defaults to 2*nside
-                             persistdir=None, # 
-                             basedir=basedir, $
-                             cmbweighting=cmbweighting,  $
-                             nmodes=nmodes, mapname=mapname, winfact=winfact,$
-                             kmask=kmask, nmapsperfile=nmapsperfile,$
-                             maxell=maxell, jackknife=jackknife,jack_cal_sigma=jack_cal_sigma, $
-                             verbose=verbose, no_cross_set=no_cross_set, $
-                             npix=npix, auto=auto, chisq=chisq,$
-                             fftrdonly=fftrdonly, allspectra=allspectra, $
-                             meansub=meansub,$
-                             wt_by_unmasked_modes=wt_by_unmasked_modes, $
-                             est1_cov=cov1, est2_cov=cov2, convol_kernel=convolkern
+                spectrum,cov,cov1,cov2 = process_all_cross_spectra(self.allspectra, nbands, nsets,setsize, 
+                                                                    auto=self.auto)
+                self.spectrum = spectrum
+                self.cov      = cov
+                self.est1_cov = cov1
+                self.est2_cov = cov2
+                                 
+                 
+                 
