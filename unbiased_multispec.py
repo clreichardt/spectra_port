@@ -1,3 +1,4 @@
+from genericpath import getsize
 from statistics import covariance
 import sys
 from turtle import setundobuffer
@@ -344,7 +345,6 @@ def process_all_cross_spectra(allspectra, nbands, nsets,setsize,
 
     return spectrum,cov,cov1,cov2
 
-
 '''
 Create a class instance to simplify storing all the arguments along with the output
 '''
@@ -364,8 +364,7 @@ class unbiased_multispec:
                  apply_windowfactor = True, #if true, calculate and apply normalization correction for partial sky mask. 
                  # Run time processing flags ################################################
                  ramlimit=16 * 2**30, # optional -- set to change default RAM limit from 16gb
-                 resume=True, #optional -- will use existing files if true 
-                 status=None, #optional -- will be filled with an object to track progress and resume in the middle    
+                 resume=True, #optional -- will use existing files if true    
                  basedir=None, # strongly suggested. defaults to current directory and can use a lot of disk space
                  persistdir=None, # optional - can be unset. will create a temp directory within basedir
                  remove_temporary_files= False, # optional. Defaults to off (user has to do cleanup, but can restart runs later)
@@ -395,7 +394,6 @@ class unbiased_multispec:
                 self.apply_windowfactor = apply_windowfactor
                 self.ramlimit = ramlimit
                 self.resume = resume
-                self.status = status
                 self.basedir = basedir
                 self.persistdir = persistdir
                 self.remove_temporary_files = remove_temporary_files
@@ -427,11 +425,15 @@ class unbiased_multispec:
                     if not os.path.isdir(self.persistdir):
                         os.makedirs(self.persistdir)
 
+                #maybe at some point, we'll use status. right now nothing is done. Resume will only affect the full step level - no partial steps yet.
                 status_file = self.persistdir + '/status.pkl'
-                fft_file = self.persistdir + '/ffts.bin'
-                processed_fft_file = self.persistdir + '/ffts_processed.bin'
-                sum_fft_file = self.persistdir + '/sumffts.bin'
-                xpec_file = self.persistdir + '/xspecs.bin'
+
+                processed_sht_file = self.persistdir + '/shts_processed.bin'
+                if not self.resume:
+                    try: 
+                        os.remove(processed_sht_file)
+                    except FileNotFoundError:
+                        pass
                 
 
                 #################
@@ -445,7 +447,10 @@ class unbiased_multispec:
                     print('Warning - check set def: inferred {}'.format(self.setdef)                    
                 
                 #get SHTs done
-                take_and_reformat_shts(self.mapfile, processedshtfile,
+                sht_size = os.path.getsize(processed_sht_file)
+                desired_size = healpy.sphtfunc.Alm.getsize(lmax) * np.zeros(1,dtype=AlmType).nbytes
+                if (sht_size < desired_size):  #this will be false if resume==False since deleted file above.
+                    take_and_reformat_shts(self.mapfile, processed_sht_file,
                            self.nside,self.lmax,
                            cmbweighting = self.cmbweighting, 
                            mask  = self.window,
@@ -456,9 +461,9 @@ class unbiased_multispec:
                           )
                 
                 use_setdef  = setdef
-                use_shtfile = processed_shtfile
+                use_shtfile = processed_sht_file
                 if self.jackknife:
-                    use_setdef = generate_jackknife_shts( processed_shtfile, jackknife_shtfile,  self.lmax, self.setdef)
+                    use_setdef = generate_jackknife_shts( processed_sht_file, jackknife_shtfile,  self.lmax, self.setdef)
                     use_shtfile = jackknife_shtfile
                 self.use_setdef = use_setdef
                 
