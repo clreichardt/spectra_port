@@ -11,6 +11,12 @@ import pickle as pkl
 import pdb
 AlmType = np.dtype(np.complex64)
 
+
+def name_tempdir(basedir):
+    while True:
+        rand = np.random.randint(0,1000000)
+        path = "{}/"
+
 def printinplace(myString):
     digits = len(myString)
     delete = "\b" * (digits)
@@ -397,7 +403,26 @@ class unbiased_multispec:
                 self.nmodes = None
                 self.windowfactor = 1.0
                 
-
+                
+                #################
+                # figure out scratch directories
+                #################
+                try:
+                    if not os.path.isdir(self.basedir):
+                        raise TypeError  # to be caught below
+                except TypeError:            
+                    self.basedir = os.getcwd()
+                try:     
+                    if os.path.exists(self.persistdir) and not os.path.isdir(self.persistdir):
+                        print("WARNING -- Requested scratch exists, but is not a directory: {}".format(self.persistdir))
+                        raise TypeError
+                except TypeError:
+                    self.persistdir = name_tempdir(self.basedir)
+                    print("WARNING -- using {} for scratch".format(self.persistdir))
+                    if not os.path.isdir(self.persistdir):
+                        os.makedirs(self.persistdir)
+                
+                
                 
                 #get SHTs done
                 take_and_reformat_shts(self.mapfile, processedshtfile,
