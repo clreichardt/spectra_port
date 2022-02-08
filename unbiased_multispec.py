@@ -1,3 +1,5 @@
+from genericpath import getsize
+from statistics import covariance
 import sys
 from turtle import setundobuffer
 import numpy as np
@@ -9,6 +11,14 @@ from spt3g import core,maps, calibration
 import pickle as pkl
 import pdb
 AlmType = np.dtype(np.complex64)
+
+
+def name_tempdir(basedir):
+    while True:
+        rand = np.random.randint(0,999999)
+        path = "{}/workdir_{:6d}".format(basedir, rand)
+        if not os.path.exists(path):
+            return path
 
 def printinplace(myString):
     digits = len(myString)
@@ -61,10 +71,13 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
     #ie do parallelism SHTs at once...
     size = healpy.sphtfunc.Alm.getsize(lmax)
     if kmask is not None:
+        if kmask.shape[0] ~= size:
+            raise Exception("kmask provided is wrong size ({} vs {}), exiting".format(size,kmask.shape[0]))
         local_kmask = kmask.astype(np.float32)
     else:
         local_kmask = np.ones(size,dtype=np.float32)
 
+        
     if cmbweighting:
         dummy_vec = np.arange(lmax+1,dtype=np.float32)
         dummy_vec = (dummy_vec*(dummy_vec+1.))/(2*np.pi)
@@ -76,7 +89,7 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
 
 
     if ell_reordering is None:  # need to make it
-        #have lmax+1 m=0's, followed by lmax-1 m=1's.... (if does do l=0,m=0)
+        #have lmax+1 m=0's, followed by lmax m=1's.... (if does do l=0,m=0)
         # healpy has indexing routines, but they only take 1 at a time...
         #make dummy vec for use
         dummy_vec = np.zeros(lmax+1,dtype=np.int)
@@ -330,12 +343,148 @@ def process_all_cross_spectra(allspectra, nbands, nsets,setsize,
     else:
         cov=cov1*(nrealizations) 
 
+    return spectrum,cov,cov1,cov2
 
-    spectrum_dict = {}
-    spectrum_dict['spectrum']=spectrum
-    spectrum_dict['allspectra']=allspectra
-    spectrum_dict['cov']=cov
-    spectrum_dict['cov1']=cov1
-    spectrum_dict['cov2']=cov2
+'''
+Create a class instance to simplify storing all the arguments along with the output
+'''
+class unbiased_multispec:
+    def __init__(self,
+                 # Maps/SHT flags ################################################
+                 mapfile, #required -array of map filenames, g3 format
+                 window, # required -- mask to apply for SHT
+                 banddef, # required. [0,lmax_bin1, lmax_bin2, ...]
+                 nside, #required. eg 8192
+                 lmax=None, #optional, but should be set. Defaults to 2*nside      
+                 cmbweighting=True, # True ==> return Dl. False ==> Return Cl
+                 kmask = None, #If not none, must be the right size for the Alms. A numpy array/vector
+                 setdef=None, # optional -- will take from mapfile array dimensions if not provided
+                 jackknife = False, #If true, will difference SHTs to do null spectrum
+                 auto=False, #If true will do autospectra instead of cross-spectra
+                 apply_windowfactor = True, #if true, calculate and apply normalization correction for partial sky mask. 
+                 # Run time processing flags ################################################
+                 ramlimit=16 * 2**30, # optional -- set to change default RAM limit from 16gb
+                 resume=True, #optional -- will use existing files if true    
+                 basedir=None, # strongly suggested. defaults to current directory and can use a lot of disk space
+                 persistdir=None, # optional - can be unset. will create a temp directory within basedir
+                 remove_temporary_files= False, # optional. Defaults to off (user has to do cleanup, but can restart runs later)
+                 verbose = False ): #extra print statements
+                #maybe sometime I'll put in more input file arguments...                  
+                '''
+                 # Outputs ################################################
+                 allspectra -- array of all cross-spectra (binned according to banddef)
+                 cov -- array estimated covariance
+                 est1_cov -- array estimated covariance from estimator 1
+                 est2_cov -- array estimated covariance from estimator 2
+                 nmodes -- array of number of alms per bandpower bin (form banddef)
+                 windowfactor -- value used to normalize spectrum for apodization window. May be 1 (ie not corrected)
+                '''
+                self.mapfile = mapfile
+                self.window = window
+                self.banddef = banddef
+                self.nside = nside
+                self.lmax = lmax
+                if self.lmax is None: 
+                    self.lmax = 2*self.nside
+                self.cmbweighting = cmbweighting
+                self.kmask = kmask
+                self.setdef = setdef
+                self.jackknife = jackknife
+                self.auto = auto
+                self.apply_windowfactor = apply_windowfactor
+                self.ramlimit = ramlimit
+                self.resume = resume
+                self.basedir = basedir
+                self.persistdir = persistdir
+                self.remove_temporary_files = remove_temporary_files
+                self.verbose = verbose
+                self.allspectra = None
+                self.spectrum = None
+                self.cov = None
+                self.est1_cov = None
+                self.est2_cov = None
+                self.nmodes = None
+                self.windowfactor = 1.0
+                
+                
+                #################
+                # figure out scratch directories
+                #################
+                try:
+                    if not os.path.isdir(self.basedir):
+                        raise TypeError  # to be caught below
+                except TypeError:            
+                    self.basedir = os.getcwd()
+                try:     
+                    if os.path.exists(self.persistdir) and not os.path.isdir(self.persistdir):
+                        print("WARNING -- Requested scratch exists, but is not a directory: {}".format(self.persistdir))
+                        raise TypeError
+                except TypeError:
+                    self.persistdir = name_tempdir(self.basedir)
+                    print("WARNING -- using {} for scratch".format(self.persistdir))
+                    if not os.path.isdir(self.persistdir):
+                        os.makedirs(self.persistdir)
 
-    return spectrum_dict
+                #maybe at some point, we'll use status. right now nothing is done. Resume will only affect the full step level - no partial steps yet.
+                status_file = self.persistdir + '/status.pkl'
+
+                processed_sht_file = self.persistdir + '/shts_processed.bin'
+                if not self.resume:
+                    try: 
+                        os.remove(processed_sht_file)
+                    except FileNotFoundError:
+                        pass
+                
+
+                #################
+                # Figure out set def based on structure of map file names, if not provided
+                #################
+                if self.setdef is None:
+                    #may need to change this -- unsure if it's right or transpose
+                    #may also need to make it 2d
+                    #remove warning printout when checked
+                    self.setdef = self.mapfile.shape
+                    print('Warning - check set def: inferred {}'.format(self.setdef)                    
+                
+                #get SHTs done
+                sht_size = os.path.getsize(processed_sht_file)
+                desired_size = healpy.sphtfunc.Alm.getsize(lmax) * np.zeros(1,dtype=AlmType).nbytes
+                if (sht_size < desired_size):  #this will be false if resume==False since deleted file above.
+                    take_and_reformat_shts(self.mapfile, processed_sht_file,
+                           self.nside,self.lmax,
+                           cmbweighting = self.cmbweighting, 
+                           mask  = self.window,
+                           kmask = self.kmask,
+                           ell_reordering=None,
+                           no_reorder=False,
+                           ram_limit = self.ramlimit
+                          )
+                
+                use_setdef  = setdef
+                use_shtfile = processed_sht_file
+                if self.jackknife:
+                    use_setdef = generate_jackknife_shts( processed_sht_file, jackknife_shtfile,  self.lmax, self.setdef)
+                    use_shtfile = jackknife_shtfile
+                self.use_setdef = use_setdef
+                
+                #figure out cross-spectra (or autospectra)
+                allspectra, nmodes= take_all_cross_spectra( use_shtfile, self.lmax,
+                            self.use_setdef, self.banddef, ram_limit=self.ramlimit, auto = self.auto) -> 'Returns set of all x-spectra, binned':
+                self.allspectra = allspectra
+                self.nmodes = nmodes
+                
+                
+                #bring it all together
+                nbands = banddef.shape[0]-1
+                nsets   = use_setdef.shape[1]
+                setsize = use_setdef.shape[0]
+
+                spectrum,cov,cov1,cov2 = process_all_cross_spectra(self.allspectra, nbands, nsets,setsize, 
+                                                                    auto=self.auto)
+                self.spectrum = spectrum
+                self.cov      = cov
+                self.est1_cov = cov1
+                self.est2_cov = cov2
+                                 
+                 
+                 

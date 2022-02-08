@@ -1,7 +1,8 @@
 
 
 
-
+real_map_dir = ''
+real_map_stub= ''
 
 ##################
 # 1: Make (or load) mode coupling kernel
@@ -20,6 +21,8 @@
 ##################
 # 3: Calculate spectra and covariances of data
 ##################
+
+
 
 
 ##################
