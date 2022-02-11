@@ -9,27 +9,27 @@ real_map_stub= ''
 ##################
 
 
-
+#plan to use wrapper to NaMaster, to be written
 
 ##################
 # 2: Calculate spectra and covariances of monte-carlo sims
 #    This is done at both a fine ell-gridding for Tf, and broader binning that matches data
 ##################
 
-
+#see unbiased_multispec.py
 
 ##################
 # 3: Calculate spectra and covariances of data
 ##################
 
-
+#see unbiased_multispec.py
 
 
 ##################
 # 4: Calculate the Transfer functions
 ##################
 
-
+#see transfer_function.py
 
 
 ##################
