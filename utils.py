@@ -44,20 +44,28 @@ def rectangle_points(vec_border_lon, vec_border_lat, this_lon, this_lat,delta_lo
 def pull_weight(file):
     ''' read g3 file
     return first weight
-    as np array. 
+    as np array of float32
     
     expecting it to be full sky
     '''
     #grab weight from file
     #zero nan's possibly. not sure if needed...
     #weight[np.isnan(weight)]=0
-    return weight
+    try:
+        frames = core.G3File(file)
+        for frame in frames:
+            return np.asarray(frame["weight"],dtype=np.float32)
+    except:
+        return None
+
 
 def find_geom_mean_weight(filelist):
     product = None
     count=0
     for file in filelist:
         loc_weight = pull_weight(file)
+        if loc_weight is None:
+            raise Exception("Failed to read/load wights from {}".format(file))
         if product is None:
             product = loc_weight
         else:
