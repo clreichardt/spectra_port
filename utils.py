@@ -39,3 +39,44 @@ def rectangle_points(vec_border_lon, vec_border_lat, this_lon, this_lat,delta_lo
     ie lon \in [this_lon-delta_lon,this_lon+delta_lon]
     can return None if none in range
     '''
+    pass
+
+def pull_weight(file):
+    ''' read g3 file
+    return first weight
+    as np array. 
+    
+    expecting it to be full sky
+    '''
+    #grab weight from file
+    #zero nan's possibly. not sure if needed...
+    #weight[np.isnan(weight)]=0
+    return weight
+
+def find_geom_mean_weight(filelist):
+    product = None
+    count=0
+    for file in filelist:
+        loc_weight = pull_weight(file)
+        if product is None:
+            product = loc_weight
+        else:
+            product *= loc_weight
+        count += 1
+    return product**(1/count)
+
+def select_good_weight_region(weight,min_fraction):
+    '''
+    expect this to return a full sky map, true where good, false most places
+    good == weight > min_fraction * median(non-zero weight)
+    assumes untouched pixels are zero, not NAN!!!
+    '''
+    medwt = np,median(weight[weight > 0])
+    threshold = medwt * fraction
+    mask = np.zeros(weight.shape,dtype=np.bool)
+    mask[weight > threshold] = True
+
+    ###maybe smooth this???
+    ### look at plots and decide
+
+    return mask
