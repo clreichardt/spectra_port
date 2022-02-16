@@ -1,5 +1,5 @@
 from genericpath import getsize
-from statistics import covariance
+#from statistics import covariance
 import sys
 from turtle import setundobuffer
 import numpy as np
@@ -427,7 +427,7 @@ class unbiased_multispec:
 
         #maybe at some point, we'll use status. right now nothing is done. Resume will only affect the full step level - no partial steps yet.
         status_file = self.persistdir + '/status.pkl'
-
+        
         processed_sht_file = self.persistdir + '/shts_processed.bin'
         if not self.resume:
             try: 
@@ -435,7 +435,7 @@ class unbiased_multispec:
             except FileNotFoundError:
                 pass
         
-
+        
         #################
         # Figure out set def based on structure of map file names, if not provided
         #################
@@ -444,7 +444,7 @@ class unbiased_multispec:
             #may also need to make it 2d
             #remove warning printout when checked
             self.setdef = self.mapfile.shape
-            print('Warning - check set def: inferred {}'.format(self.setdef)                    
+            print('Warning - check set def: inferred {}'.format(self.setdef))
         
         #get SHTs done
         sht_size = os.path.getsize(processed_sht_file)
@@ -469,7 +469,7 @@ class unbiased_multispec:
         
         #figure out cross-spectra (or autospectra)
         allspectra, nmodes= take_all_cross_spectra( use_shtfile, self.lmax,
-                    self.use_setdef, self.banddef, ram_limit=self.ramlimit, auto = self.auto) -> 'Returns set of all x-spectra, binned':
+                    self.use_setdef, self.banddef, ram_limit=self.ramlimit, auto = self.auto) #-> 'Returns set of all x-spectra, binned':
         self.allspectra = allspectra
         self.nmodes = nmodes
         

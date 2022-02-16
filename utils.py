@@ -1,3 +1,5 @@
+import numpy as np
+from spt3g import core
 def great_circle_distance(vec_border_lon, vec_border_lat, this_lon, this_lat):
     '''
     Finds minimum distance of a point (this_lon, this_lat) to a vector of long/lats
@@ -53,13 +55,13 @@ def pull_weight(file):
     #weight[np.isnan(weight)]=0
     try:
         frames = core.G3File(file)
-        for frame in frames:
-            return np.asarray(frame["weight"],dtype=np.float32)
+        frame = frames.next() #grab first frame
+        return np.asarray(frame["weight"],dtype=np.float32)
     except:
         return None
 
 
-def find_geom_mean_weight(filelist):
+def find_geom_mean_weight(filelist,norm=True):
     product = None
     count=0
     for file in filelist:
@@ -68,6 +70,8 @@ def find_geom_mean_weight(filelist):
         loc_weight = pull_weight(file)
         if loc_weight is None:
             raise Exception("Failed to read/load wights from {}".format(file))
+        if norm:
+            loc_weight /= np.max(loc_weight)
         if product is None:
             product = loc_weight
         else:
