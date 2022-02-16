@@ -94,3 +94,49 @@ def select_good_weight_region(weight,min_fraction):
     ### look at plots and decide
 
     return mask
+
+
+def source_mask_profile(radius_rad, fwhm_rad, distances_rad):
+    output = distances_rad * 0.0
+    sigma = fwhm_rad / 2.35482 #sqrt(8*log(2))
+    inds = distances_rad > radius_rad
+    output[inds] = 1.0-np.exp(-0.5 * ((distances_rad[inds]-radius_rad)/sigma)**2)
+    return output
+
+def punch_holes(ras,decs,radii,nside,mask=None,pixel_list=None, ring=True, celestial=True,buffer=1.2,fwhm_arcmin=5.0):
+    '''
+    Inputs:
+    ras, decs, radii: N-vectors of RA, Decl, and radius. All in degrees.
+    nside: healpix nside
+    Outputs: 
+    12*nside**2 pixel full sky healpix map - 1 where good, 0 at sources, and taper in between
+    Not implemented optional arguments below:
+    Optional input: mask (ignored if passed pixel_list) -- will take non-zero pixels to create pixel_list
+    Optional input: pixel_list - list of healpix pixel indices.
+    optional: Celestial: in celestial
+    optional: ring: in ring
+    '''
+    
+    if len(radii) == 1:     
+        radii = np.zeroes(ras.shape)+radii
+    assert( ras.shape == decs.shape )
+    assert( ras.shape == radii.shape)
+    radii=np.deg2rad(np.asarray(radii))
+    fwhm = np.deg2rad(fwhm_arcmin/60.) # 5'
+    search_radii = buffer * radii + 2*fwhm
+    thetas = 0.5*np.pi - np.deg2rad(decs) 
+    phis = np.deg2rad(ras)
+    phis[phis < 0] += 2*np.pi #wrap RAs
+    vectors = hp.rotator.dir2vec(thetas,phi=phis)
+    npts = len(ras)
+    mask = np.ones(12*nside**2,dtype=np.float32)
+    for i in range(npts):
+        pixlist = hp.query_disc(nside,vectors[:,i],search_radii[i],inclusive=False,nest=(ring is False))
+        loc_ang = pix2ang(nside,pixlist,nest=(ring is False))
+        #check this
+        this_ang = [thetas[i],phis[i]]
+        dist_list = hp.rotator.angdist(loc_ang,this_ang)
+        value_list = source_mask_profile(radii[i],fwhm,dist_list)
+        mask[pixlist] *= value_list
+    return mask # this source-only mask can be multiplied by the edge taper mask
+        
