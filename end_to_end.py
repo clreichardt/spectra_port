@@ -38,7 +38,25 @@ real_map_stub= ''
 #    Invert the kernel
 ##################
 
+super_kernel        = np.zeros([nspectra, nbands, nspectra, nbands],dtype=np.float64)
+sim_super_kernel    = np.zeros([nspectra, nbands, nspectra, nbands],dtype=np.float64)
+inv_super_kernel    = np.zeros([nspectra, nbands, nspectra, nbands],dtype=np.float64)
+inv_sim_super_kernel= np.zeros([nspectra, nbands, nspectra, nbands],dtype=np.float64)
+defaultskip=1
+iskips = np.zeros(nspectra, dtype=np.int32)
+for i in range(nspectra):
+    super_kernel[i,:,i,:]=rebin_coupling_kernel(kernel, ellkern, banddef, transfer=transfer[i,:], beam = beams[i,:])
+    sim_super_kernel[i,:,i,:]=rebin_coupling_kernel(kernel, ellkern, banddef, transfer=transfer[i,:], beam = simbeams[i,:])
+    slice = [superkern[i,j,i,j]==0 for j in range(nbands)]
+    try:
+        iskip = np.where(slice)[-1][-1]
+    except IndexError:
+        iskip=0 #end up here if np.where returned empty array -- all false
+    # leave first (or more) usually bogus bin out of inversion
+    #don't try to divide by zero
+    inv_super_kernel[i,iskip:,i,iskip:] = np.inverse(
 
+        #not done
 ##################
 # 6: Multiply data bandpowers by Inverse Kernel
 ##################
