@@ -63,6 +63,8 @@ def find_geom_mean_weight(filelist):
     product = None
     count=0
     for file in filelist:
+        if count % 10 == 0:
+            print(count,file)
         loc_weight = pull_weight(file)
         if loc_weight is None:
             raise Exception("Failed to read/load wights from {}".format(file))
