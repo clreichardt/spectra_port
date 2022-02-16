@@ -370,7 +370,7 @@ class unbiased_multispec:
                  remove_temporary_files= False, # optional. Defaults to off (user has to do cleanup, but can restart runs later)
                  verbose = False ): #extra print statements
                 #maybe sometime I'll put in more input file arguments...                  
-                '''
+        '''
                  # Outputs ################################################
                  allspectra -- array of all cross-spectra (binned according to banddef)
                  cov -- array estimated covariance
@@ -378,113 +378,113 @@ class unbiased_multispec:
                  est2_cov -- array estimated covariance from estimator 2
                  nmodes -- array of number of alms per bandpower bin (form banddef)
                  windowfactor -- value used to normalize spectrum for apodization window. May be 1 (ie not corrected)
-                '''
-                self.mapfile = mapfile
-                self.window = window
-                self.banddef = banddef
-                self.nside = nside
-                self.lmax = lmax
-                if self.lmax is None: 
-                    self.lmax = 2*self.nside
-                self.cmbweighting = cmbweighting
-                self.kmask = kmask
-                self.setdef = setdef
-                self.jackknife = jackknife
-                self.auto = auto
-                self.apply_windowfactor = apply_windowfactor
-                self.ramlimit = ramlimit
-                self.resume = resume
-                self.basedir = basedir
-                self.persistdir = persistdir
-                self.remove_temporary_files = remove_temporary_files
-                self.verbose = verbose
-                self.allspectra = None
-                self.spectrum = None
-                self.cov = None
-                self.est1_cov = None
-                self.est2_cov = None
-                self.nmodes = None
-                self.windowfactor = 1.0
+        '''
+        self.mapfile = mapfile
+        self.window = window
+        self.banddef = banddef
+        self.nside = nside
+        self.lmax = lmax
+        if self.lmax is None: 
+            self.lmax = 2*self.nside
+        self.cmbweighting = cmbweighting
+        self.kmask = kmask
+        self.setdef = setdef
+        self.jackknife = jackknife
+        self.auto = auto
+        self.apply_windowfactor = apply_windowfactor
+        self.ramlimit = ramlimit
+        self.resume = resume
+        self.basedir = basedir
+        self.persistdir = persistdir
+        self.remove_temporary_files = remove_temporary_files
+        self.verbose = verbose
+        self.allspectra = None
+        self.spectrum = None
+        self.cov = None
+        self.est1_cov = None
+        self.est2_cov = None
+        self.nmodes = None
+        self.windowfactor = 1.0
                 
                 
-                #################
-                # figure out scratch directories
-                #################
-                try:
-                    if not os.path.isdir(self.basedir):
-                        raise TypeError  # to be caught below
-                except TypeError:            
-                    self.basedir = os.getcwd()
-                try:     
-                    if os.path.exists(self.persistdir) and not os.path.isdir(self.persistdir):
-                        print("WARNING -- Requested scratch exists, but is not a directory: {}".format(self.persistdir))
-                        raise TypeError
-                except TypeError:
-                    self.persistdir = name_tempdir(self.basedir)
-                    print("WARNING -- using {} for scratch".format(self.persistdir))
-                    if not os.path.isdir(self.persistdir):
-                        os.makedirs(self.persistdir)
+        #################
+        # figure out scratch directories
+        #################
+        try:
+            if not os.path.isdir(self.basedir):
+                raise TypeError  # to be caught below
+        except TypeError:            
+            self.basedir = os.getcwd()
+        try:     
+            if os.path.exists(self.persistdir) and not os.path.isdir(self.persistdir):
+                print("WARNING -- Requested scratch exists, but is not a directory: {}".format(self.persistdir))
+                raise TypeError
+        except TypeError:
+            self.persistdir = name_tempdir(self.basedir)
+            print("WARNING -- using {} for scratch".format(self.persistdir))
+            if not os.path.isdir(self.persistdir):
+                os.makedirs(self.persistdir)
 
-                #maybe at some point, we'll use status. right now nothing is done. Resume will only affect the full step level - no partial steps yet.
-                status_file = self.persistdir + '/status.pkl'
+        #maybe at some point, we'll use status. right now nothing is done. Resume will only affect the full step level - no partial steps yet.
+        status_file = self.persistdir + '/status.pkl'
 
-                processed_sht_file = self.persistdir + '/shts_processed.bin'
-                if not self.resume:
-                    try: 
-                        os.remove(processed_sht_file)
-                    except FileNotFoundError:
-                        pass
-                
+        processed_sht_file = self.persistdir + '/shts_processed.bin'
+        if not self.resume:
+            try: 
+                os.remove(processed_sht_file)
+            except FileNotFoundError:
+                pass
+        
 
-                #################
-                # Figure out set def based on structure of map file names, if not provided
-                #################
-                if self.setdef is None:
-                    #may need to change this -- unsure if it's right or transpose
-                    #may also need to make it 2d
-                    #remove warning printout when checked
-                    self.setdef = self.mapfile.shape
-                    print('Warning - check set def: inferred {}'.format(self.setdef)                    
-                
-                #get SHTs done
-                sht_size = os.path.getsize(processed_sht_file)
-                desired_size = healpy.sphtfunc.Alm.getsize(lmax) * np.zeros(1,dtype=AlmType).nbytes
-                if (sht_size < desired_size):  #this will be false if resume==False since deleted file above.
-                    take_and_reformat_shts(self.mapfile, processed_sht_file,
-                           self.nside,self.lmax,
-                           cmbweighting = self.cmbweighting, 
-                           mask  = self.window,
-                           kmask = self.kmask,
-                           ell_reordering=None,
-                           no_reorder=False,
-                           ram_limit = self.ramlimit
-                          )
-                
-                use_setdef  = setdef
-                use_shtfile = processed_sht_file
-                if self.jackknife:
-                    use_setdef = generate_jackknife_shts( processed_sht_file, jackknife_shtfile,  self.lmax, self.setdef)
-                    use_shtfile = jackknife_shtfile
-                self.use_setdef = use_setdef
-                
-                #figure out cross-spectra (or autospectra)
-                allspectra, nmodes= take_all_cross_spectra( use_shtfile, self.lmax,
-                            self.use_setdef, self.banddef, ram_limit=self.ramlimit, auto = self.auto) -> 'Returns set of all x-spectra, binned':
-                self.allspectra = allspectra
-                self.nmodes = nmodes
-                
-                
-                #bring it all together
-                nbands = banddef.shape[0]-1
-                nsets   = use_setdef.shape[1]
-                setsize = use_setdef.shape[0]
+        #################
+        # Figure out set def based on structure of map file names, if not provided
+        #################
+        if self.setdef is None:
+            #may need to change this -- unsure if it's right or transpose
+            #may also need to make it 2d
+            #remove warning printout when checked
+            self.setdef = self.mapfile.shape
+            print('Warning - check set def: inferred {}'.format(self.setdef)                    
+        
+        #get SHTs done
+        sht_size = os.path.getsize(processed_sht_file)
+        desired_size = healpy.sphtfunc.Alm.getsize(lmax) * np.zeros(1,dtype=AlmType).nbytes
+        if (sht_size < desired_size):  #this will be false if resume==False since deleted file above.
+            take_and_reformat_shts(self.mapfile, processed_sht_file,
+                   self.nside,self.lmax,
+                   cmbweighting = self.cmbweighting, 
+                   mask  = self.window,
+                   kmask = self.kmask,
+                   ell_reordering=None,
+                   no_reorder=False,
+                   ram_limit = self.ramlimit
+                  )
+        
+        use_setdef  = setdef
+        use_shtfile = processed_sht_file
+        if self.jackknife:
+            use_setdef = generate_jackknife_shts( processed_sht_file, jackknife_shtfile,  self.lmax, self.setdef)
+            use_shtfile = jackknife_shtfile
+        self.use_setdef = use_setdef
+        
+        #figure out cross-spectra (or autospectra)
+        allspectra, nmodes= take_all_cross_spectra( use_shtfile, self.lmax,
+                    self.use_setdef, self.banddef, ram_limit=self.ramlimit, auto = self.auto) -> 'Returns set of all x-spectra, binned':
+        self.allspectra = allspectra
+        self.nmodes = nmodes
+        
+        
+        #bring it all together
+        nbands = banddef.shape[0]-1
+        nsets   = use_setdef.shape[1]
+        setsize = use_setdef.shape[0]
 
-                spectrum,cov,cov1,cov2 = process_all_cross_spectra(self.allspectra, nbands, nsets,setsize, 
-                                                                    auto=self.auto)
-                self.spectrum = spectrum
-                self.cov      = cov
-                self.est1_cov = cov1
-                self.est2_cov = cov2
+        spectrum,cov,cov1,cov2 = process_all_cross_spectra(self.allspectra, nbands, nsets,setsize, 
+                                                            auto=self.auto)
+        self.spectrum = spectrum
+        self.cov      = cov
+        self.est1_cov = cov1
+        self.est2_cov = cov2
                                  
                  
                  
