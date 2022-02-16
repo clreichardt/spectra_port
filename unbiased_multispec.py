@@ -71,7 +71,7 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
     #ie do parallelism SHTs at once...
     size = healpy.sphtfunc.Alm.getsize(lmax)
     if kmask is not None:
-        if kmask.shape[0] ~= size:
+        if kmask.shape[0] != size:
             raise Exception("kmask provided is wrong size ({} vs {}), exiting".format(size,kmask.shape[0]))
         local_kmask = kmask.astype(np.float32)
     else:
