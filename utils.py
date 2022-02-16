@@ -103,11 +103,13 @@ def source_mask_profile(radius_rad, fwhm_rad, distances_rad):
     output[inds] = 1.0-np.exp(-0.5 * ((distances_rad[inds]-radius_rad)/sigma)**2)
     return output
 
-def punch_holes(ras,decs,radii,nside,mask=None,pixel_list=None, ring=True, celestial=True,buffer=1.2):
+def punch_holes(ras,decs,radii,nside,mask=None,pixel_list=None, ring=True, celestial=True,buffer=1.2,fwhm_arcmin=5.0):
     '''
     Inputs:
     ras, decs, radii: N-vectors of RA, Decl, and radius. All in degrees.
     nside: healpix nside
+    Outputs: 
+    12*nside**2 pixel full sky healpix map - 1 where good, 0 at sources, and taper in between
     Not implemented optional arguments below:
     Optional input: mask (ignored if passed pixel_list) -- will take non-zero pixels to create pixel_list
     Optional input: pixel_list - list of healpix pixel indices.
@@ -120,7 +122,7 @@ def punch_holes(ras,decs,radii,nside,mask=None,pixel_list=None, ring=True, celes
     assert( ras.shape == decs.shape )
     assert( ras.shape == radii.shape)
     radii=np.deg2rad(np.asarray(radii))
-    fwhm = np.deg2rad(5./60.) # 5'
+    fwhm = np.deg2rad(fwhm_arcmin/60.) # 5'
     search_radii = buffer * radii + 2*fwhm
     thetas = 0.5*np.pi - np.deg2rad(decs) 
     phis = np.deg2rad(ras)
