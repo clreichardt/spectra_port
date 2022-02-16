@@ -96,11 +96,11 @@ def select_good_weight_region(weight,min_fraction):
     return mask
 
 
-def source_mask_profile(radius, fwhm, distances):
-    output = distances * 0.0
-    sigma = fwhm / np.sqrt(8*np.log(2))
-    inds = distances > radius
-    output[inds] = 1.0-exp(-0.5 * ((distances[inds]-radius)/sigma)**2)
+def source_mask_profile(radius_rad, fwhm_rad, distances_rad):
+    output = distances_rad * 0.0
+    sigma = fwhm_rad / 2.35482 #sqrt(8*log(2))
+    inds = distances_rad > radius_rad
+    output[inds] = 1.0-np.exp(-0.5 * ((distances_rad[inds]-radius_rad)/sigma)**2)
     return output
 
 def punch_holes(ras,decs,radii,nside,mask=None,pixel_list=None, ring=True, celestial=True,buffer=1.2):
@@ -119,22 +119,22 @@ def punch_holes(ras,decs,radii,nside,mask=None,pixel_list=None, ring=True, celes
         radii = np.zeroes(ras.shape)+radii
     assert( ras.shape == decs.shape )
     assert( ras.shape == radii.shape)
-    
-    fwhm = 5./60. # 5'
+    radii=np.deg2rad(np.asarray(radii))
+    fwhm = np.deg2rad(5./60.) # 5'
     search_radii = buffer * radii + 2*fwhm
-    tranform ra/dec to theta/phi
-    thetas = ras 
-    phis = decs 
+    thetas = 0.5*np.pi - np.deg2rad(decs) 
+    phis = np.deg2rad(ras)
+    phis[phis < 0] += 2*np.pi #wrap RAs
     vectors = hp.rotator.dir2vec(thetas,phi=phis)
     npts = len(ras)
     mask = np.ones(12*nside**2,dtype=np.float32)
     for i in range(npts):
         pixlist = hp.query_disc(nside,vectors[:,i],search_radii[i],inclusive=False,nest=(ring is False))
         loc_ang = pix2ang(nside,pixlist,nest=(ring is False))
-        check this
+        #check this
         this_ang = [thetas[i],phis[i]]
         dist_list = hp.rotator.angdist(loc_ang,this_ang)
         value_list = source_mask_profile(radii[i],fwhm,dist_list)
         mask[pixlist] *= value_list
-    return mask
+    return mask # this source-only mask can be multiplied by the edge taper mask
         
