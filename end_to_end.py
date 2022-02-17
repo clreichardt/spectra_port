@@ -1,4 +1,5 @@
 import numpy as np
+import utils
 import unbiased_multispec as spec
 
 if __name__ == "__main__":
@@ -7,7 +8,7 @@ if __name__ == "__main__":
     
     
     
-def end_to_end(do_window_func = True):    
+def end_to_end(beamfiles,simbeamfiles=None,do_window_func = True):    
     '''
     should add argument to this...
     '''
@@ -57,9 +58,41 @@ def end_to_end(do_window_func = True):
     ##################
     # 4: Calculate the Transfer functions
     ##################
-
+    nkern = len(ellkern)
+    
+    
+    #Get Beams
+    assert(len(beamfiles) == nsets)
+    beams_interp = utils.fill_in_beams(beamfiles,ellkern)
+    beams = utils.explode_beams(beams)
+    if simbeamfiles is None:
+        simbeams_interp=beams_interp
+        simbeams=beams
+    else:
+        assert(len(simbeamfiles) == nsets)
+        simbeams_interp = utils.fill_in_beams(simbeamfiles,ellkern)
+        simbeams = utils.explode_beams(simbeams_interp)
     #see transfer_function.py
 
+    '''
+    ; By default, we make one transfer function per set, and 
+    ; cross spectra are scaled  by the geometric mean of the
+    ; appropriate single set spectra. However it
+    ; is an option to make a transfer function for cross spectrum 
+    '''
+
+    beams_for_tf=simbeam_interp
+    ntfs=nsets ;  this might be changed below
+
+'''
+; This is where we need to know the theory spectrum of the monte carlo sims
+; The user has the option of inputting one file per set OR
+;  a list of files or "components" per set. 
+; Thirdly, if the user specifies one component per spectrum (including 
+; cross spectra), then a separate transfer function will be made for
+; the cross spectra, (rather than using the geometric mean of the
+; the single frequency spectra)
+'''
 
     ##################
     # 5: Create binned kernel, including mode-coupling, beams, pixel WFs, transfer functions

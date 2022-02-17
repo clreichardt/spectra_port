@@ -139,4 +139,24 @@ def punch_holes(ras,decs,radii,nside,mask=None,pixel_list=None, ring=True, celes
         value_list = source_mask_profile(radii[i],fwhm,dist_list)
         mask[pixlist] *= value_list
     return mask # this source-only mask can be multiplied by the edge taper mask
-        
+
+def fill_in_beams(files,ells):
+    nl = len(ells)
+    nfreq = len(files)
+    beams_interp = np.zeros([nspectra, nl],dtype=np.float32)
+    for i in range(nfreq):
+        bl = np.fromfile(files[i]) # this will need to be fixed
+        beams_interp[i,:] = np.interpol(bl[1,:],bl[0,:],ells) #this will need to be fixed
+        bad = beams_interp[i,:] < 0
+
+
+def explode_beams(beams):
+    nsets = nspectra*(nspectra+1)/2
+    beams = np.zeros([nsets, nl],dtype=np.float32)
+    k=0
+    for i in range(nfreq):
+        for j in range(i,nfreq):
+            good = np.logical_and(beams_interp[i,:] > 0 ,beams_interp[j,:] > 0 )
+            beams[k,good] = np.sqrt(beams_interp[i,good]*beams_interp[j,good])
+            k += 1
+    return beams
