@@ -1,5 +1,5 @@
 import numpy as np
-
+import unbiased_multispec as spec
 
 if __name__ == "__main__":
     
@@ -26,14 +26,33 @@ def end_to_end(do_window_func = True):
     #    This is done at both a fine ell-gridding for Tf, and broader binning that matches data
     ##################
 
-    #see unbiased_multispec.py
+    mcdir = workdir + '/mc/'
+    mc_specrum = spec.unbiased_multispec(mapfiles,window,banddef,nside,lmax=lmax,
+                                      resume=resume,
+                                      basedir=mcdir,
+                                      setdef=setdef_mc,
+                                      jackknife=False, auto=True,
+                                      kmask=None,
+                                      cmbweighting=True)
+    mc_specrum_fine = spec.unbiased_multispec(mapfiles,window,banddef_fine,nside,lmax=lmax,
+                                      resume=True, #reuse the SHTs
+                                      basedir=mcdir,
+                                      setdef=setdef_mc,
+                                      jackknife=False, auto=True,
+                                      kmask=None,
+                                      cmbweighting=True)
 
     ##################
     # 3: Calculate spectra and covariances of data
     ##################
-
-    #see unbiased_multispec.py
-
+    datadir = workdir + '/data/'
+    data_specrum = spec.unbiased_multispec(mapfiles,window,banddef,nside,lmax=lmax,
+                                      resume=resume,
+                                      basedir=datadir,
+                                      setdef=setdef,
+                                      jackknife=False, auto=True,
+                                      kmask=None,
+                                      cmbweighting=True)
 
     ##################
     # 4: Calculate the Transfer functions
@@ -52,7 +71,6 @@ def end_to_end(do_window_func = True):
     sim_super_kernel    = np.zeros([nspectra, nbands, nspectra, nbands],dtype=np.float64)
     inv_super_kernel    = np.zeros([nspectra, nbands, nspectra, nbands],dtype=np.float64)
     inv_sim_super_kernel= np.zeros([nspectra, nbands, nspectra, nbands],dtype=np.float64)
-    defaultskip=1
     iskips = np.zeros(nspectra, dtype=np.int32)
     for i in range(nspectra):
         super_kernel[i,:,i,:]=rebin_coupling_kernel(kernel, ellkern, banddef, transfer=transfer[i,:], beam = beams[i,:])
@@ -75,13 +93,13 @@ def end_to_end(do_window_func = True):
     ##################
     # 6: Multiply data bandpowers by Inverse Kernel
     ##################
-    spectrum = np.reshape(invkernmat * spectrum_data_raw,[nspectra,nbands])
+    spectrum = np.reshape(invkernmat * data_spectrum.spectrum,[nspectra,nbands])
 
     ##################
     # 7: Apply inverse kernel to the covariance matrices
     ##################
-    sample_cov = np.reshape(invsimkernmat * cov_mc_raw * invsimkernmattr,[nspectra,nbands,nspectra, nbands])
-    meas_cov = np.reshape(invkernmat * cov_data_raw * invkernmattr,[nspectra,nbands,nspectra, nbands])
+    sample_cov = np.reshape(invsimkernmat * mc_spectrum.cov * invsimkernmattr,[nspectra,nbands,nspectra, nbands])
+    meas_cov = np.reshape(invkernmat * data_spectrum.cov * invkernmattr,[nspectra,nbands,nspectra, nbands])
     
     ##################
     # 8: Combine covariances yield total covariance estimate
