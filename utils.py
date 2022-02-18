@@ -160,3 +160,12 @@ def explode_beams(beams):
             beams[k,good] = np.sqrt(beams_interp[i,good]*beams_interp[j,good])
             k += 1
     return beams
+
+
+'''
+no error checking. assumes right pixels in right order
+'''
+def load_spt3g_cutsky_healpix_ring_map(file,npix):
+    map = np.fromfile(file,dtype=np.float32)
+    assert (len(map) == npix)
+    return map
