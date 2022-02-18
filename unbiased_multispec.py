@@ -8,6 +8,7 @@ import healpy
 
 import os
 from spt3g import core,maps, calibration
+import utils
 import pickle as pkl
 import pdb
 AlmType = np.dtype(np.complex64)
@@ -40,6 +41,10 @@ def load_spt3g_healpix_ring_map(file,require_order = 'Ring',require_nside=8192):
             return( np.asarray(ind).astype(np.int64,casting='same_kind'), np.asarray(map).astype(np.float32,casting='same_kind') )
     raise Exception("No Map found in file: {}".format(file))
 
+
+
+
+
 def take_and_reformat_shts(mapfilelist, processedshtfile,
                            nside,lmax,
                            cmbweighting = True, 
@@ -47,7 +52,8 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
                            kmask = None,
                            ell_reordering=None,
                            no_reorder=False,
-                           ram_limit = None
+                           ram_limit = None,
+                           npmapformat=False
                           ) -> 'May be done in Fortran - output is a file':
     ''' 
     Output is expected to be CL (Dl if cmbweighting=Trure) * mask normalization factor * kweights
@@ -68,6 +74,10 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
     if mask is not None:
         inv_mask_factor = 1./np.mean(mask**2)
 
+    if mask is not None:
+        map_inds, cut_mask = mask.nonzero_pixels()
+        npix = len(map_inds)
+        
     #ie do parallelism SHTs at once...
     size = healpy.sphtfunc.Alm.getsize(lmax)
     if kmask is not None:
@@ -114,16 +124,20 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
             count += 1
 
             #TBD get a map
-            ring_indices, map_tmp = load_spt3g_healpix_ring_map(file)
+            if not npmapformat:
+                ring_indices, map_tmp = load_spt3g_healpix_ring_map(file)
 
-            map_scratch[:]=0 #reset
-            map_scratch[ring_indices]=map_tmp #fill in the temperature map
+                map_scratch[:]=0 #reset
+                map_scratch[ring_indices]=map_tmp #fill in the temperature map
 
-            # if not already masked, apply mask
-            #may need to change the next line based on formatting
-            if mask is not None:
-                map_scratch  = mask*map_scratch
-
+                # if not already masked, apply mask
+                #may need to change the next line based on formatting
+                if mask is not None:
+                    map_scratch  = mask*map_scratch
+            else:
+                map_tmp = utils.load_spt3g_cutsky_healpix_ring_map(file,npix)
+                map_scratch[map_inds]=map_tmp * cut_mask
+                    
             #gets alms
             alms = healpy.sphtfunc.map2alm(map_scratch,lmax = lmax, pol=False, use_pixel_weights=False, iter = 1,datapath='/sptlocal/user/creichardt/healpy-data/')
 
