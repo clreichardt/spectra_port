@@ -2,15 +2,29 @@ import unbiased_multispec as um
 import numpy as np
 
 if __name__ == "__main__":
-    
-    test_n_bundles()
+    combine_lr_bundles()
+    #test_n_bundles()
 
 
 def combine_lr_bundles():
-    file_list = ['/sptgrid/analysis/highell_TT_19-20/v3/mockobs/inputsky000/bundles/bundle{:03d}_150GHz.g3.gz'.format(i) for i in range(200)]
-#hpmap = list(core.G3File('/sptgrid/analysis/eete+lensing_19-20/v2/data_maps/ra0hdec-44.75/healpix_105499116_150GHz.g3'))
-hpmap = list(core.G3File('/sptgrid/analysis/highell_TT_19-20/v3/mockobs/inputsky000/bundles/bundle057_150GHz.g3.gz'))
-a = hpmap[0]["T"]+hpmap[1]["T"]
+    nf=200
+    idir='/sptgrid/analysis/highell_TT_19-20/v3/mockobs/inputsky000/bundles/'
+    odir='/sptgrid/analysis/highell_TT_19-20/v3/mockobs/inputsky000/bundles/sum'
+    for i in range(nf):
+        ifile = idir + 'bundle{:03d}_150GHz.g3.gz'.format(i)
+        ofile = odir + 'bundle{:03d}_150GHz.g3.gz'.format(i)
+        #hpmap = list(core.G3File('/sptgrid/analysis/eete+lensing_19-20/v2/data_maps/ra0hdec-44.75/healpix_105499116_150GHz.g3'))
+        hpmap = list(core.G3File(ifile))    
+        sum = 0.5*(hpmap[0]["T"]+hpmap[1]["T"]) #L+R/2
+        
+        frame = core.G3Frame(core.G3FrameType.Map)
+        frame['map'] = sum
+        with core.G3Writer(ofile) as writer:
+            writer(frame)
+    
+    
+    
+    
 def test_n_bundles():
 
 
