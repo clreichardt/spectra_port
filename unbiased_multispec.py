@@ -198,6 +198,36 @@ def generate_jackknife_shts( processed_shtfile, jackknife_shtfile,  lmax,
 
     return(np.arange(setsize,dtype=np.int32))
 
+def generate_coadd_shts( processed_shtfile, coadd_shtfile,  lmax,
+                             setdef) -> 'Does differencing to make SHT equiv file for nulls, returns new setdef':
+    '''
+    Setdef in: Nbundles_out (dim0) x Nmaps_to_coadd (dim1)
+    Setdef out: Nbundles_out (same as input dim0)
+    '''
+    
+    buffer_size = healpy.sphtfunc.Alm.getsize(lmax)
+    buffer_bytes= buffer_size * np.zeros(1,dtype=AlmType).nbytes
+    buffera = np.zeros(buffersize,dtype=AlmType)
+    bufferb = np.zeros(buffersize,dtype=AlmType)
+    setsize = setdef.shape[0]
+    nsets   = setdef.shape[1]
+
+    with open(processed_shtfile,'rb') as fin, open(coadd_shtfile,'wb') as fout:
+        for i in range(setsize):
+            #need to do stuff here
+
+            fin.seek( setdef[i,0] * buffer_bytes )
+            buffera  = np.fromfile(fin,dtype=AlmType,count=buffer_size)
+            for j in range(1,nsets):
+                fin.seek( setdef[i,1] * buffer_bytes )
+                bufferb  = np.fromfile(fin,dtype=AlmType,count=buffer_size)
+                buffera += bufferb
+            buffera *= (1./nsets)
+            fout.seek( i * buffer_bytes )
+            buffera.tofile(fout)
+
+    return(np.arange(setsize,dtype=np.int32))
+
 
 def load_cross_spectra_data_from_disk(shtfile, nshts, npersht, start, stop):
     nelems = stop - start + 1
