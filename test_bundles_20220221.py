@@ -41,7 +41,42 @@ def test_n_bundles():
                                          cmbweighting=True)
 
 
+def do_auto_spectra_firstN_bundles(Nuse,process_sht_file='/sptlocal/user/creichardt/hiell2022/sht_sim1_lmax100.bin',
+                                    banddef=np.arange(0,101,50,lmax=100)):
+    tmp_sht = process_sht_file + '_auto{}'.format(Nuse)
+    generate_coadd_shts(process_sht_file, tmp_sht,lmax,setdef)
+    return do_cross_spectra_firstN_bundles(Nuse,process_sht_file
 
+def do_cross_spectra_firstN_bundles(Nuse,process_sht_file='/sptlocal/user/creichardt/hiell2022/sht_sim1_lmax100.bin',
+                                    banddef=np.arange(0,101,50),lmax=100,
+                                    auto=False):
+    setdef = np.arange(0,Nuse)
+    
+        
+    #figure out cross-spectra (or autospectra)
+    allspectra, nmodes= take_all_cross_spectra( process_sht_file, lmax,
+                                                setdef, banddef,auto=auto) #-> 'Returns set of all x-spectra, binned':
+    allspectra = allspectra
+    nmodes = nmodes
+    
+    
+    #bring it all together
+    nbands = banddef.shape[0]-1
+    nsets   = use_setdef.shape[1]
+    setsize = use_setdef.shape[0]
+
+    spectrum,cov,cov1,cov2 = process_all_cross_spectra(allspectra, nbands, nsets,setsize)
+    results = {}
+    results['allspectra']=allspectra
+    results['nmodes']=nmodes
+    results['nbands']=nbands
+    results['nsets']=nsets
+    results['setsize']=setsize
+    results['spectrum']=spectrum
+    results['cov']=cov
+    results['cov1']=cov1
+    results['cov2']=cov2
+    
 def sht_bundles():
     mask = np.fromfile('/home/pc/hiell/mapcuts/apodization/apod_mask.npy',dtype=np.float32)
     nmap=200
