@@ -92,7 +92,8 @@ def sht_bundles():
                            ell_reordering=None,
                            no_reorder=False,
                            ram_limit = None,
-                           npmapformat=False
+                           npmapformat=False, 
+                           map_key='coadd'
                           )
 
 

@@ -37,11 +37,11 @@ def load_spt3g_healpix_ring_map(file,require_order = 'Ring',require_nside=8192,m
                 assert(require_nside == frame[map_key].nside)
             if require_order is not None:
                 assert(frame[map_key].nested == (require_order == 'Nest'))
-            if type(frame['T']) is np.ndarray:
-                ind = frame['T'].nonzero()
-                map = frame['T'][frame['T'] != 0]
+            if type(frame[map_key]) is np.ndarray:
+                ind = frame[map_key].nonzero()
+                map = frame[map_key][frame[map_key] != 0]
             else:
-                ind, map = frame['T'].nonzero_pixels()
+                ind, map = frame[map_key].nonzero_pixels()
             return( np.asarray(ind).astype(np.int64,casting='same_kind'), np.asarray(map).astype(np.float32,casting='same_kind') )
     raise Exception("No Map found in file: {}".format(file))
 
@@ -57,7 +57,8 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
                            ell_reordering=None,
                            no_reorder=False,
                            ram_limit = None,
-                           npmapformat=False
+                           npmapformat=False, 
+                           map_key='T'
                           ) -> 'May be done in Fortran - output is a file':
     ''' 
     Output is expected to be CL (Dl if cmbweighting=Trure) * mask normalization factor * kweights
@@ -133,7 +134,7 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
 
             #TBD get a map
             if not npmapformat:
-                ring_indices, map_tmp = load_spt3g_healpix_ring_map(file)
+                ring_indices, map_tmp = load_spt3g_healpix_ring_map(file,map_key=map_key)
 
                 map_scratch[:]=0 #reset
                 map_scratch[ring_indices]=map_tmp #fill in the temperature map
@@ -414,6 +415,7 @@ class unbiased_multispec:
                  jackknife = False, #If true, will difference SHTs to do null spectrum
                  auto=False, #If true will do autospectra instead of cross-spectra
                  apply_windowfactor = True, #if true, calculate and apply normalization correction for partial sky mask. 
+                 map_key = 'T', #where to fetch maps from
                  # Run time processing flags ################################################
                  ramlimit=16 * 2**30, # optional -- set to change default RAM limit from 16gb
                  resume=True, #optional -- will use existing files if true    
@@ -509,7 +511,8 @@ class unbiased_multispec:
                    kmask = self.kmask,
                    ell_reordering=None,
                    no_reorder=False,
-                   ram_limit = self.ramlimit
+                   ram_limit = self.ramlimit, 
+                   map_key=map_key
                   )
         
         use_setdef  = setdef
