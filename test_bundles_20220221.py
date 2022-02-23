@@ -42,12 +42,12 @@ def test_n_bundles():
 
 
 def do_auto_spectra_firstN_bundles(Nuse,process_sht_file='/sptlocal/user/creichardt/hiell2022/sht_sim1_lmax100.bin',
-                                    banddef=np.arange(0,101,50,lmax=100)):
+                                    banddef=np.arange(0,101,50),lmax=100):
     tmp_sht = process_sht_file + '_auto{}'.format(Nuse)
     generate_coadd_shts(process_sht_file, tmp_sht,lmax,setdef)
-    return do_cross_spectra_firstN_bundles(Nuse,process_sht_file
-
-def do_cross_spectra_firstN_bundles(Nuse,process_sht_file='/sptlocal/user/creichardt/hiell2022/sht_sim1_lmax100.bin',
+    return do_cross_spectra_firstN_bundles(Nuse,process_sht_file)
+                                           
+def do_cross_spectra_firstN_bundles(Nuse, process_sht_file='/sptlocal/user/creichardt/hiell2022/sht_sim1_lmax100.bin',
                                     banddef=np.arange(0,101,50),lmax=100,
                                     auto=False):
     setdef = np.arange(0,Nuse)
@@ -78,8 +78,8 @@ def do_cross_spectra_firstN_bundles(Nuse,process_sht_file='/sptlocal/user/creich
     results['cov2']=cov2
     
 def sht_bundles():
-    mask = np.fromfile('/home/pc/hiell/mapcuts/apodization/apod_mask.npy',dtype=np.float32)
-    nmap=200
+    mask = np.load('/home/pc/hiell/mapcuts/apodization/apod_mask.npy')
+    nmap=5
     nside=8192
     lmax=100 # test
     file_list = ['/sptlocal/user/pc/sim_coadds/bundle{:03d}_150GHz.g3.gz'.format(i) for i in range(nmap)]

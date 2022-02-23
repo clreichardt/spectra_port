@@ -3,7 +3,7 @@ from genericpath import getsize
 import sys
 from turtle import setundobuffer
 import numpy as np
-sys.path=["/home/creichardt/.local/lib/python3.7/site-packages/","/home/creichardt/spt3g_software/build","/home/creichardt/.local/lib/python3.7/site-packages/healpy-1.15.0-py3.7-linux-x86_64.egg"]+sys.path
+#sys.path=["/home/creichardt/.local/lib/python3.7/site-packages/","/home/creichardt/spt3g_software/build","/home/creichardt/.local/lib/python3.7/site-packages/healpy-1.15.0-py3.7-linux-x86_64.egg"]+sys.path
 import healpy
 
 import os
@@ -28,16 +28,20 @@ def printinplace(myString):
     sys.stdout.flush()
 
 
-def load_spt3g_healpix_ring_map(file,require_order = 'Ring',require_nside=8192):
+def load_spt3g_healpix_ring_map(file,require_order = 'Ring',require_nside=8192,map_key='T'):
     # only taking 1st map 
     frames = core.G3File(file)
     for frame in frames:
         if frame.type == core.G3FrameType.Map:
             if require_nside is not None:
-                assert(require_nside == frame['T'].nside)
+                assert(require_nside == frame[map_key].nside)
             if require_order is not None:
-                assert(frame['T'].nested == (require_order == 'Nest'))
-            ind, map = frame['T'].nonzero_pixels()
+                assert(frame[map_key].nested == (require_order == 'Nest'))
+            if type(frame['T']) is np.ndarray:
+                ind = frame['T'].nonzero()
+                map = frame['T'][frame['T'] != 0]
+            else:
+                ind, map = frame['T'].nonzero_pixels()
             return( np.asarray(ind).astype(np.int64,casting='same_kind'), np.asarray(map).astype(np.float32,casting='same_kind') )
     raise Exception("No Map found in file: {}".format(file))
 
@@ -75,7 +79,11 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
         inv_mask_factor = 1./np.mean(mask**2)
 
     if mask is not None:
-        map_inds, cut_mask = mask.nonzero_pixels()
+        if type(mask) is np.ndarray:
+            map_inds = mask.nonzero()
+            cut_mask = mask[mask != 0]
+        else:
+            map_inds, cut_mask = mask.nonzero_pixels()
         npix = len(map_inds)
         
     #ie do parallelism SHTs at once...
