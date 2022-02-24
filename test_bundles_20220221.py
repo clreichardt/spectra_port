@@ -85,8 +85,8 @@ def sht_bundles():
     nmap=200
     nside=8192
     lmax=13000 # test
-    file_list = ['/sptgrid/user/ndhuang/high_ell/xfer_specs/{:03d}.npz'.format(i) for i in range(nmap)]
-    processed_sht_file = '/sptlocal/user/creichardt/hiell2022/sht_sim1_lmax13000.bin'
+    file_list = ['/big_scratch/ndhuang/tmp/xfer/{:03d}.npz'.format(i) for i in range(nmap)]
+    processed_sht_file = '/scratch/cr/sht_sim1_lmax13000.bin'
     '''spec.take_and_reformat_shts(file_list, processed_sht_file,
                            nside,lmax,
                            cmbweighting = True, 

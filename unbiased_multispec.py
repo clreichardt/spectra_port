@@ -41,7 +41,7 @@ def load_spt3g_healpix_ring_map(file,require_order = 'Ring',require_nside=8192,m
             if type(frame[map_key]) is np.ndarray:
                 ind = frame[map_key].nonzero()
                 map = frame[map_key][frame[map_key] != 0]
-te            else:
+            else:
                 ind, map = frame[map_key].nonzero_pixels()
             return( np.asarray(ind).astype(np.int64,casting='same_kind'), np.asarray(map).astype(np.float32,casting='same_kind') )
     raise Exception("No Map found in file: {}".format(file))
@@ -119,7 +119,7 @@ def reformat_shts(shtfilelist, processedshtfile,
 
         oldtime = time.time()
         count = 0 
-        for file in SHTfilelist:
+        for file in shtfilelist:
             newtime=time.time()
             timeinminutes = (newtime - oldtime)/60.0
             oldtime=newtime
@@ -129,7 +129,7 @@ def reformat_shts(shtfilelist, processedshtfile,
             #TBD get SHT
             with np.load(file) as obs_alms:
                 alms = obs_alms['alm']
-            assert lmax ==  hp.sphtfunc.Alm.getlmax(alms.shape[0])
+            assert lmax ==  healpy.sphtfunc.Alm.getlmax(alms.shape[0])
 
             #possibly downsample alms to save later CPU cycles
             # TBD if worthwhile
