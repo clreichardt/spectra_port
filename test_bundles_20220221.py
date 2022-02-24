@@ -1,3 +1,6 @@
+import os
+os.environ['OMP_NUM_THREADS'] = "6"
+
 import unbiased_multispec as spec
 import numpy as np
 from spt3g import core,maps, calibration
@@ -79,11 +82,11 @@ def do_cross_spectra_firstN_bundles(Nuse, process_sht_file='/sptlocal/user/creic
     
 def sht_bundles():
     mask = np.load('/home/pc/hiell/mapcuts/apodization/apod_mask.npy')
-    nmap=5
+    nmap=200
     nside=8192
-    lmax=100 # test
+    lmax=11000 # test
     file_list = ['/sptlocal/user/pc/sim_coadds/bundle{:03d}_150GHz.g3.gz'.format(i) for i in range(nmap)]
-    processed_sht_file = '/sptlocal/user/creichardt/hiell2022/sht_sim1_lmax100.bin'
+    processed_sht_file = '/sptlocal/user/creichardt/hiell2022/sht_sim1_lmax11000.bin'
     spec.take_and_reformat_shts(file_list, processed_sht_file,
                            nside,lmax,
                            cmbweighting = True, 

@@ -11,6 +11,7 @@ from spt3g import core,maps, calibration
 import utils
 import pickle as pkl
 import pdb
+import time
 AlmType = np.dtype(np.complex64)
 
 
@@ -127,9 +128,13 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
     print('Warning: not using pixel weights in SHT')
     with open(processedshtfile,'wb') as fp:
 
+        oldtime = time.time()
         count = 0 
         for file in mapfilelist:
-            printinplace('SHT map: {}'.format(count))
+            newtime=time.time()
+            timeinminutes = (newtime - oldtime)/60.0
+            oldtime=newtime
+            printinplace('SHT map: {}  Last one took: {:.1f} minutes'.format(count,timeinminutes))
             count += 1
 
             #TBD get a map
