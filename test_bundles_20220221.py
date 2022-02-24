@@ -84,10 +84,10 @@ def sht_bundles():
     mask = np.load('/home/pc/hiell/mapcuts/apodization/apod_mask.npy')
     nmap=200
     nside=8192
-    lmax=11000 # test
-    file_list = ['/sptlocal/user/pc/sim_coadds/bundle{:03d}_150GHz.g3.gz'.format(i) for i in range(nmap)]
-    processed_sht_file = '/sptlocal/user/creichardt/hiell2022/sht_sim1_lmax11000.bin'
-    spec.take_and_reformat_shts(file_list, processed_sht_file,
+    lmax=13000 # test
+    file_list = ['/sptgrid/user/ndhuang/high_ell/xfer_specs/{:03d}.npz'.format(i) for i in range(nmap)]
+    processed_sht_file = '/sptlocal/user/creichardt/hiell2022/sht_sim1_lmax13000.bin'
+    '''spec.take_and_reformat_shts(file_list, processed_sht_file,
                            nside,lmax,
                            cmbweighting = True, 
                            mask  = mask,
@@ -98,6 +98,16 @@ def sht_bundles():
                            npmapformat=False, 
                            map_key='coadd'
                           )
+    '''
+    spec.reformat_shts(file_list, processed_sht_file,
+                           nside,lmax,
+                           cmbweighting = True, 
+                           mask  = mask,
+                           kmask = None,
+                           ell_reordering=None,
+                           no_reorder=False,
+                           ram_limit = None
+                          )   
 
 
 if __name__ == "__main__":

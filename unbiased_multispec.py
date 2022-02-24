@@ -41,7 +41,7 @@ def load_spt3g_healpix_ring_map(file,require_order = 'Ring',require_nside=8192,m
             if type(frame[map_key]) is np.ndarray:
                 ind = frame[map_key].nonzero()
                 map = frame[map_key][frame[map_key] != 0]
-            else:
+te            else:
                 ind, map = frame[map_key].nonzero_pixels()
             return( np.asarray(ind).astype(np.int64,casting='same_kind'), np.asarray(map).astype(np.float32,casting='same_kind') )
     raise Exception("No Map found in file: {}".format(file))
@@ -49,6 +49,106 @@ def load_spt3g_healpix_ring_map(file,require_order = 'Ring',require_nside=8192,m
 
 
 
+def reformat_shts(shtfilelist, processedshtfile,
+                           nside,lmax,
+                           cmbweighting = True, 
+                           mask  = None,
+                           kmask = None,
+                           ell_reordering=None,
+                           no_reorder=False,
+                           ram_limit = None,
+                           npmapformat=False, 
+                           map_key='T'
+                          ) -> 'May be done in Fortran - output is a file':
+    ''' 
+    Output is expected to be CL (Dl if cmbweighting=Trure) * mask normalization factor * kweights
+    Output ordering is expected to 
+    '''
+    if ram_limit is None:
+        ram_limit = 16 * 2**30 # 16 GB
+
+    # number of bytes in a Dcomplex: 16
+    # number of arrays we need to make to do this efficiently: 6 or less
+    # number of pixels in an fft: winsize^2
+    ram_required=16*6*lmax**2
+    parallelism = int(np.ceil(ram_limit/ram_required))
+
+    inv_mask_factor = 1.
+    if mask is not None:
+        inv_mask_factor = 1./np.mean(mask**2)
+
+    #ie do parallelism SHTs at once...
+    size = healpy.sphtfunc.Alm.getsize(lmax)
+    if kmask is not None:
+        if kmask.shape[0] != size:
+            raise Exception("kmask provided is wrong size ({} vs {}), exiting".format(size,kmask.shape[0]))
+        local_kmask = kmask.astype(np.float32)
+    else:
+        local_kmask = np.ones(size,dtype=np.float32)
+
+        
+    if cmbweighting:
+        dummy_vec = np.arange(lmax+1,dtype=np.float32)
+        dummy_vec = (dummy_vec*(dummy_vec+1.))/(2*np.pi)
+        j=0
+        for i in range(lmax+1):
+            nm = lmax+1-i
+            local_kmask[j:j+nm]=dummy_vec[i:]
+            j=j+nm
+
+
+    if ell_reordering is None:  # need to make it
+        #have lmax+1 m=0's, followed by lmax m=1's.... (if does do l=0,m=0)
+        # healpy has indexing routines, but they only take 1 at a time...
+        #make dummy vec for use
+        dummy_vec = np.zeros(lmax+1,dtype=np.int)
+        k=0
+        for i in np.arange(lmax+1):
+            dummy_vec[i] = k
+            k=k+lmax-i
+        ell_reordering = np.zeros(size,dtype=np.int)
+        k=0
+        for i in range(lmax+1):
+            ell_reordering[k:k+i+1] = dummy_vec[0:i+1] + i
+            k += i+1
+
+
+
+    print('Warning: not using pixel weights in SHT')
+    with open(processedshtfile,'wb') as fp:
+
+        oldtime = time.time()
+        count = 0 
+        for file in SHTfilelist:
+            newtime=time.time()
+            timeinminutes = (newtime - oldtime)/60.0
+            oldtime=newtime
+            printinplace('SHT map: {}  Last one took: {:.1f} minutes'.format(count,timeinminutes))
+            count += 1
+
+            #TBD get SHT
+            with np.load(file) as obs_alms:
+                alms = obs_alms['alm']
+            assert lmax ==  hp.sphtfunc.Alm.getlmax(alms.shape[0])
+
+            #possibly downsample alms to save later CPU cycles
+            # TBD if worthwhile
+
+            #apply weighting (ie cl-dl) and kmask 
+            alms *= local_kmask
+
+            #TBD, possibly adjust for mask factor here
+            alms *= inv_mask_factor
+
+            # Get reindexing
+
+            #reorder and write to disk
+            #need to check sizing
+            #32 bit floats/64b complex should be fine for this. will need to bump up by one for aggregation
+            if no_reorder:
+                (alms.astype(AlmType)).tofile(fp)
+            else:
+                (alms[ell_reordering].astype(AlmType)).tofile(fp)
 
 def take_and_reformat_shts(mapfilelist, processedshtfile,
                            nside,lmax,
