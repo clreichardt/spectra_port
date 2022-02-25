@@ -4,7 +4,7 @@ os.environ['OMP_NUM_THREADS'] = "6"
 import unbiased_multispec as spec
 import numpy as np
 from spt3g import core,maps, calibration
-
+import pickle as pkl
 
 
 def combine_lr_bundles():
@@ -52,16 +52,16 @@ def do_half_spectra_firstN_bundles(halfNuse,process_sht_file='/scratch/cr/sht_si
     setdef = np.zeros([2,halfNuse],dtype=np.int32)
     setdef[0,:]=np.arange(halfNuse)
     setdef[1,:]=np.arange(halfNuse,2*halfNuse)
-    newsetdef    = generate_coadd_shts(process_sht_file, tmp_sht_file,lmax,setdef)
+    newsetdef    = spec.generate_coadd_shts(process_sht_file, tmp_sht_file,lmax,setdef)
     #figure out cross-spectra (or autospectra)
-    allspectra, nmodes= take_all_cross_spectra( tmp_sht_file, lmax,
+    allspectra, nmodes= spec.take_all_cross_spectra( tmp_sht_file, lmax,
                                                 newsetdef, banddef,auto=False) #-> 'Returns set of all x-spectra, binned':
     #bring it all together
     nbands = banddef.shape[0]-1
-    nsets   = use_setdef.shape[1]
-    setsize = use_setdef.shape[0]
+    nsets   = newsetdef.shape[1]
+    setsize = newsetdef.shape[0]
 
-    spectrum,cov,cov1,cov2 = process_all_cross_spectra(allspectra, nbands, nsets,setsize)
+    spectrum,cov,cov1,cov2 = spec.process_all_cross_spectra(allspectra, nbands, nsets,setsize)
     results = {}
     results['allspectra']=allspectra
     results['nmodes']=nmodes
@@ -82,16 +82,16 @@ def do_auto_spectra_firstN_bundles(Nuse,process_sht_file='/scratch/cr/sht_sim1_l
 
     setdef = np.zeros([1,Nuse],dtype=np.int32)
     setdef[0,:]=np.arange(Nuse)
-    newsetdef    = generate_coadd_shts(process_sht_file, tmp_sht_file,lmax,setdef)
+    newsetdef    = spec.generate_coadd_shts(process_sht_file, tmp_sht_file,lmax,setdef)
     #figure out cross-spectra (or autospectra)
-    allspectra, nmodes= take_all_cross_spectra( tmp_sht_file, lmax,
+    allspectra, nmodes= spec.take_all_cross_spectra( tmp_sht_file, lmax,
                                                 newsetdef, banddef,auto=True) #-> 'Returns set of all x-spectra, binned':
     #bring it all together
     nbands = banddef.shape[0]-1
-    nsets   = use_setdef.shape[1]
-    setsize = use_setdef.shape[0]
+    nsets   = newsetdef.shape[1]
+    setsize = newsetdef.shape[0]
 
-    spectrum,cov,cov1,cov2 = process_all_cross_spectra(allspectra, nbands, nsets,setsize)
+    spectrum,cov,cov1,cov2 = spec.process_all_cross_spectra(allspectra, nbands, nsets,setsize,auto=True)
     results = {}
     results['allspectra']=allspectra
     results['nmodes']=nmodes
@@ -110,17 +110,17 @@ def do_cross_spectra_firstN_bundles(Nuse, process_sht_file='/scratch/cr/sht_sim1
                                     banddef=np.arange(0,11001,50),lmax=13000,
                                     auto=False):
     setdef = np.arange(0,Nuse)
-    
+    setdef = np.reshape(setdef,(Nuse,1))
         
     #figure out cross-spectra (or autospectra)
-    allspectra, nmodes= take_all_cross_spectra( process_sht_file, lmax,
+    allspectra, nmodes= spec.take_all_cross_spectra( process_sht_file, lmax,
                                                 setdef, banddef,auto=auto) #-> 'Returns set of all x-spectra, binned':
     #bring it all together
     nbands = banddef.shape[0]-1
-    nsets   = use_setdef.shape[1]
-    setsize = use_setdef.shape[0]
+    nsets   = setdef.shape[1]
+    setsize = setdef.shape[0]
 
-    spectrum,cov,cov1,cov2 = process_all_cross_spectra(allspectra, nbands, nsets,setsize)
+    spectrum,cov,cov1,cov2 = spec.process_all_cross_spectra(allspectra, nbands, nsets,setsize)
     results = {}
     results['allspectra']=allspectra
     results['nmodes']=nmodes
@@ -164,6 +164,22 @@ def sht_bundles():
 
 
 if __name__ == "__main__":
-    sht_bundles()
+    #sht_bundles()
     #combine_lr_bundles()
+
     #test_n_bundles()
+    rng = np.arange(20,201,20)
+    rng = np.arange(2,20,1)
+    for N in rng:
+        dl = do_cross_spectra_firstN_bundles(N)
+        with open('/scratch/cr/xspec{:d}.pkl'.format(N),'wb') as fp:
+            pkl.dump(dl,fp)
+        dl = do_auto_spectra_firstN_bundles(N)
+        with open('/scratch/cr/auto{:d}.pkl'.format(N),'wb') as fp:
+            pkl.dump(dl,fp)
+
+        Nhalf = int(N/2)
+        dl = do_half_spectra_firstN_bundles(Nhalf)
+        with open('/scratch/cr/half{:d}.pkl'.format(N),'wb') as fp:
+            pkl.dump(dl,fp)
+

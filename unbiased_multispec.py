@@ -291,8 +291,8 @@ def generate_jackknife_shts( processed_shtfile, jackknife_shtfile,  lmax,
                              setdef) -> 'Does differencing to make SHT equiv file for nulls, returns new setdef':
     buffer_size = healpy.sphtfunc.Alm.getsize(lmax)
     buffer_bytes= buffer_size * np.zeros(1,dtype=AlmType).nbytes
-    buffera = np.zeros(buffersize,dtype=AlmType)
-    bufferb = np.zeros(buffersize,dtype=AlmType)
+    buffera = np.zeros(buffer_size,dtype=AlmType)
+    bufferb = np.zeros(buffer_size,dtype=AlmType)
     setsize = setdef.shape[0]
     nsets   = setdef.shape[1]
 
@@ -310,7 +310,7 @@ def generate_jackknife_shts( processed_shtfile, jackknife_shtfile,  lmax,
             fout.seek( i * buffer_bytes )
             buffera.tofile(fout)
 
-    return(np.arange(setsize,dtype=np.int32))
+    return(np.reshape(np.arange(setsize,dtype=np.int32),[setsize,1]))
 
 def generate_coadd_shts( processed_shtfile, coadd_shtfile,  lmax,
                              setdef) -> 'Does differencing to make SHT equiv file for nulls, returns new setdef':
@@ -321,8 +321,8 @@ def generate_coadd_shts( processed_shtfile, coadd_shtfile,  lmax,
     
     buffer_size = healpy.sphtfunc.Alm.getsize(lmax)
     buffer_bytes= buffer_size * np.zeros(1,dtype=AlmType).nbytes
-    buffera = np.zeros(buffersize,dtype=AlmType)
-    bufferb = np.zeros(buffersize,dtype=AlmType)
+    buffera = np.zeros(buffer_size,dtype=AlmType)
+    bufferb = np.zeros(buffer_size,dtype=AlmType)
     setsize = setdef.shape[0]
     nsets   = setdef.shape[1]
 
@@ -340,7 +340,7 @@ def generate_coadd_shts( processed_shtfile, coadd_shtfile,  lmax,
             fout.seek( i * buffer_bytes )
             buffera.tofile(fout)
 
-    return(np.arange(setsize,dtype=np.int32))
+    return(np.reshape(np.arange(setsize,dtype=np.int32),[setsize,1]))
 
 
 def load_cross_spectra_data_from_disk(shtfile, nshts, npersht, start, stop):
@@ -445,7 +445,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
                             a+=rowlength
                     else:
                         idx=np.arange(setsize,dtype=np.int)
-                        tmpresult=np.sum(np.real(banddata[setdef[:, j],:]*conj(banddata[setdef[:, k],:])), 1,dtype=np.float64) / (nmodes) # had been in flatsky: *reso^2*winsize^2)
+                        tmpresult=np.sum(np.real(banddata[setdef[:, j],:]*np.conj(banddata[setdef[:, k],:])), 1,dtype=np.float64) / (nmodes) # had been in flatsky: *reso^2*winsize^2)
                         allspectra_out[iprime, spectrum_idx, :]=tmpresult.astype(np.float32)
                     spectrum_idx+=1
 
@@ -457,7 +457,7 @@ def process_all_cross_spectra(allspectra, nbands, nsets,setsize,
                               auto=False) -> 'Returns mean and covarariance estimates':
 
     print("Correlating Cross Spectra")
-    nspectra = (nsets * (nsets+1))/2
+    nspectra = int( (nsets * (nsets+1))/2 + 0.001)
 
 
     spectrumreformed = np.zeros([nbands,nspectra],dtype=np.float32)
@@ -465,17 +465,17 @@ def process_all_cross_spectra(allspectra, nbands, nsets,setsize,
     if auto:
         nrealizations = setsize
     else:
-        nrealizations=(setsize*(setsize-1))/2
+        nrealizations=int( (setsize*(setsize-1))/2 + 0.001)
 
     allspectra = np.reshape(allspectra, [nbands*nspectra, nrealizations])
     #cov  = np.zeros([nbands*nspectra, nbands*nspectra],dtype=np.float64)
 
-    spectrum = np.sum(allspectra,2,dtype=np.float64)/nrealizations
+    spectrum = np.sum(allspectra,-1,dtype=np.float64)/nrealizations
 
     # [nbands*nspectra, nrealizations])
-    spectrum_2d = np.tile(spectrum, [1,nrealizations])
+    spectrum_2d = np.tile(np.reshape(spectrum,[nbands*nspectra,1]), [1,nrealizations])
 
-    cov1 = np.matmul((allspectra-spectrum_2d).T , allspectra-spectrum_2d)
+    cov1 = np.matmul((allspectra-spectrum_2d) , (allspectra-spectrum_2d).T)
     cov1/= (nrealizations*(nrealizations-1))
 
     cov2 = None
@@ -485,16 +485,16 @@ def process_all_cross_spectra(allspectra, nbands, nsets,setsize,
         for i in range(setsize):
             realization_idx = 0
             for j in range(setsize):
-                for j in range(j+1,setsize):
+                for k in range(j+1,setsize):
                     if (i == j) or (i == k):
                         realization_to_complement[realization_idx, i]=1./(setsize-1)
                     realization_idx += 1
 
-        allcomplementspectra=np.matmult(realization_to_complement,allspectra)
+        allcomplementspectra=np.matmul(allspectra,realization_to_complement)
         #nbands*nspectra, setsize)
-        spectrum_2d=np.tile(spectrum, [1,setsize])
+        spectrum_2d=np.tile(np.reshape(spectrum,[nbands*nspectra,1]), [1,setsize])
 
-        cov2=np.matmult( (allcomplementspectra-spectrum_2d).T, (allcomplementspectra-spectrum_2d) )
+        cov2=np.matmul( (allcomplementspectra-spectrum_2d), (allcomplementspectra-spectrum_2d).T )
         cov2/=(setsize**2 / 2)
         cov=2*cov2-cov1
 
