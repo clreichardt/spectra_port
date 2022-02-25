@@ -8,7 +8,7 @@ import healpy
 
 import os
 from spt3g import core,maps, calibration
-import utils
+from spectra_port import utils
 import pickle as pkl
 import pdb
 import time
@@ -432,7 +432,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
                 for k in range(j, nsets):
                     if not auto:
 
-                        tmpresult  = np.real(np.matmul(banddata[setdef[:,j],:],banddata[setdef[:,k],:].T)) #need to check dims -- intended to end up for 3 freqs with 3x3 matrix
+                        tmpresult  = np.real(np.matmul(banddata[setdef[:,j],:],np.conj(banddata[setdef[:,k],:]).T)) #need to check dims -- intended to end up for 3 freqs with 3x3 matrix
 
                         tmpresult += tmpresult.T # imposing the ab + ba condition
                         tmpresult /= (2*nmodes)
@@ -448,7 +448,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
                         tmpresult=np.sum(np.real(banddata[setdef[:, j],:]*np.conj(banddata[setdef[:, k],:])), 1,dtype=np.float64) / (nmodes) # had been in flatsky: *reso^2*winsize^2)
                         allspectra_out[iprime, spectrum_idx, :]=tmpresult.astype(np.float32)
                     spectrum_idx+=1
-
+                    #           pdb.set_trace()
         i=istop
     return(allspectra_out, nmodes_out)
 
