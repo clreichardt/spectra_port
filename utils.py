@@ -181,7 +181,7 @@ def rebin_and_convert_namaster_mll(namaster_file,mll_dl_file,lmax_out):
     
     nl = mll.shape[0]
     #square
-    assert mll.shape == [nl,nl] 
+    assert mll.shape == (nl,nl)
     lmax_in = nl
 
     # can't cut to higher number
@@ -193,7 +193,7 @@ def rebin_and_convert_namaster_mll(namaster_file,mll_dl_file,lmax_out):
     #Step 2: 
     # used like np.matmul(mll,Dl_theory)
     l    = np.arange(1,lmax_out+1)
-    lfac = l*( l+`1`) 
+    lfac = l*( l+1) 
     lfac_x = (np.tile(lfac,(lmax_out,1))).T
     lfac_y = np.tile(1./lfac,(lmax_out,1))
        
