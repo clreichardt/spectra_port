@@ -29,19 +29,20 @@ def end_to_end(beamfiles,simbeamfiles=None,do_window_func = True):
 
     mcdir = workdir + '/mc/'
     mc_specrum = spec.unbiased_multispec(mapfiles,window,banddef,nside,lmax=lmax,
-                                      resume=resume,
-                                      basedir=mcdir,
-                                      setdef=setdef_mc,
-                                      jackknife=False, auto=True,
-                                      kmask=None,
-                                      cmbweighting=True)
+                                         resume=resume,
+                                         basedir=mcdir,
+                                         setdef=setdef_mc,
+                                         jackknife=False, auto=True,
+                                         kmask=None,
+                                         cmbweighting=True)
     mc_specrum_fine = spec.unbiased_multispec(mapfiles,window,banddef_fine,nside,lmax=lmax,
-                                      resume=True, #reuse the SHTs
-                                      basedir=mcdir,
-                                      setdef=setdef_mc,
-                                      jackknife=False, auto=True,
-                                      kmask=None,
-                                      cmbweighting=True)
+                                              resume=True, #reuse the SHTs
+                                              basedir=mcdir,
+                                              setdef=setdef_mc,
+                                              jackknife=False, auto=True,
+                                              kmask=None,
+                                              skipcov=True,
+                                              cmbweighting=True)
 
     ##################
     # 3: Calculate spectra and covariances of data
