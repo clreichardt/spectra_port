@@ -170,13 +170,14 @@ if __name__ == "__main__":
     #test_n_bundles()
     rng = np.arange(20,201,20)
     rng = np.arange(2,20,1)
+    rng=[2,10,20,30,40,60,80,100,150,200]
     for N in rng:
         dl = do_cross_spectra_firstN_bundles(N)
         with open('/scratch/cr/xspec{:d}.pkl'.format(N),'wb') as fp:
             pkl.dump(dl,fp)
-        dl = do_auto_spectra_firstN_bundles(N)
-        with open('/scratch/cr/auto{:d}.pkl'.format(N),'wb') as fp:
-            pkl.dump(dl,fp)
+        #dl = do_auto_spectra_firstN_bundles(N)
+        #with open('/scratch/cr/auto{:d}.pkl'.format(N),'wb') as fp:
+        #    pkl.dump(dl,fp)
 
         Nhalf = int(N/2)
         dl = do_half_spectra_firstN_bundles(Nhalf)

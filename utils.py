@@ -174,29 +174,88 @@ def load_spt3g_cutsky_healpix_ring_map(file,npix):
 # it also changes to be in DL instead of Cls
 # it does *not* count Nmodes
 #'/sptlocal/user/pc/mll/mll_tpltz.npy'
-def rebin_and_convert_namaster_mll(namaster_file,mll_dl_file,lmax_out):
+def convert_namaster_mll(namaster_file,mll_dl_file,lmax_out):
     mll = np.load(namaster_file)
     # initially setup for Cl's 
     # so we need to throw from Dl -> Cl, and then back
     
     nl = mll.shape[0]
     #square
-    assert mll.shape == [nl,nl] 
+    assert mll.shape == (nl,nl)
     lmax_in = nl
 
     # can't cut to higher number
     assert lmax_in >= lmax_out
 
-    #Step 1: cut to lmax_out
-    mll = mll[:lmax_out,:lmax_out]
+    #Step 1: cut to 2:lmax_out
+    mll = mll[1:lmax_out,1:lmax_out]
     
     #Step 2: 
     # used like np.matmul(mll,Dl_theory)
-    l    = np.arange(1,lmax_out+1)
-    lfac = l*( l+`1`) 
+    l    = np.arange(2,lmax_out+1)
+    lfac = l*( l+1) 
     lfac_x = (np.tile(lfac,(lmax_out,1))).T
     lfac_y = np.tile(1./lfac,(lmax_out,1))
        
     mll_dl = np.multiply(np.multiply(lfac_x,mll),lfac_y)
     
     np.save(mll_dl_file,mll_dl)
+
+
+#this code throws away high ells
+# it also changes to be in DL instead of Cls
+# it also rebins the Mll matrix
+# it does *not* count Nmodes
+
+#'/sptlocal/user/pc/mll/mll_tpltz.npy'
+def rebin_and_convert_namaster_mll(namaster_file,mll_dl_file,delta_l_out,lmax_out):
+    mll = np.load(namaster_file)
+    # initially setup for Cl's 
+    # so we need to throw from Dl -> Cl, and then back
+    
+    nl = mll.shape[0]
+    #square
+    assert mll.shape == (nl,nl)
+    lmax_in = nl
+
+    # can't cut to higher number
+    assert lmax_in >= lmax_out
+    assert int(lmax_out/delta_l_out)*delta_l_out == lmax_out # integer number of bins
+
+    #Step 1: cut to 2:lmax_out
+    mll = mll[1:lmax_out,1:lmax_out]
+    
+    #Step 2: 
+    # used like np.matmul(mll,Dl_theory)
+    l    = np.arange(2,lmax_out+1)
+    lfac = l*( l+1) 
+    lfac_x = (np.tile(lfac,(lmax_out,1))).T
+    lfac_y = np.tile(1./lfac,(lmax_out,1))
+       
+    mll_dl = np.multiply(np.multiply(lfac_x,mll),lfac_y)
+    
+    mll_dl_out = 0
+    # first assume a boxcar average of theory Dl's -- 
+    for i in range(delta_l_out):
+        for j in range(delta_l_out):
+            mll_dl_out += mll_dl[i::delta_l_out,j::delta_l_out]
+    mll_dl_out *= 1./(delta_l_out)**2
+    
+    info = [1,lmax_out,delta_l_out]
+    np.savez_compressed(mll_dl_file,mll_dl_out,info)
+    
+def load_mll(file):
+    with np.load(file) as data:
+        mll_dl = data['mll_dl_out']
+        info = data['info']
+    
+    return info, mll_dl
+
+
+
+def bands_from_range(info):
+    lmin,lmax,dl = info
+    assert lmin ==1 # spectra code will be assuming banddef[0]=0
+    banddef = np.arange(lmin-1,lmax+1,dl)
+    #note: ith bin is banddef[i+1] >= ell > banddef[i]
+    return banddef

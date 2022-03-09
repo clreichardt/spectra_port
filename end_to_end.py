@@ -4,11 +4,33 @@ import unbiased_multispec as spec
 
 if __name__ == "__main__":
     
-    end_to_end()
+    banddef = np.arange(0,11000,500)
+    mapfiles = np.zeros([3,4])
+    setdef_mc = np.zeros(100)
+    setdef = np.zeros(100)
+    
+    end_to_end(
+        mapfiles,
+        mcmapfiles,
+        beamfiles,
+        simbeamfiles=None,
+        setdef=setdef,
+        setdef_mc=setdef_mc,
+        do_window_func=False, 
+        banddef = banddef,
+        lmax=13000,
+        nside=8192,
+        window_file='Placeholder',
+        kernel_file ='Placeholder',
+        mapfiles=mapfiles,
+        setdef_mc = setdef_mc,
+        
+        
+    )
     
     
     
-def end_to_end(beamfiles,simbeamfiles=None,do_window_func = True):    
+def end_to_end(mapfiles,mcmapfiles,beamfiles,setdef=None,setdef_mc=None,simbeamfiles=None,do_window_func = True,lmax=13000,nside=8192,window_file=None,kernel_file=None):    
     '''
     should add argument to this...
     '''
@@ -18,6 +40,7 @@ def end_to_end(beamfiles,simbeamfiles=None,do_window_func = True):
     ##################
     # 1: Make (or load) mode coupling kernel
     ##################
+    window = utils.load_window(window_file)
 
     # should have already done a binned version of the M_ll
     # also need to have move it to Dl space 
@@ -25,6 +48,8 @@ def end_to_end(beamfiles,simbeamfiles=None,do_window_func = True):
     #
     
     #plan to use wrapper to NaMaster, to be written
+    info, mll = utils.load_mll(kernel_file)
+    banddef_fine = utils.bands_from_range(info)
 
     ##################
     # 2: Calculate spectra and covariances of monte-carlo sims
@@ -32,20 +57,22 @@ def end_to_end(beamfiles,simbeamfiles=None,do_window_func = True):
     ##################
 
     mcdir = workdir + '/mc/'
+    # will used alm's in mcdir+'shts_processed.bin'
     mc_specrum = spec.unbiased_multispec(mapfiles,window,banddef,nside,lmax=lmax,
-                                      resume=resume,
-                                      basedir=mcdir,
-                                      setdef=setdef_mc,
-                                      jackknife=False, auto=True,
-                                      kmask=None,
-                                      cmbweighting=True)
+                                         resume=resume,
+                                         basedir=mcdir,
+                                         setdef=setdef_mc,
+                                         jackknife=False, auto=False,
+                                         kmask=None,
+                                         cmbweighting=True)
     mc_specrum_fine = spec.unbiased_multispec(mapfiles,window,banddef_fine,nside,lmax=lmax,
-                                      resume=True, #reuse the SHTs
-                                      basedir=mcdir,
-                                      setdef=setdef_mc,
-                                      jackknife=False, auto=True,
-                                      kmask=None,
-                                      cmbweighting=True)
+                                              resume=True, #reuse the SHTs
+                                              basedir=mcdir,
+                                              setdef=setdef_mc,
+                                              jackknife=False, auto=False,
+                                              kmask=None,
+                                              skipcov=True,
+                                              cmbweighting=True)
 
     ##################
     # 3: Calculate spectra and covariances of data

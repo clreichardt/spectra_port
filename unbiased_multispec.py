@@ -454,7 +454,8 @@ def take_all_cross_spectra( processedshtfile, lmax,
 
 
 def process_all_cross_spectra(allspectra, nbands, nsets,setsize, 
-                              auto=False) -> 'Returns mean and covarariance estimates':
+                              auto=False,
+                              skipcov=False ) -> 'Returns mean and covarariance estimates':
 
     print("Correlating Cross Spectra")
     nspectra = int( (nsets * (nsets+1))/2 + 0.001)
@@ -472,6 +473,8 @@ def process_all_cross_spectra(allspectra, nbands, nsets,setsize,
 
     spectrum = np.sum(allspectra,-1,dtype=np.float64)/nrealizations
 
+    if skipcov:
+        return spectrum,None,None,None
     # [nbands*nspectra, nrealizations])
     spectrum_2d = np.tile(np.reshape(spectrum,[nbands*nspectra,1]), [1,nrealizations])
 
@@ -521,6 +524,7 @@ class unbiased_multispec:
                  auto=False, #If true will do autospectra instead of cross-spectra
                  apply_windowfactor = True, #if true, calculate and apply normalization correction for partial sky mask. 
                  map_key = 'T', #where to fetch maps from
+                 skipcov=False, #don't calculate covariances
                  # Run time processing flags ################################################
                  ramlimit=16 * 2**30, # optional -- set to change default RAM limit from 16gb
                  resume=True, #optional -- will use existing files if true    
