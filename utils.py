@@ -187,12 +187,12 @@ def rebin_and_convert_namaster_mll(namaster_file,mll_dl_file,lmax_out):
     # can't cut to higher number
     assert lmax_in >= lmax_out
 
-    #Step 1: cut to lmax_out
-    mll = mll[:lmax_out,:lmax_out]
+    #Step 1: cut to 2:lmax_out
+    mll = mll[1:lmax_out,1:lmax_out]
     
     #Step 2: 
     # used like np.matmul(mll,Dl_theory)
-    l    = np.arange(1,lmax_out+1)
+    l    = np.arange(2,lmax_out+1)
     lfac = l*( l+1) 
     lfac_x = (np.tile(lfac,(lmax_out,1))).T
     lfac_y = np.tile(1./lfac,(lmax_out,1))
