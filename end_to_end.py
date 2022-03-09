@@ -19,7 +19,11 @@ def end_to_end(beamfiles,simbeamfiles=None,do_window_func = True):
     # 1: Make (or load) mode coupling kernel
     ##################
 
-
+    # should have already done a binned version of the M_ll
+    # also need to have move it to Dl space 
+    # this code is here, but commented out
+    #
+    
     #plan to use wrapper to NaMaster, to be written
 
     ##################
@@ -82,7 +86,7 @@ def end_to_end(beamfiles,simbeamfiles=None,do_window_func = True):
     '''
 
     beams_for_tf=simbeam_interp
-    ntfs=nsets ;  this might be changed below
+    ntfs=nsets #  this might be changed below
 
 '''
 ; This is where we need to know the theory spectrum of the monte carlo sims
