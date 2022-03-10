@@ -10,7 +10,13 @@ if __name__ == "__main__":
     setdef = np.zeros(100)
     workdir = '/scratch/cr/xspec_2022/'
 
+    mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
     mask = utils.load_window(mask_file)
+    
+    theory_files = ['/home/pc/hiell/sims/scaledcl95.npy',
+                    '/home/pc/hiell/sims/scaledcl150.npy',
+                    '/home/pc/hiell/sims/scaledcl220.npy']
+    theory_spectra = utils.load_theory_dls(theory_files)
     
     output = end_to_end( mapfiles,
                          mcmapfiles,
@@ -162,7 +168,7 @@ def end_to_end(mapfiles,
     #see transfer_function.py
 
     '''
-    ; By default, we make one transfer function per set, and 
+    ; By default, we make one transfer function per set, and tr 
     ; cross spectra are scaled  by the geometric mean of the
     ; appropriate single set spectra. However it
     ; is an option to make a transfer function for cross spectrum 
