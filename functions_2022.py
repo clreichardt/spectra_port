@@ -71,7 +71,7 @@ if __name__ == "__main__" and PREP is True:
                            ram_limit = None,
                           ) 
     print("Now real")
-    return
+    exit()
     datashtfilelist = ""
     processedshtfile = workdir + '/data/shts_processed.bin'
     reformat_shts(shtfilelist, processedshtfile,
