@@ -13,15 +13,16 @@ if __name__ == "__main__":
     mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
     mask = utils.load_window(mask_file)
     
-    theory_files = ['/home/pc/hiell/sims/scaledcl95.npy',
+    theoryfiles = ['/home/pc/hiell/sims/scaledcl95.npy',
                     '/home/pc/hiell/sims/scaledcl150.npy',
                     '/home/pc/hiell/sims/scaledcl220.npy']
-    theory_spectra = utils.load_theory_dls(theory_files)
+
     
     output = end_to_end( mapfiles,
                          mcmapfiles,
                          banddef,
                          beamfiles,
+                         theoryfiles,
                          workdir,
                          simbeamfiles=None,
                          setdef=setdef,
@@ -45,6 +46,7 @@ def end_to_end(mapfiles,
                mcmapfiles,
                banddef,
                beamfiles,
+               theoryfiles,
                workdir,
                setdef=None,
                setdef_mc=None,
@@ -63,6 +65,8 @@ def end_to_end(mapfiles,
     #storage dictionary for later monitoring
     output = {}
     output['mask']=mask
+    fskyw2 = np.avg(mask*mask)
+    output['fskyw2']=fskyw2
     output['kmask']=kmask
     output['lmax']=lmax
     output['nside']=nside
@@ -164,14 +168,25 @@ def end_to_end(mapfiles,
     output['beams_interp']=beams_interp
     output['simbeams']=simbeams
     output['simbeams_interp']=simbeams_interp
-        
-    #see transfer_function.py
-
+    
+    if add_pixel_to_beam_for_sims:
+        #add pixel window function to beam
+        pdb.set_trace()
+    
+    #get theory
+    assert(len(theoryfiles) == nsets)
+    #same code should work as beams -- interpolate file values to chosen ells
+    # may need to change for file formats TBD
+    theory_dls_interp = utils.fill_in_beams(theoryfiles,ellkern)
+    output['theory_dls_interp']=theory_dls_interp
+    niter = 5
+    output['niter']=niter
+    
     '''
     ; By default, we make one transfer function per set, and tr 
     ; cross spectra are scaled  by the geometric mean of the
-    ; appropriate single set spectra. However it
-    ; is an option to make a transfer function for cross spectrum 
+    ; appropriate single set spectra. However it may be a future 
+    ; option to make a transfer function for cross spectrum 
     '''
 
     beams_for_tf=simbeam_interp
@@ -186,7 +201,22 @@ def end_to_end(mapfiles,
     ; the cross spectra, (rather than using the geometric mean of the
     ; the single frequency spectra)
     '''
-
+    
+    transfer_iter = np.zeros([ntfs,niter,nkern])
+    for i in range(nsets):        
+        transfer_iter[i,0,:] = utils.initial_estimate(cl_mc, theory_dls_interp[i,:], simbeams_interp[i,:], fskyw2)
+        for j in range(1,niter):
+            transfer_iter[i,j,:] = utils.transfer_iteration( transfer_iter[i,j-1,:], cl_mc, theory_dls_interp[i,:], simbeams_interp[i,:], fskyw2, kernel)
+    
+    transfer = np.zeros([nspectra,nkern])
+    k=0
+    for i in range(nsets): 
+        for j in range(i,nsets):
+            transfer[k,:] = np.sqrt(transfer_iter[i,-1,:]*transfer_iter[j,-1,:])
+    
+    output['transfer_iter'] = transfer_iter
+    output['transfer']=transfer
+            
     ##################
     # 5: Create binned kernel, including mode-coupling, beams, pixel WFs, transfer functions
     #     Optionally allow different beams in sims (and thus kernel)

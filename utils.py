@@ -261,7 +261,7 @@ def bands_from_range(info):
     return banddef
 
 
-def initial_estimate(cl_mc, cl_theory, bl, fsky_w2):
+def transfer_initial_estimate(cl_mc, cl_theory, bl, fsky_w2):
     """
     Calculates the initial estimates of the transfer function for a MASTER style pipeline
     Implements the definition of F0 above eq 18 in MASTER(astro-ph/0105302)
@@ -289,7 +289,7 @@ def initial_estimate(cl_mc, cl_theory, bl, fsky_w2):
     F0[np.where(cl_theory_beam2 < 0.)] = 1.
     return F0
 
-def iteration( F0, M_ll, fsky_w2, bl, cl_theory, cl_mc):
+def transfer_iteration( F0, cl_mc, cl_theory, bl, fsky_w2, M_ll):
     '''
     Calculates the iterative3 estimates of the transfer function for a MASTER style pipeline (astro-ph/0105302)
     
