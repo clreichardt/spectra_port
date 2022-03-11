@@ -239,7 +239,7 @@ def rebin_and_convert_namaster_mll(namaster_file,mll_dl_file,delta_l_out,lmax_ou
     for i in range(delta_l_out):
         for j in range(delta_l_out):
             mll_dl_out += mll_dl[i::delta_l_out,j::delta_l_out]
-    mll_dl_out *= 1./(delta_l_out)**2
+    mll_dl_out *= 1./(delta_l_out)   #we don't have the square because the sum of a row of Mll is unity. And we want that normalization to remain. 
     
     info = [1,lmax_out,delta_l_out]
     np.savez_compressed(mll_dl_file,mll_dl_out,info)

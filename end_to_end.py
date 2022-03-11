@@ -34,7 +34,7 @@ if __name__ == "__main__":
                          kmask=None,
                          mask=mask,
                          kernel_file ='Placeholder',
-                         resume-True
+                         resume=True
                        )
     with open(file_out,'wb') as fp:
         pkl.save(output,fp)
