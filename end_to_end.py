@@ -2,43 +2,7 @@ import numpy as np
 import utils
 import unbiased_multispec as spec
 
-if __name__ == "__main__":
-    
-    banddef = np.arange(0,11000,500)
-    mapfiles = np.zeros([3,4])
-    setdef_mc = np.zeros(100)
-    setdef = np.zeros(100)
-    workdir = '/scratch/cr/xspec_2022/'
 
-    mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
-    mask = utils.load_window(mask_file)
-    
-    theoryfiles = ['/home/pc/hiell/sims/scaledcl95.npy',
-                    '/home/pc/hiell/sims/scaledcl150.npy',
-                    '/home/pc/hiell/sims/scaledcl220.npy']
-
-    
-    output = end_to_end( mapfiles,
-                         mcmapfiles,
-                         banddef,
-                         beamfiles,
-                         theoryfiles,
-                         workdir,
-                         simbeamfiles=None,
-                         setdef=setdef,
-                         setdef_mc=setdef_mc,
-                         do_window_func=False, 
-                         banddef = banddef,
-                         lmax=13000,
-                         nside=8192,
-                         kmask=None,
-                         mask=mask,
-                         kernel_file ='Placeholder',
-                         resume=True
-                       )
-    with open(file_out,'wb') as fp:
-        pkl.save(output,fp)
-    
     
     
     

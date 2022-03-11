@@ -50,15 +50,13 @@ def load_spt3g_healpix_ring_map(file,require_order = 'Ring',require_nside=8192,m
 
 
 def reformat_shts(shtfilelist, processedshtfile,
-                           nside,lmax,
+                           lmax,
                            cmbweighting = True, 
                            mask  = None,
                            kmask = None,
                            ell_reordering=None,
                            no_reorder=False,
                            ram_limit = None,
-                           npmapformat=False, 
-                           map_key='T'
                           ) -> 'May be done in Fortran - output is a file':
     ''' 
     Output is expected to be CL (Dl if cmbweighting=Trure) * mask normalization factor * kweights
@@ -453,6 +451,109 @@ def take_all_cross_spectra( processedshtfile, lmax,
     return(allspectra_out, nmodes_out)
 
 
+def take_all_sim_cross_spectra( processedshtfile, lmax,
+                            setdef1, setdef2=None, banddef, ram_limit=None, nshts=None, auto=False) -> 'Returns set of all x-spectra, binned':
+    '''
+    ;; Step 1, copy all of the fft files and apply scalings masks etc
+
+
+    ;; Step 2 (this function):  average all the bands to create binned x-spectra
+    ;; this assumes sims are created with two bundles
+    '''
+    if ram_limit is None:
+        ram_limit = 16 * 2**30 # default limit is 16 GB
+
+
+    # Simplifying assumption axb == (a^c b + b^c a)
+    # assume do *not* do x-spectra between same observation
+    nsets   = setdef1.shape[1]
+    setsize = setdef1.shape[0]
+    nspectra=np.int((nsets*(nsets+1))/2 + 0.001)
+    print(nsets,setsize,nspectra)
+    
+    if auto is False:
+        assert setdef2 is not None
+    
+    nrealizations=setsize
+
+    nbands = banddef.shape[0]-1
+    if nshts is None:
+        nshts  = np.int(np.max(setdef1,setdef2)+1.001)
+    npersht = healpy.sphtfunc.Alm.getsize(lmax)
+    #pdb.set_trace()
+    allspectra_out = np.zeros([nbands,nspectra,nrealizations],dtype=np.float32)
+    nmodes_out     = np.zeros(nbands, dtype = np.int32)
+
+    tmpresult = np.zeros([setsize,setsize],dtype=np.float64)
+
+    # number of bytes in a Dcomplex: 16
+    # number of arrays we need to make to do this efficiently: 6 or less
+    # number of pixels in an fft: winsize^2
+    ram_required=16*6*lmax**2
+    max_nmodes=ram_limit/nshts/32 #64 b complex 
+
+    assert(banddef[0] == 0 and banddef[-1] < lmax)
+    #assumes banddef[0]=0
+    #so first bin goes 1 - banddef[1]
+    # second bin goes banddef[1]+1 - banddef[2], etc
+    band_start_idx = get_first_index_ell(banddef+1)
+
+    #code=reverse_linefeed_code()
+
+    i=0 # i is the last bin to have finished. initially 0
+    while (i < nbands):
+        istop = np.where((band_start_idx - band_start_idx[i]) < max_nmodes)[0][-1] # get out of tuple, then take last elem of array
+
+        if istop <= i:
+            raise Exception("Insufficient ram for processing even a single bin")
+
+        print('take_all_cross_spectra: loading bands {} {}'.format(i,istop-1))
+        # technical: delete the last iteration of banddata_big first
+        banddata_big=0
+        # get data for as many bins as will fit in our ramlimit
+
+        banddata_big=load_cross_spectra_data_from_disk(processedshtfile, 
+                                                       nshts, npersht,   
+                                                       band_start_idx[i],
+                                                       band_start_idx[istop]-1 )
+        #process this data
+        for iprime in range(i, istop):
+            printinplace('processing band {}    '.format(iprime))
+                
+            nmodes=(band_start_idx[iprime+1]-band_start_idx[iprime])
+            nmodes_out[iprime]=nmodes
+            aidx=band_start_idx[iprime]-band_start_idx[i]
+            banddata=banddata_big[:,aidx:(aidx+nmodes-1)] # first index SHT; second index alm
+
+
+            spectrum_idx=0
+            for j in range(nsets):
+                for k in range(j, nsets):
+                    if not auto:
+
+                        #hypothetically, have 150a, 150b, 220a,220b 
+                        #want to end with:
+                        # 150a * 220b + 150b * 220a
+                        #iew 1j* 2k + 2j* 1k
+                        tmpresult  =np.sum(np.real(banddata[setdef1[:, j],:]*np.conj(banddata[setdef2[:, k],:])), 1,dtype=np.float64)
+                        tmpresult +=np.sum(np.real(banddata[setdef2[:, j],:]*np.conj(banddata[setdef1[:, k],:])), 1,dtype=np.float64)
+                        tmpresult /= (2*nmodes)
+                        
+                        allspectra_out[iprime, spectrum_idx, :]=tmpresult.astype(np.float32)
+
+                    else:
+                        #j/k are freqs
+                        #first index is nrealizations
+                        tmpresult=np.sum(np.real(banddata[setdef1[:, j],:]*np.conj(banddata[setdef1[:, k],:])), 1,dtype=np.float64) / (nmodes) # had been in flatsky: *reso^2*winsize^2)
+                        #tmpresult is nrealizations long
+                        allspectra_out[iprime, spectrum_idx, :]=tmpresult.astype(np.float32)
+                    spectrum_idx+=1
+                    #           pdb.set_trace()
+        i=istop
+    return(allspectra_out, nmodes_out)
+
+
+
 def process_all_cross_spectra(allspectra, nbands, nsets,setsize, 
                               auto=False,
                               skipcov=False ) -> 'Returns mean and covarariance estimates':
@@ -520,6 +621,7 @@ class unbiased_multispec:
                  cmbweighting=True, # True ==> return Dl. False ==> Return Cl
                  kmask = None, #If not none, must be the right size for the Alms. A numpy array/vector
                  setdef=None, # optional -- will take from mapfile array dimensions if not provided
+                 setdef2 = None, #optional -- if provided will assume doing sim cross-spectra
                  jackknife = False, #If true, will difference SHTs to do null spectrum
                  auto=False, #If true will do autospectra instead of cross-spectra
                  apply_windowfactor = True, #if true, calculate and apply normalization correction for partial sky mask. 
@@ -632,8 +734,13 @@ class unbiased_multispec:
         self.use_setdef = use_setdef
         
         #figure out cross-spectra (or autospectra)
-        allspectra, nmodes= take_all_cross_spectra( use_shtfile, self.lmax,
-                    self.use_setdef, self.banddef, ram_limit=self.ramlimit, auto = self.auto) #-> 'Returns set of all x-spectra, binned':
+        if setdef2 is None:
+            allspectra, nmodes= take_all_cross_spectra( use_shtfile, self.lmax,
+                                                        self.use_setdef, self.banddef, ram_limit=self.ramlimit, auto = self.auto) #-> 'Returns set of all x-spectra, binned':
+        else:
+            allspectra, nmodes= take_all_sim_cross_spectra( use_shtfile, self.lmax,
+                                                        self.use_setdef,setdef2=setdef2, self.banddef, ram_limit=self.ramlimit, auto = self.auto) #-> 'Returns set of all x-spectra, binned':
+                        
         self.allspectra = allspectra
         self.nmodes = nmodes
         

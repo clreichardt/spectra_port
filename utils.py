@@ -226,7 +226,7 @@ def rebin_and_convert_namaster_mll(namaster_file,mll_dl_file,delta_l_out,lmax_ou
     mll = mll[1:lmax_out,1:lmax_out]
     
     #Step 2: 
-    # used like np.matmul(mll,Dl_theory)
+    # used like np.matmul(mll,Dl_theory)un
     l    = np.arange(2,lmax_out+1)
     lfac = l*( l+1) 
     lfac_x = (np.tile(lfac,(lmax_out,1))).T
