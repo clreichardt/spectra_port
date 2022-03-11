@@ -452,7 +452,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
 
 
 def take_all_sim_cross_spectra( processedshtfile, lmax,
-                            setdef1, setdef2=None, banddef, ram_limit=None, nshts=None, auto=False) -> 'Returns set of all x-spectra, binned':
+                            setdef1,  banddef, setdef2=None, ram_limit=None, nshts=None, auto=False) -> 'Returns set of all x-spectra, binned':
     '''
     ;; Step 1, copy all of the fft files and apply scalings masks etc
 
@@ -739,7 +739,7 @@ class unbiased_multispec:
                                                         self.use_setdef, self.banddef, ram_limit=self.ramlimit, auto = self.auto) #-> 'Returns set of all x-spectra, binned':
         else:
             allspectra, nmodes= take_all_sim_cross_spectra( use_shtfile, self.lmax,
-                                                        self.use_setdef,setdef2=setdef2, self.banddef, ram_limit=self.ramlimit, auto = self.auto) #-> 'Returns set of all x-spectra, binned':
+                                                        self.use_setdef,self.banddef, setdef2=setdef2, ram_limit=self.ramlimit, auto = self.auto) #-> 'Returns set of all x-spectra, binned':
                         
         self.allspectra = allspectra
         self.nmodes = nmodes

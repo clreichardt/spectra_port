@@ -1,5 +1,7 @@
 import numpy as np
 import glob
+import os
+from spectra_port import unbiased_multispec as spec
 
 PREP= True
 END = False
@@ -37,8 +39,8 @@ def create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',
 
     for i in range(nsim):
         for j in range(nfreq):
-            file_list[j*2*nsim + i]     = os.path.join(dir, dstub.format(i),bstub+'{d}_'.format(bundle_list[i,0])+sfreqs[j]+estub)
-            file_list[(j*2+1)*nsim + i] = os.path.join(dir, dstub.format(i),bstub+'{d}_'.format(bundle_list[i,1])+sfreqs[j]+estub)
+            file_list[j*2*nsim + i]     = os.path.join(dir, dstub.format(i),bstub+'{:03d}_'.format(bundle_list[i,0])+sfreqs[j]+estub)
+            file_list[(j*2+1)*nsim + i] = os.path.join(dir, dstub.format(i),bstub+'{:03d}_'.format(bundle_list[i,1])+sfreqs[j]+estub)
             
     return file_list
 
@@ -61,7 +63,7 @@ if __name__ == "__main__" and PREP is True:
     dir='/sptgrid/analysis/highell_TT_19-20/v3/mockobs/v1_2bundles/'
     mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
     processedshtfile = workdir + '/mc/shts_processed.bin'
-    reformat_shts(shtfilelist, processedshtfile,
+    spec.reformat_shts(mcshtfilelist, processedshtfile,
                            lmax,
                            cmbweighting = True, 
                            mask  = None,
@@ -74,7 +76,7 @@ if __name__ == "__main__" and PREP is True:
     exit()
     datashtfilelist = ""
     processedshtfile = workdir + '/data/shts_processed.bin'
-    reformat_shts(shtfilelist, processedshtfile,
+    spec.reformat_shts(shtfilelist, processedshtfile,
                            lmax,
                            cmbweighting = True, 
                            mask  = None,
