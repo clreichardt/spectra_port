@@ -59,7 +59,7 @@ if __name__ == "__main__" and PREP is True:
     workdir = '/scratch/cr/xspec_2022/'
     lmax = 13000
     dir='/sptgrid/analysis/highell_TT_19-20/v3/mockobs/v1_2bundles/'
-    mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100):
+    mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
     processedshtfile = workdir + '/mc/shts_processed.bin'
     reformat_shts(shtfilelist, processedshtfile,
                            lmax,
