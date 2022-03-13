@@ -3,8 +3,8 @@ import glob
 import os
 from spectra_port import unbiased_multispec as spec
 
-PREP= True
-END = False
+PREP= False
+END = True
 
 
 def create_real_file_list(dir,stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200):
@@ -116,18 +116,36 @@ if __name__ == "__main__" and PREP is True:
 if __name__ == "__main__" and END == True:
     
     banddef = np.arange(0,11000,500)
-    mapfiles = np.zeros([3,4])
-    setdef_mc = np.zeros(100)
-    setdef = np.zeros(100)
-    workdir = '/scratch/cr/xspec_2022/'
+    banddef = [0,1000,1500,2000,2200,2500,2800,3100,3400,3700,4000,4400,4800,5200,5700,6200,6800,7400,8000,9000,10000,11000,12000,13000]
+
+    setdef_mc1, setdef_mc2 = create_sim_setdefs(100,3)
+    
+    setdef = np.zeros([200,3])
+    setdef[:,0]=np.arange(200)
+    setdef[:,0]=np.arange(200)+200
+    setdef[:,0]=np.arange(200)+400
+    #nsets   = setdef.shape[1] #nfreq
+    #setsize = setdef.shape[0] #nbundles
+    
+    kernel_file = '/sptlocal/user/creichardt/mll_dl_13000.npy'
+
+    workdir = '/sptlocal/user/creichardt/xspec_2022/'
+    file_out = workdir + 'spectrum.pkl'
+    
+    #need to get beam formatting in
+    pdb.set_trace()
 
     mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
     mask = utils.load_window(mask_file)
     
+    #may need to reformat theoryfiles
+    pdb.set_trace()
     theoryfiles = ['/home/pc/hiell/sims/scaledcl95.npy',
                     '/home/pc/hiell/sims/scaledcl150.npy',
                     '/home/pc/hiell/sims/scaledcl220.npy']
-
+    mapfiles = create_real_file_list('/sptgrid/user/pc/obs_shts/',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
+    mcmapfiles = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
+    
     
     output = end_to_end( mapfiles,
                          mcmapfiles,
@@ -137,7 +155,8 @@ if __name__ == "__main__" and END == True:
                          workdir,
                          simbeamfiles=None,
                          setdef=setdef,
-                         setdef_mc=setdef_mc,
+                         setdef_mc1=setdef_mc1,
+                         setdef_mc2=setdef_mc2,
                          do_window_func=False, 
                          banddef = banddef,
                          lmax=13000,
