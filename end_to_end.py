@@ -13,7 +13,8 @@ def end_to_end(mapfiles,
                theoryfiles,
                workdir,
                setdef=None,
-               setdef_mc=None,
+               setdef_mc1=None,
+               setdef_mc2=None,
                simbeamfiles=None,
                do_window_func = True,
                lmax=13000,
@@ -43,6 +44,9 @@ def end_to_end(mapfiles,
     output['kernel_file']=kernel_file
     output['workdir']=workdir
     output['do_window_func']=do_window_func
+    output['setdef']=setdef
+    output['setdef_mc1']=setdef_mc1
+    output['setdef_mc2']=setdef_mc2
     
     ##################
     # 1: Make (or load) mode coupling kernel
@@ -78,7 +82,8 @@ def end_to_end(mapfiles,
                                               lmax=lmax,
                                               resume=resume,
                                               basedir=mcdir,
-                                              setdef=setdef_mc,
+                                              setdef=setdef_mc1,
+                                              setdef2=setdef_mc2,
                                               jackknife=False, auto=False,
                                               kmask=kmask,
                                               cmbweighting=True)
@@ -87,7 +92,8 @@ def end_to_end(mapfiles,
                                               lmax=lmax,
                                               resume=True, #reuse the SHTs
                                               basedir=mcdir,
-                                              setdef=setdef_mc,
+                                              setdef=setdef_mc1,
+                                              setdef2=setdef_mc2,
                                               jackknife=False, auto=False,
                                               kmask=kmask,
                                               skipcov=True,

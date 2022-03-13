@@ -367,8 +367,8 @@ def take_all_cross_spectra( processedshtfile, lmax,
 
     # Simplifying assumption axb == (a^c b + b^c a)
     # assume do *not* do x-spectra between same observation
-    nsets   = setdef.shape[1]
-    setsize = setdef.shape[0]
+    nsets   = setdef.shape[1] #nfreq
+    setsize = setdef.shape[0] #nbundles
     nspectra=np.int((nsets*(nsets+1))/2 + 0.001)
     print(nsets,setsize,nspectra)
     if auto:
@@ -715,6 +715,8 @@ class unbiased_multispec:
         sht_size = os.path.getsize(processed_sht_file)
         desired_size = healpy.sphtfunc.Alm.getsize(lmax) * np.zeros(1,dtype=AlmType).nbytes
         if (sht_size < desired_size):  #this will be false if resume==False since deleted file above.
+            print("Dont expect to be here")
+            pdb.set_trace()
             take_and_reformat_shts(self.mapfile, processed_sht_file,
                    self.nside,self.lmax,
                    cmbweighting = self.cmbweighting, 
@@ -757,5 +759,3 @@ class unbiased_multispec:
         self.est1_cov = cov1
         self.est2_cov = cov2
                                  
-                 
-                 
