@@ -6,6 +6,28 @@ from spectra_port import unbiased_multispec as spec
 PREP= True
 END = False
 
+
+def create_real_file_list(dir,stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200):
+    nfreq=len(sfreqs)
+    
+    #file_list = np.zeros(6*nsim,dtype='<U265') #max len 256
+    '''
+    desired output order (for 200 bundles)
+      0-199: 90 bundleA
+
+      200-399: 150 bundleA
+
+      400-599: 220 bundleA
+
+    '''
+    file_list = np.zeros(3*nbundle,dtype='<U{:d}'.format(maxlen)) 
+
+    for j in range(nfreq):
+        for i in range(nbundle):
+            file_list[j*nbundle + i]     = os.path.join(dir, sfreqs[j]+stub+'{:d}'.format(i)+estub)
+            
+    return file_list
+
 def create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100):
     nfreq=len(sfreqs)
     listA  = []
@@ -61,6 +83,7 @@ if __name__ == "__main__" and PREP is True:
     workdir = '/sptlocal/user/creichardt/xspec_2022/'
     lmax = 13000
     dir='/sptgrid/analysis/highell_TT_19-20/v3/mockobs/v1_2bundles/'
+    '''
     mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
     processedshtfile = workdir + '/mc/shts_processed.bin'
     spec.reformat_shts(mcshtfilelist, processedshtfile,
@@ -71,10 +94,12 @@ if __name__ == "__main__" and PREP is True:
                            ell_reordering=None,
                            no_reorder=False,
                            ram_limit = None,
-                          ) 
+                          )
+    '''
     print("Now real")
-    exit()
-    datashtfilelist = ""
+    #    exit()
+
+    datashtfilelist = create_real_file_list('/sptgrid/user/pc/obs_shts/',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
     processedshtfile = workdir + '/data/shts_processed.bin'
     spec.reformat_shts(shtfilelist, processedshtfile,
                            lmax,
