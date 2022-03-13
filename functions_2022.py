@@ -102,7 +102,7 @@ if __name__ == "__main__" and PREP is True:
 
     datashtfilelist = create_real_file_list('/sptgrid/user/pc/obs_shts/',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
     processedshtfile = workdir + '/data/shts_processed.bin'
-    spec.reformat_shts(shtfilelist, processedshtfile,
+    spec.reformat_shts(datashtfilelist, processedshtfile,
                            lmax,
                            cmbweighting = True, 
                            mask  = None,
