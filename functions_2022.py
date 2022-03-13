@@ -20,6 +20,7 @@ def create_real_file_list(dir,stub='GHz_bundle_',sfreqs=['90','150','220'],estub
       400-599: 220 bundleA
 
     '''
+    maxlen    = len(os.path.join(dir, sfreqs[2]+stub+'{:d}'.format(nbundle-1)+estub))+1
     file_list = np.zeros(3*nbundle,dtype='<U{:d}'.format(maxlen)) 
 
     for j in range(nfreq):
