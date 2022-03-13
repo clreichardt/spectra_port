@@ -58,7 +58,7 @@ def create_sim_setdefs(nsim,nfreq):
 
 if __name__ == "__main__" and PREP is True:
     print("First sims")
-    workdir = '/scratch/cr/xspec_2022/'
+    workdir = '/sptlocal/user/creichardt/xspec_2022/'
     lmax = 13000
     dir='/sptgrid/analysis/highell_TT_19-20/v3/mockobs/v1_2bundles/'
     mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
