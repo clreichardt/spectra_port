@@ -139,10 +139,9 @@ if __name__ == "__main__" and END == True:
     file_out = workdir + 'spectrum.pkl'
     
     mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
-    mask = utils.load_window(mask_file)
+    mask = np.fromfile(mask_file)
     
     #may need to reformat theoryfiles
-    pdb.set_trace()
     theoryfiles = ['/home/pc/hiell/sims/90ghz_input_spectrum.txt',
                     '/home/pc/hiell/sims/150ghz_input_spectrum.txt',
                     '/home/pc/hiell/sims/220ghz_input_spectrum.txt']
