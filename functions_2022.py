@@ -7,6 +7,8 @@ PREP= False
 END = True
 
 
+
+
 def create_real_file_list(dir,stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200):
     nfreq=len(sfreqs)
     
@@ -127,22 +129,22 @@ if __name__ == "__main__" and END == True:
     #nsets   = setdef.shape[1] #nfreq
     #setsize = setdef.shape[0] #nbundles
     
+    #note beam is 90, 150, 220, so everything else needs to be too (or change beam array ordering)
+    beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
+    
     kernel_file = '/sptlocal/user/creichardt/mll_dl_13000.npy'
 
     workdir = '/sptlocal/user/creichardt/xspec_2022/'
     file_out = workdir + 'spectrum.pkl'
     
-    #need to get beam formatting in
-    pdb.set_trace()
-
     mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
     mask = utils.load_window(mask_file)
     
     #may need to reformat theoryfiles
     pdb.set_trace()
-    theoryfiles = ['/home/pc/hiell/sims/scaledcl95.npy',
-                    '/home/pc/hiell/sims/scaledcl150.npy',
-                    '/home/pc/hiell/sims/scaledcl220.npy']
+    theoryfiles = ['/home/pc/hiell/sims/90ghz_input_spectrum.txt',
+                    '/home/pc/hiell/sims/150ghz_input_spectrum.txt',
+                    '/home/pc/hiell/sims/220ghz_input_spectrum.txt']
     mapfiles = create_real_file_list('/sptgrid/user/pc/obs_shts/',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
     mcmapfiles = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
     
@@ -150,20 +152,21 @@ if __name__ == "__main__" and END == True:
     output = end_to_end( mapfiles,
                          mcmapfiles,
                          banddef,
-                         beamfiles,
+                         beam_arr,
                          theoryfiles,
                          workdir,
-                         simbeamfiles=None,
+                         simbeam_arr=None,
                          setdef=setdef,
                          setdef_mc1=setdef_mc1,
                          setdef_mc2=setdef_mc2,
                          do_window_func=False, 
                          banddef = banddef,
                          lmax=13000,
+                         cl2dl=True,
                          nside=8192,
                          kmask=None,
                          mask=mask,
-                         kernel_file ='Placeholder',
+                         kernel_file =kernel_file,
                          resume=True
                        )
     with open(file_out,'wb') as fp:

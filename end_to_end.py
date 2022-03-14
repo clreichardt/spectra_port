@@ -9,13 +9,13 @@ import unbiased_multispec as spec
 def end_to_end(mapfiles,
                mcmapfiles,
                banddef,
-               beamfiles,
+               beam_arr,
                theoryfiles,
                workdir,
                setdef=None,
                setdef_mc1=None,
                setdef_mc2=None,
-               simbeamfiles=None,
+               simbeam_arr=None,
                do_window_func = True,
                lmax=13000,
                nside=8192,
@@ -39,8 +39,8 @@ def end_to_end(mapfiles,
     output['mapfiles']=mapfiles
     output['mcmapfiles']=mcmapfiles
     output['banddef']=banddef
-    output['beamfiles']=beamfiles
-    output['simbeamfiles']=simbeamfiles
+    output['beam_arr']=beam_arr
+    output['simbeam_arr']=simbeam_arr
     output['kernel_file']=kernel_file
     output['workdir']=workdir
     output['do_window_func']=do_window_func
@@ -124,15 +124,17 @@ def end_to_end(mapfiles,
     
     
     #Get Beams
-    assert(len(beamfiles) == nsets)
-    beams_interp = utils.fill_in_beams(beamfiles,ellkern)
+    assert beam_arr.shape[1] == nsets+1
+    assert beam_arr.shape[0] >= lmax+1
+
+    beams_interp = utils.fill_in_beams(beam_arr,ellkern)
     beams = utils.explode_beams(beams)
-    if simbeamfiles is None:
+    if simbeam_arr is None:
         simbeams_interp=beams_interp
         simbeams=beams
     else:
-        assert(len(simbeamfiles) == nsets)
-        simbeams_interp = utils.fill_in_beams(simbeamfiles,ellkern)
+        assert(simbeam_arr.shape[1] == nsets+1)
+        simbeams_interp = utils.fill_in_beams(simbeam_arr,ellkern)
         simbeams = utils.explode_beams(simbeams_interp)
     output['beams']=beams
     output['beams_interp']=beams_interp
@@ -159,7 +161,7 @@ def end_to_end(mapfiles,
     ; option to make a transfer function for cross spectrum 
     '''
 
-    beams_for_tf=simbeam_interp
+    beams_for_tf=simbeams_interp
     ntfs=nsets #  this might be changed below
 
     '''
@@ -228,14 +230,14 @@ def end_to_end(mapfiles,
     ##################
     # 6: Multiply data bandpowers by Inverse Kernel
     ##################
-    spectrum = np.reshape(invkernmat * data_spectrum.spectrum,[nspectra,nbands])
+    spectrum = np.reshape(np.matmul(invkernmat, data_spectrum.spectrum),[nspectra,nbands])
 
     output['spectrum']=spectrum
     ##################
     # 7: Apply inverse kernel to the covariance matrices
     ##################
-    sample_cov = np.reshape(invsimkernmat * mc_spectrum.cov * invsimkernmattr,[nspectra,nbands,nspectra, nbands])
-    meas_cov = np.reshape(invkernmat * data_spectrum.cov * invkernmattr,[nspectra,nbands,nspectra, nbands])
+    sample_cov = np.reshape(np.matmul(np.matmul(invsimkernmat , mc_spectrum.cov) , invsimkernmattr),[nspectra,nbands,nspectra, nbands])
+    meas_cov = np.reshape(np.matmul(np.matmul(invkernmat , data_spectrum.cov), invkernmattr),[nspectra,nbands,nspectra, nbands])
 
     output['sample_cov']=sample_cov
     output['meas_cov']=meas_cov

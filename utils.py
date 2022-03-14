@@ -140,7 +140,7 @@ def punch_holes(ras,decs,radii,nside,mask=None,pixel_list=None, ring=True, celes
         mask[pixlist] *= value_list
     return mask # this source-only mask can be multiplied by the edge taper mask
 
-def fill_in_beams(files,ells):
+def fill_in_beams_fromfile(files,ells):
     nl = len(ells)
     nfreq = len(files)
     beams_interp = np.zeros([nspectra, nl],dtype=np.float32)
@@ -148,7 +148,33 @@ def fill_in_beams(files,ells):
         bl = np.fromfile(files[i]) # this will need to be fixed
         beams_interp[i,:] = np.interpol(bl[1,:],bl[0,:],ells) #this will need to be fixed
         bad = beams_interp[i,:] < 0
+    return beams_interp
 
+def fill_in_theory(files,ells,cl2dl=False):
+    nl = len(ells)
+    nfreq = len(files)
+    theory_interp = np.zeros([nspectra, nl],dtype=np.float32)
+    for i in range(nfreq):
+        dl = np.loadtxt(files[i])
+        locl=np.arange(0,len(dl))
+        if cl2dl:
+            dl = dl * locl*(locl+1)/(2*np.pi)
+        dl[0:2]=0 #don't want 0,1
+        theory_interp[i,:] = np.interpol(dl,locl,ells)
+    return theory_interp   
+        
+def fill_in_beams(beam_arr,ells):
+    nl = len(ells)
+    nfreq = beam_arr.shape[1]-1
+    beams_interp = np.zeros([nspectra, nl],dtype=np.float32)
+    ell_stored = beam_arr[:,0]
+    
+    for i in range(nfreq):
+        bl = beam_arr[:,i+1]
+        beams_interp[i,:] = np.interpol(bl,ell_stored,ells) #this will need to be fixed
+        bad = beams_interp[i,:] < 0
+        beams_interp[i,bad]=0
+    return beams_interp
 
 def explode_beams(beams):
     nsets = nspectra*(nspectra+1)/2
