@@ -754,8 +754,9 @@ class unbiased_multispec:
         nsets   = use_setdef.shape[1]
         setsize = use_setdef.shape[0]
 
+        process_auto = self.auto or (setdef2 is not None) # only get 1 per set for the sim crosses too
         spectrum,cov,cov1,cov2 = process_all_cross_spectra(self.allspectra, nbands, nsets,setsize, 
-                                                            auto=self.auto)
+                                                            auto=process_auto)
         self.spectrum = spectrum
         self.cov      = cov
         self.est1_cov = cov1
