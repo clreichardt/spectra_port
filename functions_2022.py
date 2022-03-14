@@ -3,6 +3,7 @@ import glob
 import os
 from spectra_port import unbiased_multispec as spec
 from spectra_port import utils
+from spectra_port import end_to_end
 
 PREP= False
 END = True
@@ -150,7 +151,7 @@ if __name__ == "__main__" and END == True:
     mcmapfiles = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
     
     
-    output = end_to_end( mapfiles,
+    output = end_to_end.end_to_end( mapfiles,
                          mcmapfiles,
                          banddef,
                          beam_arr,
