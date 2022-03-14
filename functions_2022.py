@@ -146,6 +146,7 @@ if __name__ == "__main__" and END == True:
                     '/home/pc/hiell/sims/150ghz_input_spectrum.txt',
                     '/home/pc/hiell/sims/220ghz_input_spectrum.txt']
     mapfiles = create_real_file_list('/sptgrid/user/pc/obs_shts/',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
+    dir='/sptgrid/analysis/highell_TT_19-20/v3/mockobs/v1_2bundles/'
     mcmapfiles = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
     
     
