@@ -354,7 +354,7 @@ def load_cross_spectra_data_from_disk(shtfile, nshts, npersht, start, stop):
 
 
 def take_all_cross_spectra( processedshtfile, lmax,
-                            setdef, banddef, ram_limit=None, auto = False) -> 'Returns set of all x-spectra, binned':
+                            setdef, banddef, ram_limit=None, auto = False,nshts=None) -> 'Returns set of all x-spectra, binned':
     '''
     ;; Step 1, copy all of the fft files and apply scalings masks etc
 
@@ -377,7 +377,9 @@ def take_all_cross_spectra( processedshtfile, lmax,
         nrealizations=np.int( (setsize*(setsize-1))/2 + 0.001)
 
     nbands = banddef.shape[0]-1
-    nshts  = np.int(np.max(setdef)+1.001)
+    if nshts is  None:
+        nshts  = np.int(np.max(setdef)+1.001)
+
     npersht = healpy.sphtfunc.Alm.getsize(lmax)
     #pdb.set_trace()
     allspectra_out = np.zeros([nbands,nspectra,nrealizations],dtype=np.float32)
@@ -452,7 +454,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
 
 
 def take_all_sim_cross_spectra( processedshtfile, lmax,
-                            setdef1,  banddef, setdef2=None, ram_limit=None, nshts=None, auto=False) -> 'Returns set of all x-spectra, binned':
+                            setdef1,  banddef, setdef2=None, ram_limit=None, auto=False) -> 'Returns set of all x-spectra, binned':
     '''
     ;; Step 1, copy all of the fft files and apply scalings masks etc
 
@@ -477,8 +479,8 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
     nrealizations=setsize
 
     nbands = banddef.shape[0]-1
-    if nshts is None:
-        nshts  = np.int(np.max([setdef1,setdef2])+1.001)
+
+    nshts  = np.int(np.max([setdef1,setdef2])+1.001)
     npersht = healpy.sphtfunc.Alm.getsize(lmax)
     #pdb.set_trace()
     allspectra_out = np.zeros([nbands,nspectra,nrealizations],dtype=np.float32)
@@ -735,12 +737,13 @@ class unbiased_multispec:
         if self.jackknife:
             use_setdef = generate_jackknife_shts( processed_sht_file, jackknife_shtfile,  self.lmax, self.setdef)
             use_shtfile = jackknife_shtfile
+
         self.use_setdef = use_setdef
         
         #figure out cross-spectra (or autospectra)
         if setdef2 is None:
             allspectra, nmodes= take_all_cross_spectra( use_shtfile, self.lmax,
-                                                        self.use_setdef, self.banddef, ram_limit=self.ramlimit, auto = self.auto) #-> 'Returns set of all x-spectra, binned':
+                                                        self.use_setdef, self.banddef,  ram_limit=self.ramlimit, auto = self.auto) #-> 'Returns set of all x-spectra, binned':
         else:
             allspectra, nmodes= take_all_sim_cross_spectra( use_shtfile, self.lmax,
                                                         self.use_setdef,self.banddef, setdef2=setdef2, ram_limit=self.ramlimit, auto = self.auto) #-> 'Returns set of all x-spectra, binned':
