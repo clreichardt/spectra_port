@@ -362,7 +362,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
     ;; Step 2 (this function):  average all the bands to create binned x-spectra
     '''
     if ram_limit is None:
-        ram_limit = 16 * 2**30 # default limit is 16 GB
+        ram_limit = 64 * 2**30 # default limit is 64 GB
 
 
     # Simplifying assumption axb == (a^c b + b^c a)
@@ -461,7 +461,7 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
     ;; this assumes sims are created with two bundles
     '''
     if ram_limit is None:
-        ram_limit = 16 * 2**30 # default limit is 16 GB
+        ram_limit = 32 * 2**30 # default limit is 32 GB
 
 
     # Simplifying assumption axb == (a^c b + b^c a)
@@ -478,7 +478,7 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
 
     nbands = banddef.shape[0]-1
     if nshts is None:
-        nshts  = np.int(np.max(setdef1,setdef2)+1.001)
+        nshts  = np.int(np.max([setdef1,setdef2])+1.001)
     npersht = healpy.sphtfunc.Alm.getsize(lmax)
     #pdb.set_trace()
     allspectra_out = np.zeros([nbands,nspectra,nrealizations],dtype=np.float32)
@@ -492,7 +492,8 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
     ram_required=16*6*lmax**2
     max_nmodes=ram_limit/nshts/32 #64 b complex 
 
-    assert(banddef[0] == 0 and banddef[-1] < lmax)
+
+    assert(banddef[0] == 0 and banddef[-1] <= lmax)
     #assumes banddef[0]=0
     #so first bin goes 1 - banddef[1]
     # second bin goes banddef[1]+1 - banddef[2], etc
@@ -505,6 +506,7 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
         istop = np.where((band_start_idx - band_start_idx[i]) < max_nmodes)[0][-1] # get out of tuple, then take last elem of array
 
         if istop <= i:
+            print('ram hit:',max_modes, band_start_idx[i],band_start_idx[i+1])
             raise Exception("Insufficient ram for processing even a single bin")
 
         print('take_all_cross_spectra: loading bands {} {}'.format(i,istop-1))
@@ -628,7 +630,7 @@ class unbiased_multispec:
                  map_key = 'T', #where to fetch maps from
                  skipcov=False, #don't calculate covariances
                  # Run time processing flags ################################################
-                 ramlimit=16 * 2**30, # optional -- set to change default RAM limit from 16gb
+                 ramlimit=64 * 2**30, # optional -- set to change default RAM limit from 64gb
                  resume=True, #optional -- will use existing files if true    
                  basedir=None, # strongly suggested. defaults to current directory and can use a lot of disk space
                  persistdir=None, # optional - can be unset. will create a temp directory within basedir

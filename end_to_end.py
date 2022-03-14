@@ -1,7 +1,7 @@
 import numpy as np
 import utils
 import unbiased_multispec as spec
-
+import time
 
     
     
@@ -21,6 +21,7 @@ def end_to_end(mapfiles,
                nside=8192,
                kmask=None,
                mask=None,
+               cl2dl=False,
                kernel_file=None,
                resume=True):    
     '''
@@ -30,7 +31,7 @@ def end_to_end(mapfiles,
     #storage dictionary for later monitoring
     output = {}
     output['mask']=mask
-    fskyw2 = np.avg(mask*mask)
+    fskyw2 = np.mean(mask*mask)
     output['fskyw2']=fskyw2
     output['kmask']=kmask
     output['lmax']=lmax
@@ -51,8 +52,8 @@ def end_to_end(mapfiles,
     ##################
     # 1: Make (or load) mode coupling kernel
     ##################
-
-
+    lasttime=time.time()
+    print('load mll')
     
     # should have already done a binned version of the M_ll
     # also need to have move it to Dl space 
@@ -74,7 +75,10 @@ def end_to_end(mapfiles,
     # 2: Calculate spectra and covariances of monte-carlo sims
     #    This is done at both a fine ell-gridding for Tf, and broader binning that matches data
     ##################
-
+    newtime=time.time()
+    print('run sim unbiased: last step took {:.0f}'.format(newtime-lasttime))
+    lasttime=newtime
+          
     mcdir = workdir + '/mc/'
 
     # will used alm's in mcdir+'shts_processed.bin'
@@ -82,6 +86,7 @@ def end_to_end(mapfiles,
                                               lmax=lmax,
                                               resume=resume,
                                               basedir=mcdir,
+                                              persistdir=mcdir,
                                               setdef=setdef_mc1,
                                               setdef2=setdef_mc2,
                                               jackknife=False, auto=False,
@@ -92,6 +97,7 @@ def end_to_end(mapfiles,
                                               lmax=lmax,
                                               resume=True, #reuse the SHTs
                                               basedir=mcdir,
+                                              persistdir=mcdir,
                                               setdef=setdef_mc1,
                                               setdef2=setdef_mc2,
                                               jackknife=False, auto=False,
@@ -105,11 +111,15 @@ def end_to_end(mapfiles,
     ##################
     # 3: Calculate spectra and covariances of data
     ##################
+    newtime=time.time()
+    print('run data unbiased: last step took {:.0f}'.format(newtime-lasttime))
+    lasttime=newtime
     datadir = workdir + '/data/'
     data_specrum    = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                               lmax=lmax,
                                               resume=resume,
                                               basedir=datadir,
+                                              persistdir=datadir,
                                               setdef=setdef,
                                               jackknife=False, auto=False,
                                               kmask=kmask,
@@ -120,6 +130,11 @@ def end_to_end(mapfiles,
     ##################
     # 4: Calculate the Transfer functions
     ##################
+    newtime=time.time()
+    print('last step took {:.0f}'.format(newtime-lasttime))
+    lasttime=newtime
+    print('run Tf')
+
     nkern = len(ellkern)
     
     
@@ -194,7 +209,10 @@ def end_to_end(mapfiles,
     #     Optionally allow different beams in sims (and thus kernel)
     #    Invert the kernel
     ##################
-
+    newtime=time.time()
+    print('last step took {:.0f}'.format(newtime-lasttime))
+    lasttime=newtime
+    print('binned kernels')
     super_kernel        = np.zeros([nspectra, nbands, nspectra, nbands],dtype=np.float64)
     sim_super_kernel    = np.zeros([nspectra, nbands, nspectra, nbands],dtype=np.float64)
     inv_super_kernel    = np.zeros([nspectra, nbands, nspectra, nbands],dtype=np.float64)
@@ -213,9 +231,9 @@ def end_to_end(mapfiles,
         inv_super_kernel[i,iskip:,i,iskip:] = np.linalg.inv(super_kernel[i,iskip:,i,iskip:])
         inv_sim_super_kernel[i,iskip:,i,iskip:] = np.linalg.inv(sim_super_kernel[i,iskip:,i,iskip:])
         
-    invkernmat      = np.reshape(inv_super_kernel,[nspectra*nbands, nbands*nspectra]))
+    invkernmat      = np.reshape(inv_super_kernel,[nspectra*nbands, nbands*nspectra])
     invkernmattr    = np.transpose(invkernmat)
-    invsimkernmat   = np.reshape(inv_sim_super_kernel,[nspectra*nbands, nbands*nspectra]))
+    invsimkernmat   = np.reshape(inv_sim_super_kernel,[nspectra*nbands, nbands*nspectra])
     invsimkernmattr = np.transpose(invsimkernmat)
 
     output['super_kernel']=super_kernel
@@ -230,12 +248,20 @@ def end_to_end(mapfiles,
     ##################
     # 6: Multiply data bandpowers by Inverse Kernel
     ##################
+    newtime=time.time()
+    print('last step took {:.0f}'.format(newtime-lasttime))
+    lasttime=newtime
+    print('unbias spectra')
     spectrum = np.reshape(np.matmul(invkernmat, data_spectrum.spectrum),[nspectra,nbands])
 
     output['spectrum']=spectrum
     ##################
     # 7: Apply inverse kernel to the covariance matrices
     ##################
+    newtime=time.time()
+    print('last step took {:.0f}'.format(newtime-lasttime))
+    lasttime=newtime
+    print('unbias cov')
     sample_cov = np.reshape(np.matmul(np.matmul(invsimkernmat , mc_spectrum.cov) , invsimkernmattr),[nspectra,nbands,nspectra, nbands])
     meas_cov = np.reshape(np.matmul(np.matmul(invkernmat , data_spectrum.cov), invkernmattr),[nspectra,nbands,nspectra, nbands])
 
@@ -244,14 +270,22 @@ def end_to_end(mapfiles,
     ##################
     # 8: Combine covariances yield total covariance estimate
     ##################
+    newtime=time.time()
+    print('last step took {:.0f}'.format(newtime-lasttime))
+    lasttime=newtime
+    print('combine cov')
     cov = meas_cov + sample_cov
 
     output['cov']=cov
     ##################
     # 9: Optionally: Calculate bandpower window functions
     ##################
+    newtime=time.time()
+    print('last step took {:.0f}'.format(newtime-lasttime))
+    lasttime=newtime
 
     if do_window_func:
+        print('window funcs')
         assert(win_minell < win_maxell)
         nlwin = win_maxell-win_minell+1
         windowfunc = np.zeros([nbands*nspectra,nlwin],dtype=np.float32)
@@ -261,8 +295,7 @@ def end_to_end(mapfiles,
                         'kernel':kernel,
                         'transfer':transfer[i,:],
                         'bl':beams[i,:]}
-            windowfunc[iskip+i*nbands:nbands+i*nbands,:] = 
-                window_function_calc(banddef,transdic,nskip=iskip,ellmin = win_minell,ellmax=win_maxell)
+            windowfunc[iskip+i*nbands:nbands+i*nbands,:] = window_function_calc(banddef,transdic,nskip=iskip,ellmin = win_minell,ellmax=win_maxell)
 
 
     output['windowfunc']=windowfunc

@@ -74,8 +74,8 @@ def create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',
 def create_sim_setdefs(nsim,nfreq):
     ''' assumes 2 bundles per'''
     
-    set1 = np.zeros([nsim,nfreq],dtype=np.int)
-    set2 = np.zeros([nsim,nfreq],dtype=np.int)
+    set1 = np.zeros([nsim,nfreq],dtype=np.int32)
+    set2 = np.zeros([nsim,nfreq],dtype=np.int32)
 
     for i in range(nfreq):
         set1[:,i] = np.arange(0,nsim) + 2*i*nsim
@@ -119,11 +119,11 @@ if __name__ == "__main__" and PREP is True:
 
 if __name__ == "__main__" and END == True:
     
-    banddef = np.arange(0,11000,500)
-    banddef = [0,1000,1500,2000,2200,2500,2800,3100,3400,3700,4000,4400,4800,5200,5700,6200,6800,7400,8000,9000,10000,11000,12000,13000]
+    banddef = np.arange(0,11000,200)
+    #banddef = np.asarray([0,1000,1500,2000,2200,2500,2800,3100,3400,3700,4000,4400,4800,5200,5700,6200,6800,7400,8000,9000,10000,11000,12000,13000])
 
     setdef_mc1, setdef_mc2 = create_sim_setdefs(100,3)
-    
+
     setdef = np.zeros([200,3])
     setdef[:,0]=np.arange(200)
     setdef[:,0]=np.arange(200)+200
@@ -134,13 +134,17 @@ if __name__ == "__main__" and END == True:
     #note beam is 90, 150, 220, so everything else needs to be too (or change beam array ordering)
     beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
     
-    kernel_file = '/sptlocal/user/creichardt/mll_dl_13000.npy'
+
+ #   >>> namaster_file='/sptlocal/user/pc/mll/mll_tpltz.npy'
+#>>> kernel_file = '/sptlocal/user/creichardt/mll_dl_13000.npz'
+#>>> utils.rebin_and_convert_namaster_mll(namaster_file,kernel_file,5,13000)
+    kernel_file = '/sptlocal/user/creichardt/mll_dl_13000.npz'
 
     workdir = '/sptlocal/user/creichardt/xspec_2022/'
     file_out = workdir + 'spectrum.pkl'
     
     mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
-    mask = np.fromfile(mask_file)
+    mask = np.load(mask_file)
     
     #may need to reformat theoryfiles
     theoryfiles = ['/home/pc/hiell/sims/90ghz_input_spectrum.txt',
@@ -162,7 +166,6 @@ if __name__ == "__main__" and END == True:
                          setdef_mc1=setdef_mc1,
                          setdef_mc2=setdef_mc2,
                          do_window_func=False, 
-                         banddef = banddef,
                          lmax=13000,
                          cl2dl=True,
                          nside=8192,

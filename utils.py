@@ -1,5 +1,6 @@
 import numpy as np
 from spt3g import core
+import pdb
 def great_circle_distance(vec_border_lon, vec_border_lat, this_lon, this_lat):
     '''
     Finds minimum distance of a point (this_lon, this_lat) to a vector of long/lats
@@ -220,8 +221,8 @@ def convert_namaster_mll(namaster_file,mll_dl_file,lmax_out):
     # used like np.matmul(mll,Dl_theory)
     l    = np.arange(2,lmax_out+1)
     lfac = l*( l+1) 
-    lfac_x = (np.tile(lfac,(lmax_out,1))).T
-    lfac_y = np.tile(1./lfac,(lmax_out,1))
+    lfac_x = (np.tile(lfac,(lmax_out-1,1))).T
+    lfac_y = np.tile(1./lfac,(lmax_out-1,1))
        
     mll_dl = np.multiply(np.multiply(lfac_x,mll),lfac_y)
     
@@ -249,17 +250,18 @@ def rebin_and_convert_namaster_mll(namaster_file,mll_dl_file,delta_l_out,lmax_ou
     assert int(lmax_out/delta_l_out)*delta_l_out == lmax_out # integer number of bins
 
     #Step 1: cut to 2:lmax_out
-    mll = mll[1:lmax_out,1:lmax_out]
-    
+    mll = mll[0:lmax_out,0:lmax_out]
+    mll[0,:]=0
+    mll[:,0]=0
+
     #Step 2: 
     # used like np.matmul(mll,Dl_theory)un
-    l    = np.arange(2,lmax_out+1)
+    l    = np.arange(1,lmax_out+1)
     lfac = l*( l+1) 
     lfac_x = (np.tile(lfac,(lmax_out,1))).T
     lfac_y = np.tile(1./lfac,(lmax_out,1))
-       
+
     mll_dl = np.multiply(np.multiply(lfac_x,mll),lfac_y)
-    
     mll_dl_out = 0
     # first assume a boxcar average of theory Dl's -- 
     for i in range(delta_l_out):
@@ -268,7 +270,7 @@ def rebin_and_convert_namaster_mll(namaster_file,mll_dl_file,delta_l_out,lmax_ou
     mll_dl_out *= 1./(delta_l_out)   #we don't have the square because the sum of a row of Mll is unity. And we want that normalization to remain. 
     
     info = [1,lmax_out,delta_l_out]
-    np.savez_compressed(mll_dl_file,mll_dl_out,info)
+    np.savez_compressed(mll_dl_file,mll_dl_out=mll_dl_out,info=info)
     
 def load_mll(file):
     with np.load(file) as data:
@@ -278,6 +280,9 @@ def load_mll(file):
     return info, mll_dl
 
 
+def band_centers(banddef):
+    ctr = (1+banddef[:-1]+banddef[1:])/2. #ie 0-5 -> 3
+    return ctr
 
 def bands_from_range(info):
     lmin,lmax,dl = info
