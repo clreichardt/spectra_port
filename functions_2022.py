@@ -6,7 +6,8 @@ from spectra_port import utils
 from spectra_port import end_to_end
 
 PREP= False
-END = True
+END = False
+NULL= True
 
 
 
@@ -177,3 +178,22 @@ if __name__ == "__main__" and END == True:
     with open(file_out,'wb') as fp:
         pkl.save(output,fp)
     
+if __name__ == "__main__" and NULL == True:
+    mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
+    mask = np.load(mask_file)
+    nside=8192
+    banddef = np.arange(0,11000,500)
+    workdir90='/big_scratch/cr/null90/'
+    mapfiles = create_real_file_list('/sptgrid/user/pc/obs_shts/',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
+    null_spectrum_90      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+                                              lmax=13000,
+                                              resume=True,
+                                              basedir=workdir90,
+                                              persistdir=workdir90,
+                                              setdef=setdef,
+                                              jackknife=True, auto=False,
+                                              kmask=None,
+                                              cmbweighting=True)
+    file_out = workdir + 'null_spectrum.pkl'
+    with open(file_out,'wb') as fp:
+        pkl.save(null_spectrum_90,fp)
