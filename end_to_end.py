@@ -178,8 +178,8 @@ def end_to_end(mapfiles,
     assert beam_arr.shape[1] == nsets+1
     assert beam_arr.shape[0] >= lmax+1
 
-    beams_interp = utils.fill_in_beams(beam_arr,ellkern)
-    beams = utils.explode_beams(beams)
+    beams = utils.fill_in_beams(beam_arr,ellkern)
+    beams_interp = utils.explode_beams(beams)
     if simbeam_arr is None:
         simbeams_interp=beams_interp
         simbeams=beams
