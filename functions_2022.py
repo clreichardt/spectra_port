@@ -179,13 +179,14 @@ if __name__ == "__main__" and END == True:
         pkl.save(output,fp)
     
 if __name__ == "__main__" and NULL == True:
+    print('doing null')
     mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
     mask = np.load(mask_file)
     nside=8192
     banddef = np.arange(0,11000,500)
     workdir90='/big_scratch/cr/null90/'
     setdef = np.zeros([100,2],dtype=np.int32)
-    setdef[:,0]=np.arange(0100,dtype=np.int32)
+    setdef[:,0]=np.arange(0,100,dtype=np.int32)
     setdef[:,1]=np.arange(100,200,dtype=np.int32)
     mapfiles = create_real_file_list('/sptgrid/user/pc/obs_shts/',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
     null_spectrum_90      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
