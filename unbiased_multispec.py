@@ -310,8 +310,9 @@ def generate_jackknife_shts( processed_shtfile, jackknife_shtfile,  lmax,
 
             buffera -= bufferb
             buffera *= 0.5
-            fout.seek( i * buffer_bytes )
-            buffera.tofile(fout)
+            #fout.seek( i * buffer_bytes )
+            (buffera.astype(AlmType)).tofile(fout)
+
 
     return(np.reshape(np.arange(setsize,dtype=np.int32),[setsize,1]))
 
@@ -727,7 +728,7 @@ class unbiased_multispec:
         if (sht_size < desired_size):  #this will be false if resume==False since deleted file above.
             print("Dont expect to be here")
             pdb.set_trace()
-            take_and_reformat_shts(self.mapfile, processed_sht_file,
+            take_and_reformat_shts(self.fuile, processed_sht_file,
                    self.nside,self.lmax,
                    cmbweighting = self.cmbweighting, 
                    mask  = self.window,
