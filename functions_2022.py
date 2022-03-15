@@ -179,7 +179,9 @@ if __name__ == "__main__" and END == True:
         pkl.save(output,fp)
     
 if __name__ == "__main__" and NULL == True:
+
     print('doing null')
+
     mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
     mask = np.load(mask_file)
     nside=8192
