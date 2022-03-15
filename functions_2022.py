@@ -200,6 +200,6 @@ if __name__ == "__main__" and NULL == True:
                                               jackknife=True, auto=False,
                                               kmask=None,
                                               cmbweighting=True)
-    file_out = workdir + 'null_spectrum.pkl'
+    file_out = workdir90 + 'null_spectrum.pkl'
     with open(file_out,'wb') as fp:
         pkl.save(null_spectrum_90,fp)
