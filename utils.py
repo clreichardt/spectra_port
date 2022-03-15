@@ -172,7 +172,7 @@ def fill_in_beams(beam_arr,ells):
     
     for i in range(nfreq):
         bl = beam_arr[:,i+1]
-        beams_interp[i,:] = np.interpol(bl,ell_stored,ells) #this will need to be fixed
+        beams_interp[i,:] = np.interp(ells,ell_stored,bl) #this will need to be fixed
         bad = beams_interp[i,:] < 0
         beams_interp[i,bad]=0
     return beams_interp
