@@ -119,12 +119,12 @@ if __name__ == "__main__" and PREP is True:
 
 if __name__ == "__main__" and END == True:
     
-    banddef = np.arange(0,11000,200)
+    banddef = np.arange(0,11000,100)
     #banddef = np.asarray([0,1000,1500,2000,2200,2500,2800,3100,3400,3700,4000,4400,4800,5200,5700,6200,6800,7400,8000,9000,10000,11000,12000,13000])
 
     setdef_mc1, setdef_mc2 = create_sim_setdefs(100,3)
 
-    setdef = np.zeros([200,3])
+    setdef = np.zeros([200,3],dtype=np.int32)
     setdef[:,0]=np.arange(200)
     setdef[:,0]=np.arange(200)+200
     setdef[:,0]=np.arange(200)+400

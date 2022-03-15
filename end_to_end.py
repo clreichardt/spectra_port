@@ -1,8 +1,8 @@
 import numpy as np
 import utils
 import unbiased_multispec as spec
-import time
-
+import time,os
+import pickle as pkl
     
     
     
@@ -23,6 +23,7 @@ def end_to_end(mapfiles,
                mask=None,
                cl2dl=False,
                kernel_file=None,
+               checkpoint=True,
                resume=True):    
     '''
     should add argument to this...
@@ -49,6 +50,10 @@ def end_to_end(mapfiles,
     output['setdef_mc1']=setdef_mc1
     output['setdef_mc2']=setdef_mc2
     
+    if checkpoint:
+        with open(os.path.join(workdir,'tmp_start.pkl'),'wb') as fp:
+            pkl.dump(output,fp)
+
     ##################
     # 1: Make (or load) mode coupling kernel
     ##################
@@ -82,7 +87,7 @@ def end_to_end(mapfiles,
     mcdir = workdir + '/mc/'
 
     # will used alm's in mcdir+'shts_processed.bin'
-    mc_specrum      = spec.unbiased_multispec(mcmapfiles,mask,banddef,nside,
+    mc_spectrum      = spec.unbiased_multispec(mcmapfiles,mask,banddef,nside,
                                               lmax=lmax,
                                               resume=resume,
                                               basedir=mcdir,
@@ -93,7 +98,7 @@ def end_to_end(mapfiles,
                                               kmask=kmask,
                                               cmbweighting=True)
     
-    mc_specrum_fine = spec.unbiased_multispec(mcmapfiles,mask,banddef_fine,nside,
+    mc_spectrum_fine = spec.unbiased_multispec(mcmapfiles,mask,banddef_fine,nside,
                                               lmax=lmax,
                                               resume=True, #reuse the SHTs
                                               basedir=mcdir,
@@ -115,7 +120,7 @@ def end_to_end(mapfiles,
     print('run data unbiased: last step took {:.0f}'.format(newtime-lasttime))
     lasttime=newtime
     datadir = workdir + '/data/'
-    data_specrum    = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+    data_spectrum    = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                               lmax=lmax,
                                               resume=resume,
                                               basedir=datadir,
@@ -126,7 +131,9 @@ def end_to_end(mapfiles,
                                               cmbweighting=True)
 
     output['data_spectrum']=data_spectrum
-    
+    if checkpoint:
+        with open(os.path.join(workdir,'tmp.pkl'),'wb') as fp:
+            pkl.dump(output,fp)
     ##################
     # 4: Calculate the Transfer functions
     ##################
@@ -191,6 +198,7 @@ def end_to_end(mapfiles,
     
     transfer_iter = np.zeros([ntfs,niter,nkern])
     for i in range(nsets):        
+        cl_mc = mc_spectrum_fine.spectrum[:,i]
         transfer_iter[i,0,:] = utils.initial_estimate(cl_mc, theory_dls_interp[i,:], simbeams_interp[i,:], fskyw2)
         for j in range(1,niter):
             transfer_iter[i,j,:] = utils.transfer_iteration( transfer_iter[i,j-1,:], cl_mc, theory_dls_interp[i,:], simbeams_interp[i,:], fskyw2, kernel)

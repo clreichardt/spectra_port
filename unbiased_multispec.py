@@ -294,8 +294,13 @@ def generate_jackknife_shts( processed_shtfile, jackknife_shtfile,  lmax,
     setsize = setdef.shape[0]
     nsets   = setdef.shape[1]
 
+    oldtime=time.time()
     with open(processed_shtfile,'rb') as fin, open(jackknife_shtfile,'wb') as fout:
         for i in range(setsize):
+            newtime=time.time()
+            timeinminutes = (newtime - oldtime)/60.0
+            oldtime=newtime
+            printinplace('Creating null SHT : {} of {}  Last one took: {:.1f} minutes'.format(i,setsize,timeinminutes))
             #need to do stuff here
 
             fin.seek( setdef[i,0] * buffer_bytes )
@@ -566,7 +571,7 @@ def process_all_cross_spectra(allspectra, nbands, nsets,setsize,
     nspectra = int( (nsets * (nsets+1))/2 + 0.001)
 
 
-    spectrumreformed = np.zeros([nbands,nspectra],dtype=np.float32)
+
 
     if auto:
         nrealizations = setsize
@@ -578,6 +583,7 @@ def process_all_cross_spectra(allspectra, nbands, nsets,setsize,
 
     spectrum = np.sum(allspectra,-1,dtype=np.float64)/nrealizations
 
+    spectrum = np.reshape(spectrum,[nbands,nspectra])
     if skipcov:
         return spectrum,None,None,None
     # [nbands*nspectra, nrealizations])
