@@ -6,8 +6,8 @@ from spectra_port import utils
 from spectra_port import end_to_end
 
 PREP= False
-END = False
-NULL= True
+END = True
+NULL= False
 
 
 
@@ -173,7 +173,8 @@ if __name__ == "__main__" and END == True:
                          kmask=None,
                          mask=mask,
                          kernel_file =kernel_file,
-                         resume=True
+                         resume=True, 
+                         checkpoint=True
                        )
     with open(file_out,'wb') as fp:
         pkl.save(output,fp)

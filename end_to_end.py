@@ -1,3 +1,4 @@
+from turtle import goto
 import numpy as np
 import utils
 import unbiased_multispec as spec
@@ -28,7 +29,25 @@ def end_to_end(mapfiles,
     '''
     should add argument to this...
     '''
-
+    
+    do_mll=True
+    do_mc=True
+    do_data=True
+    
+    checkpoint_success=False    
+    if checkpoint:
+        file_tmp = os.path.join(workdir,'tmp.pkl')
+        try:
+            with open(file_tmp,'rb') as fp:
+                output=pkl.load(fp)
+            do_mll=False
+            do_mc=False
+            do_data=True
+            checkpoint_success=True
+            
+        except:
+            pass
+        
     #storage dictionary for later monitoring
     output = {}
     output['mask']=mask
@@ -58,82 +77,92 @@ def end_to_end(mapfiles,
     # 1: Make (or load) mode coupling kernel
     ##################
     lasttime=time.time()
-    print('load mll')
+    if do_mll:
+        print('load mll')
     
-    # should have already done a binned version of the M_ll
-    # also need to have move it to Dl space 
-    # this code is here, but commented out
-    #
-    
-    #plan to use wrapper to NaMaster, to be written
-    info, kernel = utils.load_mll(kernel_file)
-    banddef_fine = utils.bands_from_range(info)
-    ellkern = utils.band_centers(banddef_fine)
+        # should have already done a binned version of the M_ll
+        # also need to have move it to Dl space 
+        # this code is here, but commented out
+        #
+        
+        #plan to use wrapper to NaMaster, to be written
+        info, kernel = utils.load_mll(kernel_file)
+        banddef_fine = utils.bands_from_range(info)
+        ellkern = utils.band_centers(banddef_fine)
 
-    #and store
-    output['info']=info
-    output['kernel']=kernel
-    output['ellkern']=ellkern
-    output['banddef_fine']=banddef_fine
+        #and store
+        output['info']=info
+        output['kernel']=kernel
+        output['ellkern']=ellkern
+        output['banddef_fine']=banddef_fine
 
     ##################
     # 2: Calculate spectra and covariances of monte-carlo sims
     #    This is done at both a fine ell-gridding for Tf, and broader binning that matches data
     ##################
-    newtime=time.time()
-    print('run sim unbiased: last step took {:.0f}'.format(newtime-lasttime))
-    lasttime=newtime
-          
-    mcdir = workdir + '/mc/'
+    if do_mc:
+        newtime=time.time()
+        print('run sim unbiased: last step took {:.0f}'.format(newtime-lasttime))
+        lasttime=newtime
+            
+        mcdir = workdir + '/mc/'
 
-    # will used alm's in mcdir+'shts_processed.bin'
-    mc_spectrum      = spec.unbiased_multispec(mcmapfiles,mask,banddef,nside,
-                                              lmax=lmax,
-                                              resume=resume,
-                                              basedir=mcdir,
-                                              persistdir=mcdir,
-                                              setdef=setdef_mc1,
-                                              setdef2=setdef_mc2,
-                                              jackknife=False, auto=False,
-                                              kmask=kmask,
-                                              cmbweighting=True)
-    
-    mc_spectrum_fine = spec.unbiased_multispec(mcmapfiles,mask,banddef_fine,nside,
-                                              lmax=lmax,
-                                              resume=True, #reuse the SHTs
-                                              basedir=mcdir,
-                                              persistdir=mcdir,
-                                              setdef=setdef_mc1,
-                                              setdef2=setdef_mc2,
-                                              jackknife=False, auto=False,
-                                              kmask=kmask,
-                                              skipcov=True,
-                                              cmbweighting=True)
+        if not checkpoint_success:
+        # will used alm's in mcdir+'shts_processed.bin'
+            mc_spectrum      = spec.unbiased_multispec(mcmapfiles,mask,banddef,nside,
+                                                    lmax=lmax,
+                                                    resume=resume,
+                                                    basedir=mcdir,
+                                                    persistdir=mcdir,
+                                                    setdef=setdef_mc1,
+                                                    setdef2=setdef_mc2,
+                                                    jackknife=False, auto=False,
+                                                    kmask=kmask,
+                                                    cmbweighting=True)
+            
+            mc_spectrum_fine = spec.unbiased_multispec(mcmapfiles,mask,banddef_fine,nside,
+                                                    lmax=lmax,
+                                                    resume=True, #reuse the SHTs
+                                                    basedir=mcdir,
+                                                    persistdir=mcdir,
+                                                    setdef=setdef_mc1,
+                                                    setdef2=setdef_mc2,
+                                                    jackknife=False, auto=False,
+                                                    kmask=kmask,
+                                                    skipcov=True,
+                                                    cmbweighting=True)
 
-    output['mc_spectrum']=mc_spectrum
-    output['mc_spectrum_fine']=mc_spectrum_fine
+            output['mc_spectrum']=mc_spectrum
+            output['mc_spectrum_fine']=mc_spectrum_fine
+        else:
+            mc_spectrum=output['mc_spectrum']
+            mc_spectrum_fine=output['mc_spectrum_fine']
 
     ##################
     # 3: Calculate spectra and covariances of data
     ##################
-    newtime=time.time()
-    print('run data unbiased: last step took {:.0f}'.format(newtime-lasttime))
-    lasttime=newtime
-    datadir = workdir + '/data/'
-    data_spectrum    = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
-                                              lmax=lmax,
-                                              resume=resume,
-                                              basedir=datadir,
-                                              persistdir=datadir,
-                                              setdef=setdef,
-                                              jackknife=False, auto=False,
-                                              kmask=kmask,
-                                              cmbweighting=True)
+    if do_data:
+        newtime=time.time()
+        print('run data unbiased: last step took {:.0f}'.format(newtime-lasttime))
+        lasttime=newtime
+        datadir = workdir + '/data/'
+        data_spectrum    = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+                                                lmax=lmax,
+                                                resume=resume,
+                                                basedir=datadir,
+                                                persistdir=datadir,
+                                                setdef=setdef,
+                                                jackknife=False, auto=False,
+                                                kmask=kmask,
+                                                cmbweighting=True)
 
-    output['data_spectrum']=data_spectrum
-    if checkpoint:
-        with open(os.path.join(workdir,'tmp.pkl'),'wb') as fp:
-            pkl.dump(output,fp)
+        output['data_spectrum']=data_spectrum
+
+        if checkpoint:
+            with open(os.path.join(workdir,'tmp.pkl'),'wb') as fp:
+                pkl.dump(output,fp)
+                
+    
     ##################
     # 4: Calculate the Transfer functions
     ##################
@@ -144,7 +173,7 @@ def end_to_end(mapfiles,
 
     nkern = len(ellkern)
     
-    
+    nsets=mc_spectrum_fine.spectrum.shape[1]
     #Get Beams
     assert beam_arr.shape[1] == nsets+1
     assert beam_arr.shape[0] >= lmax+1
