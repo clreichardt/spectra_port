@@ -70,7 +70,7 @@ def create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',
             file_list[j*2*nsim + i]     = os.path.join(dir, dstub.format(i),bstub+'{:03d}_'.format(bundle_list[i,0])+sfreqs[j]+estub)
             file_list[(j*2+1)*nsim + i] = os.path.join(dir, dstub.format(i),bstub+'{:03d}_'.format(bundle_list[i,1])+sfreqs[j]+estub)
             
-    return file_list
+    return file_listun
 
 def create_sim_setdefs(nsim,nfreq):
     ''' assumes 2 bundles per'''
@@ -94,7 +94,7 @@ if __name__ == "__main__" and PREP is True:
     processedshtfile = workdir + '/mc/shts_processed.bin'
     spec.reformat_shts(mcshtfilelist, processedshtfile,
                            lmax,
-                           cmbweighting = True, 
+                           cmbweighting = True, #may already be in Dl??? 
                            mask  = None,
                            kmask = None,
                            ell_reordering=None,

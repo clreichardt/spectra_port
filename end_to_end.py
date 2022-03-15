@@ -1,4 +1,4 @@
-from turtle import goto
+
 import numpy as np
 import utils
 import unbiased_multispec as spec
@@ -163,7 +163,7 @@ def end_to_end(mapfiles,
                 pkl.dump(output,fp)
                 
     
-    ##################
+    ##################fun
     # 4: Calculate the Transfer functions
     ##################
     newtime=time.time()
@@ -172,8 +172,8 @@ def end_to_end(mapfiles,
     print('run Tf')
 
     nkern = len(ellkern)
-    
-    nsets=mc_spectrum_fine.spectrum.shape[1]
+
+    nspectra=mc_spectrum_fine.spectrum.shape[1]
     #Get Beams
     assert beam_arr.shape[1] == nsets+1
     assert beam_arr.shape[0] >= lmax+1

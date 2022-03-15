@@ -167,7 +167,7 @@ def fill_in_theory(files,ells,cl2dl=False):
 def fill_in_beams(beam_arr,ells):
     nl = len(ells)
     nfreq = beam_arr.shape[1]-1
-    beams_interp = np.zeros([nspectra, nl],dtype=np.float32)
+    beams_interp = np.zeros([nfreq, nl],dtype=np.float32)
     ell_stored = beam_arr[:,0]
     
     for i in range(nfreq):
@@ -178,7 +178,8 @@ def fill_in_beams(beam_arr,ells):
     return beams_interp
 
 def explode_beams(beams):
-    nsets = nspectra*(nspectra+1)/2
+    nfreq = beams.shape[1]
+    nsets = nfreq*(nfreq+1)/2
     beams = np.zeros([nsets, nl],dtype=np.float32)
     k=0
     for i in range(nfreq):
