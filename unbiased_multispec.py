@@ -741,8 +741,9 @@ class unbiased_multispec:
         use_setdef  = setdef
         use_shtfile = processed_sht_file
         if self.jackknife:
-            use_setdef = generate_jackknife_shts( processed_sht_file, jackknife_shtfile,  self.lmax, self.setdef)
-            use_shtfile = jackknife_shtfile
+            jackknife_sht_file = self.persistdir + '/null_shts_processed.bin'
+            use_setdef = generate_jackknife_shts( processed_sht_file, jackknife_sht_file,  self.lmax, self.setdef)
+            use_shtfile = jackknife_sht_file
 
         self.use_setdef = use_setdef
         
