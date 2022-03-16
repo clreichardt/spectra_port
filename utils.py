@@ -147,21 +147,22 @@ def fill_in_beams_fromfile(files,ells):
     beams_interp = np.zeros([nspectra, nl],dtype=np.float32)
     for i in range(nfreq):
         bl = np.fromfile(files[i]) # this will need to be fixed
-        beams_interp[i,:] = np.interpol(bl[1,:],bl[0,:],ells) #this will need to be fixed
+        beams_interp[i,:] = np.interp(ells,bl[0,:],bl[1,:])
         bad = beams_interp[i,:] < 0
     return beams_interp
 
 def fill_in_theory(files,ells,cl2dl=False):
     nl = len(ells)
+    
     nfreq = len(files)
-    theory_interp = np.zeros([nspectra, nl],dtype=np.float32)
+    theory_interp = np.zeros([nfreq, nl],dtype=np.float32)
     for i in range(nfreq):
         dl = np.loadtxt(files[i])
         locl=np.arange(0,len(dl))
         if cl2dl:
             dl = dl * locl*(locl+1)/(2*np.pi)
         dl[0:2]=0 #don't want 0,1
-        theory_interp[i,:] = np.interpol(dl,locl,ells)
+        theory_interp[i,:] = np.interp(ells,locl,dl)
     return theory_interp   
         
 def fill_in_beams(beam_arr,ells):

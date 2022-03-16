@@ -60,6 +60,7 @@ def end_to_end(mapfiles,
     output['mapfiles']=mapfiles
     output['mcmapfiles']=mcmapfiles
     output['banddef']=banddef
+    output['theoryfiles']=theoryfiles
     output['beam_arr']=beam_arr
     output['simbeam_arr']=simbeam_arr
     output['kernel_file']=kernel_file
@@ -200,7 +201,7 @@ def end_to_end(mapfiles,
     assert(len(theoryfiles) == nsets)
     #same code should work as beams -- interpolate file values to chosen ells
     # may need to change for file formats TBD
-    theory_dls_interp = utils.fill_in_beams(theoryfiles,ellkern)
+    theory_dls_interp = utils.fill_in_theory(theoryfiles,ellkern)
     output['theory_dls_interp']=theory_dls_interp
     niter = 5
     output['niter']=niter
