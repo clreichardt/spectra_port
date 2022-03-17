@@ -1,6 +1,12 @@
 import numpy as np
 from spt3g import core
 import pdb
+import healpy
+
+def quickplot(tmap,max=0.5):
+    hp.visufunc.cartview(tmap,min=-1*max,max=max,latra=[-73,-38],lonra=[-55,55])
+
+
 def great_circle_distance(vec_border_lon, vec_border_lat, this_lon, this_lat):
     '''
     Finds minimum distance of a point (this_lon, this_lat) to a vector of long/lats

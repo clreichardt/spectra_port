@@ -12,19 +12,53 @@ import pickle as pkl
 PREP= False
 END = False
 NULL= False
+COADD= False
 
 my_parser = argparse.ArgumentParser()
 my_parser.add_argument('-prep', action='store_true',dest='prep')
 my_parser.add_argument('-end', action='store_true',dest='end')
 my_parser.add_argument('-null', action='store_true',dest='null')
+my_parser.add_argument('-coadd', action='store_true',dest='coadd')
 args = my_parser.parse_args()
 
 PREP=args.prep
 END=args.end
 NULL=args.null
+COADD=args.coadd
 
 
-
+def create_bundle_maps_and_coadds(freq,nbundles=200):
+    if freq == 150:
+        dir='/sptgrid/user/pc/bundle_coadds/150GHz/'
+        filestub = '150GHz_bundle_{}.g3'
+        fileout = 'coadd_150ghz.pkl'
+    if freq == 90:
+        dir='/sptgrid/user/pc/bundle_coadds/90GHz/'
+        filestub = '90GHz_bundle_{}.g3'
+        fileout = 'coadd_90ghz.pkl'
+    if freq == 220:
+        dir='/sptgrid/user/pc/bundle_coadds/220GHz/'
+        filestub = '220GHz_bundle_{}.g3'
+        fileout = 'coadd_220ghz.pkl'
+    dirout = '/sptlocal/user/creichardt/hiell2022/bundles/'
+    
+    nside=8192
+    coadd = np.zeros(12*nside**2,dtype=np.float32)
+    for i in range(nbundles):
+        a=list(core.G3File(dir+filestub.format(i)))
+        loc_ind,loc_map = (a[0]['left']+a[0]['right']).nonzero_pixels()
+        loc_ind,loc_wt = (a[0]['weight']).nonzero_pixels()
+        loc_map = (loc_map/loc_wt).astype(np.float32)
+        with open(dirout+filestub.format(i),'wb') as fp:
+            pkl.dump(loc_ind,fp)
+            pkl.dump(loc_map,fp)
+        coadd[loc_ind]+= loc_map
+    ind = coadd.nonzero()
+    store = (coadd[ind]/nbundles).astype(np.float32)
+    with open(dirout+fileout,'wb') as fp:
+        pkl.dump(ind,fp)
+        pkl.dump(store,fp)
+    
 
 def create_real_file_list(dir,stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200):
     nfreq=len(sfreqs)
@@ -241,3 +275,9 @@ if __name__ == "__main__" and NULL == True:
     file_out = workdir + 'null_spectrum.pkl'
     with open(file_out,'wb') as fp:
         pkl.dump(null_spectrum,fp)
+
+
+if __name__ == "__main__" and COADD == True:
+    create_bundle_maps_and_coadds(90,nbundles=200)
+    create_bundle_maps_and_coadds(150,nbundles=200)
+    create_bundle_maps_and_coadds(220,nbundles=200)
