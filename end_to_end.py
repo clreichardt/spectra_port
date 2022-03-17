@@ -92,7 +92,7 @@ def end_to_end(mapfiles,
     try:
         if not resume:
             raise Exception("Bounce out")
-        with open(mcdir+'mc_spectrum.pkl', 'r') as f:
+        with open(mcdir+'mc_spectrum.pkl', 'rb') as f:
             mc_spectrum = pkl.load(f)
     except:
     # will used alm's in mcdir+'shts_processed.bin'
@@ -114,7 +114,7 @@ def end_to_end(mapfiles,
     try:
         if not resume:
             raise Exception("Bounce out")
-        with open(mcdir+'mc_spectrum_fine.pkl', 'r') as f:
+        with open(mcdir+'mc_spectrum_fine.pkl', 'rb') as f:
             mc_spectrum_fine = pkl.load(f)
     except:    
         mc_spectrum_fine = spec.unbiased_multispec(mcmapfiles,mask,banddef_fine,nside,
@@ -145,7 +145,7 @@ def end_to_end(mapfiles,
     try:
         if not resume:
             raise Exception("Bounce out")
-        with open(datadir+'data_spectrum.pkl', 'r') as f:
+        with open(datadir+'data_spectrum.pkl', 'rb') as f:
             data_spectrum = pkl.load(f)
     except:    
         data_spectrum    = spec.unbiased_multispec(mapfiles,mask,banddef,nside,

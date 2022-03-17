@@ -1,6 +1,8 @@
+import os
+os.environ['OMP_NUM_THREADS'] = "6"
 import numpy as np
 import glob
-import os
+
 from spectra_port import unbiased_multispec as spec
 from spectra_port import utils
 from spectra_port import end_to_end
@@ -191,7 +193,7 @@ if __name__ == "__main__" and END == True:
                          checkpoint=True
                        )
     with open(file_out,'wb') as fp:
-        pkl.save(output,fp)
+        pkl.dump(output,fp)
     
 if __name__ == "__main__" and NULL == True:
 
@@ -201,20 +203,41 @@ if __name__ == "__main__" and NULL == True:
     mask = np.load(mask_file)
     nside=8192
     banddef = np.arange(0,13000,500)
-    workdir90='/big_scratch/cr/null90/'
+
+
+    workdir='/big_scratch/cr/null150/'
     setdef = np.zeros([100,2],dtype=np.int32)
-    setdef[:,0]=np.arange(0,100,dtype=np.int32)
-    setdef[:,1]=np.arange(100,200,dtype=np.int32)
+    setdef[:,0]=np.arange(0,100,dtype=np.int32)+200
+    setdef[:,1]=np.arange(100,200,dtype=np.int32)+200
     mapfiles = create_real_file_list('/sptgrid/user/pc/obs_shts/',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
-    null_spectrum_90      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+    null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                               lmax=13000,
                                               resume=True,
-                                              basedir=workdir90,
-                                              persistdir=workdir90,
+                                              basedir=workdir,
+                                              persistdir=workdir,
                                               setdef=setdef,
                                               jackknife=True, auto=False,
                                               kmask=None,
                                               cmbweighting=True)
-    file_out = workdir90 + 'null_spectrum.pkl'
+    file_out = workdir + 'null_spectrum.pkl'
     with open(file_out,'wb') as fp:
-        pkl.save(null_spectrum_90,fp)
+        pkl.dump(null_spectrum,fp)
+
+
+    workdir='/big_scratch/cr/null220/'
+    setdef = np.zeros([100,2],dtype=np.int32)
+    setdef[:,0]=np.arange(0,100,dtype=np.int32)+400
+    setdef[:,1]=np.arange(100,200,dtype=np.int32)+400
+    mapfiles = create_real_file_list('/sptgrid/user/pc/obs_shts/',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
+    null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+                                              lmax=13000,
+                                              resume=True,
+                                              basedir=workdir,
+                                              persistdir=workdir,
+                                              setdef=setdef,
+                                              jackknife=True, auto=False,
+                                              kmask=None,
+                                              cmbweighting=True)
+    file_out = workdir + 'null_spectrum.pkl'
+    with open(file_out,'wb') as fp:
+        pkl.dump(null_spectrum,fp)
