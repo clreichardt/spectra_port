@@ -73,7 +73,7 @@ def reformat_shts(shtfilelist, processedshtfile,
 
     inv_mask_factor = 1.
     if mask is not None:
-        inv_mask_factor = 1./np.mean(mask**2)
+        inv_mask_factor = np.sqrt(1./np.mean(mask**2))
 
     #ie do parallelism SHTs at once...
     size = healpy.sphtfunc.Alm.getsize(lmax)
@@ -87,7 +87,7 @@ def reformat_shts(shtfilelist, processedshtfile,
         
     if cmbweighting:
         dummy_vec = np.arange(lmax+1,dtype=np.float32)
-        dummy_vec = (dummy_vec*(dummy_vec+1.))/(2*np.pi)
+        dummy_vec = np.sqrt((dummy_vec*(dummy_vec+1.))/(2*np.pi)) # This will be squared since Cl =a*a
         j=0
         for i in range(lmax+1):
             nm = lmax+1-i
@@ -176,7 +176,7 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
 
     inv_mask_factor = 1.
     if mask is not None:
-        inv_mask_factor = 1./np.mean(mask**2)
+        inv_mask_factor = np.sqrt(1./np.mean(mask**2))
 
     if mask is not None:
         if type(mask) is np.ndarray:
@@ -198,7 +198,7 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
         
     if cmbweighting:
         dummy_vec = np.arange(lmax+1,dtype=np.float32)
-        dummy_vec = (dummy_vec*(dummy_vec+1.))/(2*np.pi)
+        dummy_vec = np.sqrt((dummy_vec*(dummy_vec+1.))/(2*np.pi)) #this will be squared later as Cl=a*a
         j=0
         for i in range(lmax+1):
             nm = lmax+1-i

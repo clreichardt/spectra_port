@@ -4,10 +4,22 @@ import os
 from spectra_port import unbiased_multispec as spec
 from spectra_port import utils
 from spectra_port import end_to_end
+import argparse
+import pickle as pkl
 
 PREP= False
-END = True
+END = False
 NULL= False
+
+my_parser = argparse.ArgumentParser()
+my_parser.add_argument('-prep', action='store_true',dest='prep')
+my_parser.add_argument('-end', action='store_true',dest='end')
+my_parser.add_argument('-null', action='store_true',dest='null')
+args = my_parser.parse_args()
+
+PREP=args.prep
+END=args.end
+NULL=args.null
 
 
 
@@ -70,7 +82,7 @@ def create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',
             file_list[j*2*nsim + i]     = os.path.join(dir, dstub.format(i),bstub+'{:03d}_'.format(bundle_list[i,0])+sfreqs[j]+estub)
             file_list[(j*2+1)*nsim + i] = os.path.join(dir, dstub.format(i),bstub+'{:03d}_'.format(bundle_list[i,1])+sfreqs[j]+estub)
             
-    return file_listun
+    return file_list
 
 def create_sim_setdefs(nsim,nfreq):
     ''' assumes 2 bundles per'''
@@ -87,21 +99,22 @@ def create_sim_setdefs(nsim,nfreq):
 if __name__ == "__main__" and PREP is True:
     print("First sims")
     workdir = '/sptlocal/user/creichardt/xspec_2022/'
+    workdir = '/big_scratch/cr/xspec_2022/'
     lmax = 13000
     dir='/sptgrid/analysis/highell_TT_19-20/v3/mockobs/v1_2bundles/'
-    '''
+
     mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
     processedshtfile = workdir + '/mc/shts_processed.bin'
     spec.reformat_shts(mcshtfilelist, processedshtfile,
                            lmax,
-                           cmbweighting = True, #may already be in Dl??? 
+                           cmbweighting = True, 
                            mask  = None,
                            kmask = None,
                            ell_reordering=None,
                            no_reorder=False,
                            ram_limit = None,
                           )
-    '''
+
     print("Now real")
     #    exit()
 
@@ -120,7 +133,7 @@ if __name__ == "__main__" and PREP is True:
 
 if __name__ == "__main__" and END == True:
     
-    banddef = np.arange(0,11000,100)
+    banddef = np.arange(0,13000,50)
     #banddef = np.asarray([0,1000,1500,2000,2200,2500,2800,3100,3400,3700,4000,4400,4800,5200,5700,6200,6800,7400,8000,9000,10000,11000,12000,13000])
 
     setdef_mc1, setdef_mc2 = create_sim_setdefs(100,3)
@@ -142,6 +155,7 @@ if __name__ == "__main__" and END == True:
     kernel_file = '/sptlocal/user/creichardt/mll_dl_13000.npz'
 
     workdir = '/sptlocal/user/creichardt/xspec_2022/'
+    workdir = '/big_scratch/cr/xspec_2022/'
     file_out = workdir + 'spectrum.pkl'
     
     mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
@@ -168,7 +182,7 @@ if __name__ == "__main__" and END == True:
                          setdef_mc2=setdef_mc2,
                          do_window_func=False, 
                          lmax=13000,
-                         cl2dl=True,
+#                         cl2dl=True,
                          nside=8192,
                          kmask=None,
                          mask=mask,
@@ -186,7 +200,7 @@ if __name__ == "__main__" and NULL == True:
     mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
     mask = np.load(mask_file)
     nside=8192
-    banddef = np.arange(0,11000,500)
+    banddef = np.arange(0,13000,500)
     workdir90='/big_scratch/cr/null90/'
     setdef = np.zeros([100,2],dtype=np.int32)
     setdef[:,0]=np.arange(0,100,dtype=np.int32)
