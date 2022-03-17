@@ -6,6 +6,7 @@ import glob
 from spectra_port import unbiased_multispec as spec
 from spectra_port import utils
 from spectra_port import end_to_end
+from spt3g import core,maps, calibration
 import argparse
 import pickle as pkl
 
@@ -40,6 +41,7 @@ def create_bundle_maps_and_coadds(freq,nbundles=200):
         dir='/sptgrid/user/pc/bundle_coadds/220GHz/'
         filestub = '220GHz_bundle_{}.g3'
         fileout = 'coadd_220ghz.pkl'
+    ofilestub = filestub[:-3]+'.pkl'
     dirout = '/sptlocal/user/creichardt/hiell2022/bundles/'
     
     nside=8192
@@ -48,12 +50,13 @@ def create_bundle_maps_and_coadds(freq,nbundles=200):
         a=list(core.G3File(dir+filestub.format(i)))
         loc_ind,loc_map = (a[0]['left']+a[0]['right']).nonzero_pixels()
         loc_ind,loc_wt = (a[0]['weight']).nonzero_pixels()
-        loc_map = (loc_map/loc_wt).astype(np.float32)
-        with open(dirout+filestub.format(i),'wb') as fp:
+        loc_ind = np.asarray(loc_ind,dtype=np.int32)
+        loc_map = np.asarray((loc_map/loc_wt),dtype=np.float32)
+        with open(dirout+ofilestub.format(i),'wb') as fp:
             pkl.dump(loc_ind,fp)
             pkl.dump(loc_map,fp)
         coadd[loc_ind]+= loc_map
-    ind = coadd.nonzero()
+    ind = np.asarray(coadd.nonzero(),dtype=np.int32)
     store = (coadd[ind]/nbundles).astype(np.float32)
     with open(dirout+fileout,'wb') as fp:
         pkl.dump(ind,fp)
