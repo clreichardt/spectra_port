@@ -1,3 +1,4 @@
+from re import A
 import numpy as np
 from spt3g import core
 import pdb
@@ -348,3 +349,141 @@ def transfer_iteration( F0, cl_mc, cl_theory, bl, fsky_w2, M_ll):
     F = F0 + (cl_mc -  np.matmul(M_ll, (F0 * cl_theory_beam2 )) ) / (cl_theory_beam2 * fsky_w2)
     F[np.where(cl_theory_beam2 < 0.)] = 1.
     return F
+
+
+
+'''
+; PURPOSE:
+;
+;  Take the mode-coupling matrix M_{uu'} and rebin it into bands
+;  K_{bb\}.  At this step the Transfer function, the beam function and
+;  the pixelization function are included. 
+;
+; CATEGORY:
+;
+;
+;
+; CALLING SEQUENCE:
+;
+;
+;
+; INPUTS:
+;
+;   matrix:   The mode coupling matrix M_{uu} (See
+;   https://spt.uchicago.edu/trac/attachment/wiki/AnalysisNotesFeb2007/Pseudo-Cl-081021.pdf 
+;   for a definition.
+;   ell:  the mapping between u and \ell (Should be as long as M_{uu}
+;         is on a side).   
+;        This is usually something like: delta_ell*dindgen((size[muu])[1])
+;   bindef:  The definition of the bins.   This should be an array of
+;        floats, one element per bin.   Each element should be the
+;        upper bound of each ell bin.   The lowest bin by default
+;        extends to \ell=0.   (Yeah that's right \ell=0. We are on the
+;        flat sky here, so \ell is a continuous variable...  I wouldn't talk about
+;        fractional ells in publication, but for the purposes of flat
+;        sky code, in makes sense to think about \ells this way). 
+;
+; OPTIONAL INPUTS:
+;
+;  transferfunc:  The transfer function as evaluated at each element
+;      of the matrix ell.   (default: 1)
+;  beamfunc:  The beam function as evaluated at each element of ell
+;      (default: 1)
+;  pixfunc:  The pixel transfer function as evaluated at each element
+;      of ell.   I personnally think that the pixel transfer function
+;      is something bogus invented by people who don't quite understand
+;      aliasing, but it's in Hivon et al, so I've included it here.
+;      (default: 1) 
+;
+; KEYWORD PARAMETERS:
+;
+;  nocmbweighting: Do not assume that the input spectrum is l(l+1) weighted
+; 
+; OUTPUTS:
+;
+;  Returns the matrix, K_{bb} as defined in the master paper
+;
+; OPTIONAL OUTPUTS:
+;
+;  None
+;
+; SIDE EFFECTS:
+;
+;  None known
+;
+; PROCEDURE:
+;
+;   Uses equation (25) of Hivon et al, arXiv:astro-ph/0105302v1
+;
+; MODIFICATION HISTORY:
+;
+;   Sept 23, 2008: Created, Martin Lueker 
+;   Oct 28, 2008: Documentation header added, Martin Lueker
+;   06/25/2015  : add option allowing negative transfer function, Zhen Hou
+'''
+
+
+def rebin_coupling_matrix( matrix, ell, bindef, transferfunc=None, 
+                                beamfunc=None, pixelfunc=None, 
+                                nocmbweighting=False,
+                                onesidecmbweighting=False,
+                                master=True, $
+                                allow_negative_transfer=False):
+nell=n_elements(ell)
+
+if beamfunc is None:
+    beamfunc=np.ones(nell,dtype=np.float32)
+if pixelfunc is None:
+    pixelfunc=np.ones(nell,dtype=np.float32)
+if transferfunc is None:
+    transferfunc=np.ones(nell,dtype=np.float32)
+
+
+nbins=bindef.shape[0]-1
+
+'''
+;; We may not want calculate the mode-to-mode coupling matrix
+;; at delta-ell of one (for reasons of computational efficiency, 
+;; or space, or whatever), hence the spacing in ell, may be 
+;; different than unity ( as assumed in the master paper), thus
+;; the new definition should be:
+;;
+;; P_{bl}=1/2/!PI * ell(ell+1) / sum_{ell in b} 1
+'''
+
+p = np.zeros([nbin,nell],dtype=np.float64)
+q = np.zeros([nell,nbin],dtype=np.float64)
+
+for i in range(nbins):
+    
+    idx=(ell <= bindef[i+1])*(ell > bindef[i])
+    cnt = np.sum(idx)
+    
+    if nocmbweighting:
+        p[i,idx] = 1/cnt
+        q[idx,i] = 1.
+    elif onesidecmbweighting:
+        p[i,idx] = 1/cnt
+        q[idx,i] = 1./(2*np.pi) * (ell[idx]*(ell[idx]+1))
+    else:
+        p[i,idx] = ((2*np.pi/cnt) / (ell[idx]*(ell[idx]+1))
+        q[idx,i] = 1./(2*np.pi) * (ell[idx]*(ell[idx]+1))
+
+
+scale = transferfunc*pixfunc**2*beamfunc**2
+scale[scale<0]=0
+scale = np.reshape(scale,nell)   #likely not needed   
+if master:
+    print('using master scaling')
+
+    scaling = np.tile(scale,[nell,1]) #may be transpose of what want...
+
+else:
+    print('using non master scaling')
+    scale = np.reshape(np.sqrt(scale),[1,nell])
+    scaling = np.matmul(scale.T,scale)
+
+#may have some transposes of what is desired... will need to check some
+
+return np.matmul(p,np.matmul(np.multiply((matrix,scaling),q)))
+
