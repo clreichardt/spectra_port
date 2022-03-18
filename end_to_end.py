@@ -173,8 +173,10 @@ def end_to_end(mapfiles,
 
     nkern = len(ellkern)
 
+    
     nspectra=mc_spectrum_fine.spectrum.shape[1]
     #Get Beams
+    nsets = setdef.shape[1]
     assert beam_arr.shape[1] == nsets+1
     assert beam_arr.shape[0] >= lmax+1
 

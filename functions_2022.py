@@ -178,9 +178,9 @@ if __name__ == "__main__" and END == True:
     setdef_mc1, setdef_mc2 = create_sim_setdefs(100,3)
 
     setdef = np.zeros([200,3],dtype=np.int32)
-    setdef[:,0]=np.arange(200)
-    setdef[:,0]=np.arange(200)+200
-    setdef[:,0]=np.arange(200)+400
+    setdef[:,0]=np.arange(200,dtype=np.int32)
+    setdef[:,1]=np.arange(200,dtype=np.int32)+200
+    setdef[:,2]=np.arange(200,dtype=np.int32)+400
     #nsets   = setdef.shape[1] #nfreq
     #setsize = setdef.shape[0] #nbundles
     
@@ -240,6 +240,25 @@ if __name__ == "__main__" and NULL == True:
     mask = np.load(mask_file)
     nside=8192
     banddef = np.arange(0,13000,500)
+
+    workdir='/big_scratch/cr/null90/'
+    setdef = np.zeros([100,2],dtype=np.int32)
+    setdef[:,0]=np.arange(0,100,dtype=np.int32)
+    setdef[:,1]=np.arange(100,200,dtype=np.int32)
+    mapfiles = create_real_file_list('/sptgrid/user/pc/obs_shts/',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
+    null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+                                              lmax=13000,
+                                              resume=True,
+                                              basedir=workdir,
+                                              persistdir=workdir,
+                                              setdef=setdef,
+                                              jackknife=True, auto=False,
+                                              kmask=None,
+                                              cmbweighting=True)
+    file_out = workdir + 'null_spectrum.pkl'
+    with open(file_out,'wb') as fp:
+        pkl.dump(null_spectrum,fp)
+
 
 
     workdir='/big_scratch/cr/null150/'
