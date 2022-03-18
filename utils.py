@@ -185,9 +185,9 @@ def fill_in_beams(beam_arr,ells):
     return beams_interp
 
 def explode_beams(beams_interp):
-    nfreq = beams_interp.shape[1]
-    nl = beams_interp.shape[0]
-    nsets = nfreq*(nfreq+1)/2
+    nfreq = beams_interp.shape[0]
+    nl = beams_interp.shape[1]
+    nsets = int(nfreq*(nfreq+1)/2)
     beams = np.zeros([nsets, nl],dtype=np.float32)
     k=0
     for i in range(nfreq):

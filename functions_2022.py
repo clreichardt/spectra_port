@@ -91,7 +91,7 @@ def create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',
     listB  = []
     
     #file_list = np.zeros(6*nsim,dtype='<U265') #max len 256
-    bundle_list = np.zeros([nsim,2],dtype=np.int)
+    bundle_list = np.zeros([nsim,2],dtype=np.int32)
     '''
     desired output order (for 100 sims)
       0-99: 90 bundleA

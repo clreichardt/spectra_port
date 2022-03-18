@@ -193,7 +193,7 @@ def end_to_end(mapfiles,
     output['beams_interp']=beams_interp
     output['simbeams']=simbeams
     output['simbeams_interp']=simbeams_interp
-    
+    add_pixel_to_beam_for_sims=False
     if add_pixel_to_beam_for_sims:
         #add pixel window function to beam
         pdb.set_trace()
@@ -229,7 +229,7 @@ def end_to_end(mapfiles,
     transfer_iter = np.zeros([ntfs,niter,nkern])
     for i in range(nsets):        
         cl_mc = mc_spectrum_fine.spectrum[:,i]
-        transfer_iter[i,0,:] = utils.initial_estimate(cl_mc, theory_dls_interp[i,:], simbeams_interp[i,:], fskyw2)
+        transfer_iter[i,0,:] = utils.transfer_initial_estimate(cl_mc, theory_dls_interp[i,:], simbeams_interp[i,:], fskyw2)
         for j in range(1,niter):
             transfer_iter[i,j,:] = utils.transfer_iteration( transfer_iter[i,j-1,:], cl_mc, theory_dls_interp[i,:], simbeams_interp[i,:], fskyw2, kernel)
     
@@ -251,14 +251,15 @@ def end_to_end(mapfiles,
     print('last step took {:.0f}'.format(newtime-lasttime))
     lasttime=newtime
     print('binned kernels')
+    nbands = banddef.shape[0]-1
     super_kernel        = np.zeros([nspectra, nbands, nspectra, nbands],dtype=np.float64)
     sim_super_kernel    = np.zeros([nspectra, nbands, nspectra, nbands],dtype=np.float64)
     inv_super_kernel    = np.zeros([nspectra, nbands, nspectra, nbands],dtype=np.float64)
     inv_sim_super_kernel= np.zeros([nspectra, nbands, nspectra, nbands],dtype=np.float64)
     iskips = np.zeros(nspectra, dtype=np.int32)
     for i in range(nspectra):
-        super_kernel[i,:,i,:]     = rebin_coupling_kernel(kernel, ellkern, banddef, transfer=transfer[i,:], beam = beams[i,:])
-        sim_super_kernel[i,:,i,:] = rebin_coupling_kernel(kernel, ellkern, banddef, transfer=transfer[i,:], beam = simbeams[i,:])
+        super_kernel[i,:,i,:]     = utils.rebin_coupling_kernel(kernel, ellkern, banddef, transfer=transfer[i,:], beam = beams[i,:])
+        sim_super_kernel[i,:,i,:] = utils.rebin_coupling_kernel(kernel, ellkern, banddef, transfer=transfer[i,:], beam = simbeams[i,:])
         slice = [superkern[i,j,i,j]==0 for j in range(nbands)]
         try:
             iskip = np.where(slice)[-1][-1]
