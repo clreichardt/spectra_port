@@ -451,8 +451,8 @@ def rebin_coupling_matrix( matrix, ell, bindef, transferfunc=None,
 ;; P_{bl}=1/2/!PI * ell(ell+1) / sum_{ell in b} 1
     '''
 
-    p = np.zeros([nbin,nell],dtype=np.float64)
-    q = np.zeros([nell,nbin],dtype=np.float64)
+    p = np.zeros([nbins,nell],dtype=np.float64)
+    q = np.zeros([nell,nbins],dtype=np.float64)
 
     for i in range(nbins):
     
