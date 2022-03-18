@@ -427,21 +427,21 @@ def rebin_coupling_matrix( matrix, ell, bindef, transferfunc=None,
                                 beamfunc=None, pixelfunc=None, 
                                 nocmbweighting=False,
                                 onesidecmbweighting=False,
-                                master=True, $
+                                master=True, 
                                 allow_negative_transfer=False):
-nell=n_elements(ell)
+    nell=ell.shape[0]
 
-if beamfunc is None:
-    beamfunc=np.ones(nell,dtype=np.float32)
-if pixelfunc is None:
-    pixelfunc=np.ones(nell,dtype=np.float32)
-if transferfunc is None:
-    transferfunc=np.ones(nell,dtype=np.float32)
+    if beamfunc is None:
+        beamfunc=np.ones(nell,dtype=np.float32)
+    if pixelfunc is None:
+        pixelfunc=np.ones(nell,dtype=np.float32)
+    if transferfunc is None:
+        transferfunc=np.ones(nell,dtype=np.float32)
 
 
-nbins=bindef.shape[0]-1
+    nbins=bindef.shape[0]-1
 
-'''
+    '''
 ;; We may not want calculate the mode-to-mode coupling matrix
 ;; at delta-ell of one (for reasons of computational efficiency, 
 ;; or space, or whatever), hence the spacing in ell, may be 
@@ -449,41 +449,41 @@ nbins=bindef.shape[0]-1
 ;; the new definition should be:
 ;;
 ;; P_{bl}=1/2/!PI * ell(ell+1) / sum_{ell in b} 1
-'''
+    '''
 
-p = np.zeros([nbin,nell],dtype=np.float64)
-q = np.zeros([nell,nbin],dtype=np.float64)
+    p = np.zeros([nbin,nell],dtype=np.float64)
+    q = np.zeros([nell,nbin],dtype=np.float64)
 
-for i in range(nbins):
+    for i in range(nbins):
     
-    idx=(ell <= bindef[i+1])*(ell > bindef[i])
-    cnt = np.sum(idx)
+        idx=(ell <= bindef[i+1])*(ell > bindef[i])
+        cnt = np.sum(idx)
     
-    if nocmbweighting:
-        p[i,idx] = 1/cnt
-        q[idx,i] = 1.
-    elif onesidecmbweighting:
-        p[i,idx] = 1/cnt
-        q[idx,i] = 1./(2*np.pi) * (ell[idx]*(ell[idx]+1))
+        if nocmbweighting:
+            p[i,idx] = 1/cnt
+            q[idx,i] = 1.
+        elif onesidecmbweighting:
+            p[i,idx] = 1/cnt
+            q[idx,i] = 1./(2*np.pi) * (ell[idx]*(ell[idx]+1))
+        else:
+            p[i,idx] = ((2*np.pi/cnt) / (ell[idx]*(ell[idx]+1)))
+            q[idx,i] = 1./(2*np.pi) * (ell[idx]*(ell[idx]+1))
+
+
+    scale = transferfunc*pixfunc**2*beamfunc**2
+    scale[scale<0]=0
+    scale = np.reshape(scale,nell)   #likely not needed   
+    if master:
+        print('using master scaling')
+
+        scaling = np.tile(scale,[nell,1]) #may be transpose of what want...
+
     else:
-        p[i,idx] = ((2*np.pi/cnt) / (ell[idx]*(ell[idx]+1))
-        q[idx,i] = 1./(2*np.pi) * (ell[idx]*(ell[idx]+1))
+        print('using non master scaling')
+        scale = np.reshape(np.sqrt(scale),[1,nell])
+        scaling = np.matmul(scale.T,scale)
 
+    #may have some transposes of what is desired... will need to check some
 
-scale = transferfunc*pixfunc**2*beamfunc**2
-scale[scale<0]=0
-scale = np.reshape(scale,nell)   #likely not needed   
-if master:
-    print('using master scaling')
-
-    scaling = np.tile(scale,[nell,1]) #may be transpose of what want...
-
-else:
-    print('using non master scaling')
-    scale = np.reshape(np.sqrt(scale),[1,nell])
-    scaling = np.matmul(scale.T,scale)
-
-#may have some transposes of what is desired... will need to check some
-
-return np.matmul(p,np.matmul(np.multiply((matrix,scaling),q)))
+    return np.matmul(p,np.matmul(np.multiply((matrix,scaling),q)))
 
