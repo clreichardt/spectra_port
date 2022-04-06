@@ -76,8 +76,7 @@ def create_real_file_list(dir, sfreqs=['90','150','220'], nbundle=200):
       400-599: 220 bundleA
 
     '''
-    maxlen    = len(os.path.join(dir, sfreqs[2]+stub+'{:d}'.format(nbundle-1)+estub))+1
-    file_list = np.zeros(3*nbundle,dtype='<U{:d}'.format(maxlen)) 
+    file_list = np.zeros(3*nbundle,dtype='<U265') 
 
     for j_freq, freq in enumerate(sfreqs):
         for i in range(nbundle):
@@ -244,7 +243,7 @@ if __name__ == "__main__" and NULL == True:
     nside=8192
     banddef = np.arange(0,13000,500)
 
-    workdir='/big_scratch/pc/null90/'
+    workdir='/big_scratch/pc/null90'
     setdef = np.zeros([100,2],dtype=np.int32)
     setdef[:,0]=np.arange(0,100,dtype=np.int32)
     setdef[:,1]=np.arange(100,200,dtype=np.int32)
@@ -264,7 +263,7 @@ if __name__ == "__main__" and NULL == True:
 
 
 
-    workdir='/big_scratch/pc/null150/'
+    workdir='/big_scratch/pc/null150'
     setdef = np.zeros([100,2],dtype=np.int32)
     setdef[:,0]=np.arange(0,100,dtype=np.int32)+200
     setdef[:,1]=np.arange(100,200,dtype=np.int32)+200
@@ -283,7 +282,7 @@ if __name__ == "__main__" and NULL == True:
         pkl.dump(null_spectrum,fp)
 
 
-    workdir='/big_scratch/pc/null220/'
+    workdir='/big_scratch/pc/null220'
     setdef = np.zeros([100,2],dtype=np.int32)
     setdef[:,0]=np.arange(0,100,dtype=np.int32)+400
     setdef[:,1]=np.arange(100,200,dtype=np.int32)+400
