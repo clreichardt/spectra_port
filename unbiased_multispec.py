@@ -8,7 +8,7 @@ import healpy
 
 import os
 from spt3g import core,maps, calibration
-from spectra_port import utils
+import utils
 import pickle as pkl
 import pdb
 import time
