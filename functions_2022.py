@@ -63,7 +63,7 @@ def create_bundle_maps_and_coadds(freq,nbundles=200):
         pkl.dump(store,fp)
     
 
-def create_real_file_list(dir, stub='GHz_bundle_',sfreqs=['90','150','220'], nbundle=200):
+def create_real_file_list(dir, stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz', nbundle=200):
     nfreq=len(sfreqs)
     
     '''
