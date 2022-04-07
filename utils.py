@@ -7,6 +7,17 @@ import healpy
 def quickplot(tmap,max=0.5):
     hp.visufunc.cartview(tmap,min=-1*max,max=max,latra=[-73,-38],lonra=[-55,55])
 
+def cast_clonly_to_theory_format(filein,fileout):
+    cls = np.loadtxt(filein)
+    lmax = len(cls)-1
+    l = np.arange(0,lmax+1)
+    lfac = l * (l+1)/(2*np.pi)
+    dl = cls * lfac
+    dl[0:2]=0
+    tmp = np.zeros([lmax+1,2])
+    tmp[:,0]=l
+    tmp[:,1]=dl
+    np.savetxt(fileout,tmp)
 
 def great_circle_distance(vec_border_lon, vec_border_lat, this_lon, this_lat):
     '''
@@ -164,11 +175,12 @@ def fill_in_theory(files,ells,cl2dl=False):
     nfreq = len(files)
     theory_interp = np.zeros([nfreq, nl],dtype=np.float32)
     for i in range(nfreq):
-        dl = np.loadtxt(files[i])
-        locl=np.arange(0,len(dl))
+        dls = np.loadtxt(files[i])
+        locl=dls[:,0]
+        dl = dls[:,1]
         if cl2dl:
             dl = dl * locl*(locl+1)/(2*np.pi)
-        dl[0:2]=0 #don't want 0,1
+        dl[locl < 2]=0 #don't want 0,1
         theory_interp[i,:] = np.interp(ells,locl,dl)
     return theory_interp   
         
