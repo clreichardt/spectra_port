@@ -482,7 +482,7 @@ def rebin_coupling_matrix( matrix, ell, bindef, transferfunc=None,
             q[idx,i] = 1./(2*np.pi) * (ell[idx]*(ell[idx]+1))
 
 
-    scale = transferfunc*pixfunc**2*beamfunc**2
+    scale = transferfunc*(pixelfunc*beamfunc)**2
     scale[scale<0]=0
     scale = np.reshape(scale,nell)   #likely not needed   
     if master:
@@ -496,6 +496,6 @@ def rebin_coupling_matrix( matrix, ell, bindef, transferfunc=None,
         scaling = np.matmul(scale.T,scale)
 
     #may have some transposes of what is desired... will need to check some
-
-    return np.matmul(p,np.matmul(np.multiply((matrix,scaling),q)))
+    #print(p.shape,matrix.shape,scaling.shape,q.shape)
+    return np.matmul(p,np.matmul(np.multiply(matrix,scaling),q))
 

@@ -258,6 +258,7 @@ def end_to_end(mapfiles,
     inv_sim_super_kernel= np.zeros([nspectra, nbands, nspectra, nbands],dtype=np.float64)
     iskips = np.zeros(nspectra, dtype=np.int32)
     for i in range(nspectra):
+        print(i,kernel.shape)
         super_kernel[i,:,i,:]     = utils.rebin_coupling_matrix(kernel, ellkern, banddef, transferfunc=transfer[i,:], beamfunc = beams[i,:])
         sim_super_kernel[i,:,i,:] = utils.rebin_coupling_matrix(kernel, ellkern, banddef, transferfunc=transfer[i,:], beamfunc = simbeams[i,:])
         slice = [superkern[i,j,i,j]==0 for j in range(nbands)]
