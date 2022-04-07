@@ -3,9 +3,9 @@ os.environ['OMP_NUM_THREADS'] = "6"
 import numpy as np
 import glob
 
-from spectra_port import unbiased_multispec as spec
-from spectra_port import utils
-from spectra_port import end_to_end
+import unbiased_multispec as spec
+import utils
+import end_to_end
 from spt3g import core,maps, calibration
 import argparse
 import pickle as pkl
@@ -63,7 +63,7 @@ def create_bundle_maps_and_coadds(freq,nbundles=200):
         pkl.dump(store,fp)
     
 
-def create_real_file_list(dir,stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200):
+def create_real_file_list(dir, sfreqs=['90','150','220'], nbundle=200):
     nfreq=len(sfreqs)
     
     #file_list = np.zeros(6*nsim,dtype='<U265') #max len 256
@@ -76,13 +76,15 @@ def create_real_file_list(dir,stub='GHz_bundle_',sfreqs=['90','150','220'],estub
       400-599: 220 bundleA
 
     '''
-    maxlen    = len(os.path.join(dir, sfreqs[2]+stub+'{:d}'.format(nbundle-1)+estub))+1
-    file_list = np.zeros(3*nbundle,dtype='<U{:d}'.format(maxlen)) 
+    file_list = np.zeros(3*nbundle,dtype='<U265') 
 
-    for j in range(nfreq):
+    for j_freq, freq in enumerate(sfreqs):
         for i in range(nbundle):
-            file_list[j*nbundle + i]     = os.path.join(dir, sfreqs[j]+stub+'{:d}'.format(i)+estub)
-            
+            file_list[j_freq*nbundle + i] = f"{dir}bundle_{i}_{freq}GHz.npz"
+
+    # for j in range(nfreq):
+    #     for i in range(nbundle):
+    #         file_list[j*nbundle + i]     = os.path.join(dir, sfreqs[j]+stub+'{:d}'.format(i)+estub)
     return file_list
 
 def create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100):
@@ -242,11 +244,11 @@ if __name__ == "__main__" and NULL == True:
     nside=8192
     banddef = np.arange(0,13000,500)
 
-    workdir='/big_scratch/cr/null90/'
+    workdir='/big_scratch/pc/null90'
     setdef = np.zeros([100,2],dtype=np.int32)
     setdef[:,0]=np.arange(0,100,dtype=np.int32)
     setdef[:,1]=np.arange(100,200,dtype=np.int32)
-    mapfiles = create_real_file_list('/sptgrid/user/pc/obs_shts/',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
+    mapfiles = create_real_file_list('/sptgrid/user/pc/obs_shts/', sfreqs=['90','150','220'], nbundle=200)
     null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                               lmax=13000,
                                               resume=True,
@@ -262,11 +264,11 @@ if __name__ == "__main__" and NULL == True:
 
 
 
-    workdir='/big_scratch/cr/null150/'
+    workdir='/big_scratch/pc/null150'
     setdef = np.zeros([100,2],dtype=np.int32)
     setdef[:,0]=np.arange(0,100,dtype=np.int32)+200
     setdef[:,1]=np.arange(100,200,dtype=np.int32)+200
-    mapfiles = create_real_file_list('/sptgrid/user/pc/obs_shts/',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
+    mapfiles = create_real_file_list('/sptgrid/user/pc/obs_shts/', sfreqs=['90','150','220'], nbundle=200)
     null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                               lmax=13000,
                                               resume=True,
@@ -281,11 +283,11 @@ if __name__ == "__main__" and NULL == True:
         pkl.dump(null_spectrum,fp)
 
 
-    workdir='/big_scratch/cr/null220/'
+    workdir='/big_scratch/pc/null220'
     setdef = np.zeros([100,2],dtype=np.int32)
     setdef[:,0]=np.arange(0,100,dtype=np.int32)+400
     setdef[:,1]=np.arange(100,200,dtype=np.int32)+400
-    mapfiles = create_real_file_list('/sptgrid/user/pc/obs_shts/',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
+    mapfiles = create_real_file_list('/sptgrid/user/pc/obs_shts/', sfreqs=['90','150','220'], nbundle=200)
     null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                               lmax=13000,
                                               resume=True,
