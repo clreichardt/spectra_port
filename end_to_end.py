@@ -1,7 +1,7 @@
 
 import numpy as np
-import utils
-import unbiased_multispec as spec
+from spectra_port import utils
+from spectra_port import unbiased_multispec as spec
 import time,os
 import pickle as pkl
     
@@ -241,6 +241,10 @@ def end_to_end(mapfiles,
     
     output['transfer_iter'] = transfer_iter
     output['transfer']=transfer
+
+    with open(datadir+'tmp_posttransfer.pkl', 'wb') as f:
+        pkl.dump(output,f)
+
             
     ##################
     # 5: Create binned kernel, including mode-coupling, beams, pixel WFs, transfer functions
@@ -261,7 +265,7 @@ def end_to_end(mapfiles,
         print(i,kernel.shape)
         super_kernel[i,:,i,:]     = utils.rebin_coupling_matrix(kernel, ellkern, banddef, transferfunc=transfer[i,:], beamfunc = beams[i,:])
         sim_super_kernel[i,:,i,:] = utils.rebin_coupling_matrix(kernel, ellkern, banddef, transferfunc=transfer[i,:], beamfunc = simbeams[i,:])
-        slice = [superkern[i,j,i,j]==0 for j in range(nbands)]
+        slice = [super_kernel[i,j,i,j]==0 for j in range(nbands)]
         try:
             iskip = np.where(slice)[-1][-1]
         except IndexError:
