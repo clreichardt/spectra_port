@@ -238,7 +238,7 @@ def end_to_end(mapfiles,
     for i in range(nsets): 
         for j in range(i,nsets):
             transfer[k,:] = np.sqrt(transfer_iter[i,-1,:]*transfer_iter[j,-1,:])
-    
+            k+=1
     output['transfer_iter'] = transfer_iter
     output['transfer']=transfer
 
