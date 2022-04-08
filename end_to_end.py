@@ -296,7 +296,8 @@ def end_to_end(mapfiles,
     print('last step took {:.0f}'.format(newtime-lasttime))
     lasttime=newtime
     print('unbias spectra')
-    spectrum = np.reshape(np.matmul(invkernmat, data_spectrum.spectrum),[nspectra,nbands])
+    print(invkernmat.shape,data_spectrum.spectrum.shape)
+    spectrum = np.reshape(np.matmul(invkernmat, np.reshape(data_spectrum.spectrum,[nspectra*nbands])),[nspectra,nbands])
 
     output['spectrum']=spectrum
     ##################
@@ -342,7 +343,7 @@ def end_to_end(mapfiles,
             windowfunc[iskip+i*nbands:nbands+i*nbands,:] = window_function_calc(banddef,transdic,nskip=iskip,ellmin = win_minell,ellmax=win_maxell)
 
 
-    output['windowfunc']=windowfunc
+        output['windowfunc']=windowfunc
 
     
     return output
