@@ -63,7 +63,26 @@ def create_bundle_maps_and_coadds(freq,nbundles=200):
         pkl.dump(store,fp)
     
 
-def create_real_file_list(dir, stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz', nbundle=200):
+def create_real_file_list(dir, stub='bundle_',sfreqs=['90','150','220'],estub='GHz.npz', nbundle=200):
+    nfreq=len(sfreqs)
+    
+    '''
+    desired output order (for 200 bundles)
+      0-199: 90 bundleA
+
+      200-399: 150 bundleA
+
+      400-599: 220 bundleA
+
+    '''
+    file_list = np.zeros(nfreq*nbundle,dtype='<U265') 
+
+    for j in range(nfreq):
+        for i in range(nbundle):
+            file_list[j*nbundle + i]     = os.path.join(dir, stub+'{:d}'.format(i)+'_'+sfreqs[j]+estub)
+    return file_list
+
+def create_real_file_list_v3(dir, stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz', nbundle=200):
     nfreq=len(sfreqs)
     
     '''
@@ -137,11 +156,14 @@ if __name__ == "__main__" and PREP is True:
     workdir = '/sptlocal/user/creichardt/xspec_2022/'
     workdir = '/big_scratch/cr/xspec_2022/'
     lmax = 13000
-    dir='/sptgrid/analysis/highell_TT_19-20/v3/mockobs/v1_2bundles/'
+    dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
+    
 
-    mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
-    processedshtfile = workdir + '/mc/shts_processed.bin'
-    spec.reformat_shts(mcshtfilelist, processedshtfile,
+    if True:
+        mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
+        print(mcshtfilelist)        
+        processedshtfile = workdir + '/mc/shts_processed.bin'
+        spec.reformat_shts(mcshtfilelist, processedshtfile,
                            lmax,
                            cmbweighting = True, 
                            mask  = None,
@@ -150,13 +172,14 @@ if __name__ == "__main__" and PREP is True:
                            no_reorder=False,
                            ram_limit = None,
                           )
-
+        
     print("Now real")
+    if True:
     #    exit()
-
-    datashtfilelist = create_real_file_list('/sptgrid/user/pc/obs_shts/',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
-    processedshtfile = workdir + '/data/shts_processed.bin'
-    spec.reformat_shts(datashtfilelist, processedshtfile,
+        dir='/sptgrid/analysis/highell_TT_19-20/v4/obs_shts/'
+        datashtfilelist = create_real_file_list(dir,stub='bundle_',sfreqs=['90','150','220'],estub='GHz.npz',nbundle=200)
+        processedshtfile = workdir + '/data/shts_processed.bin'
+        spec.reformat_shts(datashtfilelist, processedshtfile,
                            lmax,
                            cmbweighting = True, 
                            mask  = None,
@@ -202,8 +225,10 @@ if __name__ == "__main__" and END == True:
                    '/sptlocal/user/creichardt/hiell2022/sim_dls_150ghz.txt',
                    '/sptlocal/user/creichardt/hiell2022/sim_dls_220ghz.txt']
 
-    mapfiles = create_real_file_list('/sptgrid/user/pc/obs_shts/',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
-    dir='/sptgrid/analysis/highell_TT_19-20/v3/mockobs/v1_2bundles/'
+    dir='/sptgrid/analysis/highell_TT_19-20/v4/obs_shts/'
+    mapfiles = create_real_file_list(dir,stub='bundle_',sfreqs=['90','150','220'],estub='GHz.npz',nbundle=200)
+
+    dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
     mcmapfiles = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
     
     
