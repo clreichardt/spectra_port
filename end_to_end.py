@@ -69,6 +69,9 @@ def end_to_end(mapfiles,
     
     #plan to use wrapper to NaMaster, to be written
     info, kernel = utils.load_mll(kernel_file)
+    # dimensions --
+    # kernel[ell_out, ell_in]
+    #
     banddef_fine = utils.bands_from_range(info)
     ellkern = utils.band_centers(banddef_fine)
 
@@ -227,8 +230,10 @@ def end_to_end(mapfiles,
     '''
     
     transfer_iter = np.zeros([ntfs,niter,nkern])
+    ii=0
     for i in range(nsets):        
-        cl_mc = mc_spectrum_fine.spectrum[:,i]
+        cl_mc = mc_spectrum_fine.spectrum[:,ii]
+        ii += (nsets -i)
         transfer_iter[i,0,:] = utils.transfer_initial_estimate(cl_mc, theory_dls_interp[i,:], simbeams_interp[i,:], fskyw2)
         for j in range(1,niter):
             transfer_iter[i,j,:] = utils.transfer_iteration( transfer_iter[i,j-1,:], cl_mc, theory_dls_interp[i,:], simbeams_interp[i,:], fskyw2, kernel)
