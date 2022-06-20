@@ -20,12 +20,14 @@ my_parser.add_argument('-prep', action='store_true',dest='prep')
 my_parser.add_argument('-end', action='store_true',dest='end')
 my_parser.add_argument('-null', action='store_true',dest='null')
 my_parser.add_argument('-coadd', action='store_true',dest='coadd')
+my_parser.add_argument('-sht', action='store_true',dest='sht')
 args = my_parser.parse_args()
 
 PREP=args.prep
 END=args.end
 NULL=args.null
 COADD=args.coadd
+SHT = args.sht
 
 
 def create_bundle_maps_and_coadds(freq,nbundles=200):
@@ -327,3 +329,34 @@ if __name__ == "__main__" and COADD == True:
     create_bundle_maps_and_coadds(90,nbundles=200)
     create_bundle_maps_and_coadds(150,nbundles=200)
     create_bundle_maps_and_coadds(220,nbundles=200)
+
+
+
+if __name__ == "__main__" and SHT == True:
+    subfield='ra0hdec-52.25'
+    calworkdir = '/big_scratch/cr/xspec_2022/cal/'+subfield+'/'
+    if True:
+        dir='/sptlocal/user/creichardt/hiell2022/bundle10/'
+        rlist = create_real_file_list_v3(dir, stub='bundle_',sfreqs=['90','150','220'],estub='GHz.pkl', nbundle=10):
+        #mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
+        print(rlist)
+        lmax = 3100
+        nside= 8192
+        #with open(dir+'../mask_50mJy_'+subfield+'.pkl','rb') as fp:
+        #    mask = pkl.load(fp)
+        mask = None
+        processedshtfile = calworkdir + '/data/shts_processed.bin'
+        spec.take_and_reformat_shts(rlist, processedshtfile,
+                           nside,lmax,
+                           cmbweighting = True, 
+                           mask  = mask,
+                           kmask = None,
+                           ell_reordering=None,
+                           no_reorder=False,
+                           ram_limit = None,
+                           npmapformat=False, 
+                           map_key='T'
+                          ) 
+
+    
+
