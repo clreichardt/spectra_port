@@ -156,7 +156,8 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
                            ell_reordering=None,
                            no_reorder=False,
                            ram_limit = None,
-                           npmapformat=False, 
+                           npmapformat=False,
+                           pklmapformat=False,
                            map_key='T'
                           ) -> 'May be done in Fortran - output is a file':
     ''' 
@@ -236,7 +237,15 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
             count += 1
 
             #TBD get a map
-            if not npmapformat:
+            if pklmapformat:
+                with open(file,'rb') as fp:
+                    map_scratch = pkl.load(fp)
+                map_scratch *= mask
+            elif npmapformat:
+                map_tmp = utils.load_spt3g_cutsky_healpix_ring_map(file,npix)
+                map_scratch[map_inds]=map_tmp * cut_mask
+
+            else:
                 ring_indices, map_tmp = load_spt3g_healpix_ring_map(file,map_key=map_key)
 
                 map_scratch[:]=0 #reset
@@ -246,9 +255,8 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
                 #may need to change the next line based on formatting
                 if mask is not None:
                     map_scratch  = mask*map_scratch
-            else:
-                map_tmp = utils.load_spt3g_cutsky_healpix_ring_map(file,npix)
-                map_scratch[map_inds]=map_tmp * cut_mask
+
+
                     
             #gets alms
             alms = healpy.sphtfunc.map2alm(map_scratch,lmax = lmax, pol=False, use_pixel_weights=False, iter = 1,datapath='/sptlocal/user/creichardt/healpy-data/')

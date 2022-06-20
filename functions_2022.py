@@ -367,16 +367,17 @@ if __name__ == "__main__" and SHT == True:
         mask = None
         processedshtfile = calworkdir + '/data/shts_processed.bin'
         spec.take_and_reformat_shts(rlist, processedshtfile,
-                           nside,lmax,
-                           cmbweighting = True, 
-                           mask  = mask,
-                           kmask = None,
-                           ell_reordering=None,
-                           no_reorder=False,
-                           ram_limit = None,
-                           npmapformat=False, 
-                           map_key='T'
-                          ) 
+                                    nside,lmax,
+                                    cmbweighting = True, 
+                                    mask  = mask,
+                                    kmask = None,
+                                    ell_reordering=None,
+                                    no_reorder=False,
+                                    ram_limit = None,
+                                    npmapformat=False,
+                                    pklmapformat=True,
+                                    map_key='T'
+        ) 
 
     
 
