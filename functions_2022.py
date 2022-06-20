@@ -103,6 +103,26 @@ def create_real_file_list_v3(dir, stub='GHz_bundle_',sfreqs=['90','150','220'],e
             file_list[j*nbundle + i]     = os.path.join(dir, sfreqs[j]+stub+'{:d}'.format(i)+estub)
     return file_list
 
+
+def create_real_file_list_v4(dir, stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz', nbundle=200):
+    nfreq=len(sfreqs)
+    
+    '''
+    desired output order (for 200 bundles)
+      0-199: 90 bundleA
+
+      200-399: 150 bundleA
+
+      400-599: 220 bundleA
+
+    '''
+    file_list = np.zeros(nfreq*nbundle,dtype='<U265') 
+
+    for j in range(nfreq):
+        for i in range(nbundle):
+            file_list[j*nbundle + i]     = os.path.join(dir, stub+'{:d}_'.format(i)+sfreqs[j]+estub)
+    return file_list
+
 def create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100):
     nfreq=len(sfreqs)
     listA  = []
@@ -337,7 +357,7 @@ if __name__ == "__main__" and SHT == True:
     calworkdir = '/big_scratch/cr/xspec_2022/cal/'+subfield+'/'
     if True:
         dir='/sptlocal/user/creichardt/hiell2022/bundle10/'
-        rlist = create_real_file_list_v3(dir, stub='bundle_',sfreqs=['90','150','220'],estub='GHz.pkl', nbundle=10):
+        rlist = create_real_file_list_v4(dir, stub='bundle_',sfreqs=['90','150','220'],estub='GHz.pkl', nbundle=10)
         #mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
         print(rlist)
         lmax = 3100
