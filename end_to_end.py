@@ -1,7 +1,7 @@
 
 import numpy as np
-from spectra_port import utils
-from spectra_port import unbiased_multispec as spec
+import utils
+import unbiased_multispec as spec
 import time,os
 import pickle as pkl
     
