@@ -14,6 +14,8 @@ PREP= False
 END = False
 NULL= False
 COADD= False
+SHT = False
+CAL = False
 
 my_parser = argparse.ArgumentParser()
 my_parser.add_argument('-prep', action='store_true',dest='prep')
@@ -21,13 +23,16 @@ my_parser.add_argument('-end', action='store_true',dest='end')
 my_parser.add_argument('-null', action='store_true',dest='null')
 my_parser.add_argument('-coadd', action='store_true',dest='coadd')
 my_parser.add_argument('-sht', action='store_true',dest='sht')
+my_parser.add_argument('-cal', action='store_true',dest='cal')
+#my_parser.add_argument('-freq', default=None ,dest='freq')
 args = my_parser.parse_args()
 
 PREP=args.prep
 END=args.end
 NULL=args.null
 COADD=args.coadd
-SHT = args.sht
+CAL = args.cal
+
 
 
 def create_bundle_maps_and_coadds(freq,nbundles=200):
@@ -386,3 +391,32 @@ if __name__ == "__main__" and SHT == True:
 
     
 
+if __name__ == "__main__" and CAL == True:
+
+    subfields = ['ra0hdec-44.75','ra0hdec-52.25','ra0hdec-59.75','ra0hdec-67.25']
+    subfields = ['ra0hdec-59.75','ra0hdec-67.25']]
+    mapfiles = create_real_file_list_v4(dir, stub='bundle_',sfreqs=['90','150','220'],estub='GHz.pkl', nbundle=10)
+    banddef = np.arange(0,3100,50)   
+    for subfield in subfields:
+        workdir='/big_scratch/cr/xspec_2022/cal/'+subfield+'/data/'
+        shtfile = workdir+'shts_processed.bin'
+        setdef = np.zeros([10,3],dtype=np.int32)
+        setdef[:,0]=np.arange(0,10,dtype=np.int32)
+        setdef[:,1]=np.arange(0,10,dtype=np.int32)+10
+        setdef[:,2]=np.arange(0,10,dtype=np.int32)+20
+
+        with open('maskfile','rb') as fp:
+            mask = pkl.load(fp)
+
+        cal_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+                                              lmax=3100,
+                                              resume=True,
+                                              basedir=workdir,
+                                              persistdir=workdir,
+                                              setdef=setdef,
+                                              jackknife=False, auto=False,
+                                              kmask=None,
+                                              cmbweighting=True)
+        file_out = workdir + 'cal_spectrum.pkl'
+        with open(file_out,'wb') as fp:
+            pkl.dump(null_spectrum,fp)
