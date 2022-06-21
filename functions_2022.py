@@ -355,7 +355,7 @@ if __name__ == "__main__" and COADD == True:
 if __name__ == "__main__" and SHT == True:
     subfield='ra0hdec-44.75'
     #subfield='ra0hdec-52.25'
-    subfield='ra0hdec-59.75'
+    #subfield='ra0hdec-59.75'
     #subfield='ra0hdec-67.25'
     calworkdir = '/big_scratch/cr/xspec_2022/cal/'+subfield+'/'
     #os.makedirs(calworkdir+'data/',exist_ok=True)
