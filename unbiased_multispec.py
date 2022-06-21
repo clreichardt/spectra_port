@@ -238,9 +238,10 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
 
             #TBD get a map
             if pklmapformat:
-                with open(file,'rb') as fp:
-                    map_scratch = pkl.load(fp)
-                map_scratch *= mask
+                with open(file,'rb') as fb:
+                    map_scratch = pkl.load(fb)
+                if mask is not None:
+                    map_scratch  = mask*map_scratch
             elif npmapformat:
                 map_tmp = utils.load_spt3g_cutsky_healpix_ring_map(file,npix)
                 map_scratch[map_inds]=map_tmp * cut_mask

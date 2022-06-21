@@ -353,8 +353,13 @@ if __name__ == "__main__" and COADD == True:
 
 
 if __name__ == "__main__" and SHT == True:
-    subfield='ra0hdec-52.25'
+    subfield='ra0hdec-44.75'
+    #subfield='ra0hdec-52.25'
+    subfield='ra0hdec-59.75'
+    #subfield='ra0hdec-67.25'
     calworkdir = '/big_scratch/cr/xspec_2022/cal/'+subfield+'/'
+    #os.makedirs(calworkdir+'data/',exist_ok=True)
+    print(calworkdir)
     if True:
         dir='/sptlocal/user/creichardt/hiell2022/bundle10/'
         rlist = create_real_file_list_v4(dir, stub='bundle_',sfreqs=['90','150','220'],estub='GHz.pkl', nbundle=10)
@@ -362,9 +367,9 @@ if __name__ == "__main__" and SHT == True:
         print(rlist)
         lmax = 3100
         nside= 8192
-        #with open(dir+'../mask_50mJy_'+subfield+'.pkl','rb') as fp:
-        #    mask = pkl.load(fp)
-        mask = None
+        with open(dir+'../mask_50mJy_'+subfield+'.pkl','rb') as fp:
+            mask = pkl.load(fp)
+        #mask = None
         processedshtfile = calworkdir + '/data/shts_processed.bin'
         spec.take_and_reformat_shts(rlist, processedshtfile,
                                     nside,lmax,
