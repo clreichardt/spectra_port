@@ -394,7 +394,7 @@ if __name__ == "__main__" and SHT == True:
 if __name__ == "__main__" and CAL == True:
 
     subfields = ['ra0hdec-44.75','ra0hdec-52.25','ra0hdec-59.75','ra0hdec-67.25']
-    subfields = ['ra0hdec-59.75','ra0hdec-67.25']]
+    subfields = ['ra0hdec-59.75','ra0hdec-67.25']
     mapfiles = create_real_file_list_v4(dir, stub='bundle_',sfreqs=['90','150','220'],estub='GHz.pkl', nbundle=10)
     banddef = np.arange(0,3100,50)   
     for subfield in subfields:
