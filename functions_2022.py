@@ -446,7 +446,7 @@ if __name__ == "__main__" and TEST == True:
     workdir = '/big_scratch/cr/xspec_2022/'
     #os.makedirs(calworkdir+'data/',exist_ok=True)
     print(workdir)
-    if True:
+    if False:
         dir='/sptlocal/user/pc/g3files/220GHz/'
         rlist = [dir+'combined_T_219ghz_00088.g3',dir+'combined_T_219ghz_00066.g3']
 
@@ -471,4 +471,26 @@ if __name__ == "__main__" and TEST == True:
                                     pklmapformat=False,
                                     map_key='T'
         )
+    if True:
+        dir='/sptlocal/user/pc/g3files/220GHz/'    
+        rlist = [dir+'combined_T_219ghz_00088.g3',dir+'combined_T_219ghz_00066.g3']
+        shtfile = workdir+'test/shts_processed.bin'
+        setdef=np.arange(0,2,dtype=np.int32)
 
+        maskfile='/sptlocal/user/creichardt/hiell2022/mask_ra0hdec-52.25.pkl'
+        with open(maskfile,'rb') as fp:
+            mask = pkl.load(fp)
+        nside=8192
+        banddef = np.arange(0,7100,50)
+        mc_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+                                              lmax=7100,
+                                              resume=True,
+                                              basedir=workdir,
+                                              persistdir=workdir,
+                                              setdef=setdef,
+                                              jackknife=False, auto=True,
+                                              kmask=None,
+                                              cmbweighting=True)
+        file_out = workdir + 'mc_spectrum.pkl'
+        with open(file_out,'wb') as fp:
+            pkl.dump(mc_spectrum,fp)
