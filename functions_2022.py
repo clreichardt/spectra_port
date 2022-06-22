@@ -473,16 +473,22 @@ if __name__ == "__main__" and TEST == True:
         )
     if True:
         dir='/sptlocal/user/pc/g3files/220GHz/'    
-        rlist = [dir+'combined_T_219ghz_00088.g3',dir+'combined_T_219ghz_00066.g3']
-        shtfile = workdir+'test/shts_processed.bin'
-        setdef=np.arange(0,2,dtype=np.int32)
+
+        rlist = np.zeros([2,1],dtype=object)
+        rlist[0,0]=dir+'combined_T_219ghz_00088.g3'
+        rlist[1,0]=dir+'combined_T_219ghz_00066.g3'
+        workdir=workdir+'test/'
+        shtfile = workdir+'shts_processed.bin'
+        setdef=np.zeros([2,1],dtype=np.int)
+        
+        setdef[:,0]=np.arange(0,2,dtype=np.int32)
 
         maskfile='/sptlocal/user/creichardt/hiell2022/mask_ra0hdec-52.25.pkl'
         with open(maskfile,'rb') as fp:
             mask = pkl.load(fp)
         nside=8192
         banddef = np.arange(0,7100,50)
-        mc_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+        mc_spectrum      = spec.unbiased_multispec(rlist,mask,banddef,nside,
                                               lmax=7100,
                                               resume=True,
                                               basedir=workdir,
