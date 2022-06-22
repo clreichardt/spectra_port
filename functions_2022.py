@@ -32,7 +32,7 @@ END=args.end
 NULL=args.null
 COADD=args.coadd
 CAL = args.cal
-
+SHT = args.sht
 
 
 def create_bundle_maps_and_coadds(freq,nbundles=200):
@@ -395,8 +395,23 @@ if __name__ == "__main__" and CAL == True:
 
     subfields = ['ra0hdec-44.75','ra0hdec-52.25','ra0hdec-59.75','ra0hdec-67.25']
     subfields = ['ra0hdec-59.75','ra0hdec-67.25']
+    subfields = ['ra0hdec-44.75','ra0hdec-52.25']
+    subfields = ['ra0hdec-52.25']
+    subfields = ['ra0hdec-52.25','ra0hdec-59.75','ra0hdec-67.25']
+    subfields = ['ra0hdec-44.75']
+    dir='/sptlocal/user/creichardt/hiell2022/bundle10/'
     mapfiles = create_real_file_list_v4(dir, stub='bundle_',sfreqs=['90','150','220'],estub='GHz.pkl', nbundle=10)
-    banddef = np.arange(0,3100,50)   
+    #banddef = np.arange(0,3100,50)   
+    banddef = np.asarray([0,188,288,388,  #dump bins
+               424,  460,  496,  532,  568,  604,  640,  676,  712,  748,  # 4x planck binning = 36
+               784,  820,  856,  892,  928,  964, 1000, 1036, 1072, 1108, 1144,
+               1180, 1216, 1252, 1288, 1324, 1360, 1396, 1432, 1468, 1504,
+               1538, 1572, 1606, 1640, 1674, 1708, 1742, 1776, 1810, 1844, #moved to 2x planck = 34
+               1878, 1912, 1946, 1980, 2014, 
+               2047, 2080, 2113, 2146, 2179, 2212, 2245, 2278, 2311, 2344, # moved to 1x planck = 33
+               2377, 2410, 2443, 2476, 2509])
+
+ 
     for subfield in subfields:
         workdir='/big_scratch/cr/xspec_2022/cal/'+subfield+'/data/'
         shtfile = workdir+'shts_processed.bin'
@@ -404,10 +419,10 @@ if __name__ == "__main__" and CAL == True:
         setdef[:,0]=np.arange(0,10,dtype=np.int32)
         setdef[:,1]=np.arange(0,10,dtype=np.int32)+10
         setdef[:,2]=np.arange(0,10,dtype=np.int32)+20
-
-        with open('maskfile','rb') as fp:
+        maskfile=dir+'../mask_50mJy_'+subfield+'.pkl'
+        with open(maskfile,'rb') as fp:
             mask = pkl.load(fp)
-
+        nside=8192
         cal_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                               lmax=3100,
                                               resume=True,
@@ -419,4 +434,4 @@ if __name__ == "__main__" and CAL == True:
                                               cmbweighting=True)
         file_out = workdir + 'cal_spectrum.pkl'
         with open(file_out,'wb') as fp:
-            pkl.dump(null_spectrum,fp)
+            pkl.dump(cal_spectrum,fp)
