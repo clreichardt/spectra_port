@@ -16,6 +16,7 @@ NULL= False
 COADD= False
 SHT = False
 CAL = False
+TEST= False
 
 my_parser = argparse.ArgumentParser()
 my_parser.add_argument('-prep', action='store_true',dest='prep')
@@ -24,6 +25,7 @@ my_parser.add_argument('-null', action='store_true',dest='null')
 my_parser.add_argument('-coadd', action='store_true',dest='coadd')
 my_parser.add_argument('-sht', action='store_true',dest='sht')
 my_parser.add_argument('-cal', action='store_true',dest='cal')
+my_parser.add_argument('-test', action='store_true',dest='test')
 #my_parser.add_argument('-freq', default=None ,dest='freq')
 args = my_parser.parse_args()
 
@@ -32,6 +34,7 @@ END=args.end
 NULL=args.null
 COADD=args.coadd
 CAL = args.cal
+TEST= args.test
 
 
 
@@ -420,3 +423,34 @@ if __name__ == "__main__" and CAL == True:
         file_out = workdir + 'cal_spectrum.pkl'
         with open(file_out,'wb') as fp:
             pkl.dump(null_spectrum,fp)
+
+if __name__ == "__main__" and TEST == True:
+        #subfield='ra0hdec-67.25'
+    workdir = '/big_scratch/cr/xspec_2022/'
+    #os.makedirs(calworkdir+'data/',exist_ok=True)
+    print(workdir)
+    if True:
+        dir='/sptlocal/user/pc/g3files/220GHz/'
+        rlist = [dir+'combined_T_219ghz_00088.g3',dir+'combined_T_219ghz_00066.g3']
+
+        #mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
+        print(rlist)
+        lmax = 7100
+        nside= 8192
+        mfile='/sptlocal/user/creichardt/hiell2022/mask_ra0hdec-52.25.pkl'
+        with open(mfile,'rb') as fp:
+            mask = pkl.load(fp)
+        #mask = None
+        processedshtfile = workdir + '/test/shts_processed.bin'
+        spec.take_and_reformat_shts(rlist, processedshtfile,
+                                    nside,lmax,
+                                    cmbweighting = True, 
+                                    mask  = mask,
+                                    kmask = None,
+                                    ell_reordering=None,
+                                    no_reorder=False,
+                                    ram_limit = None,
+                                    npmapformat=False,
+                                    pklmapformat=True,
+                                    map_key='T'
+        )
