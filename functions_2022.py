@@ -468,7 +468,7 @@ if __name__ == "__main__" and TEST == True:
                                     no_reorder=False,
                                     ram_limit = None,
                                     npmapformat=False,
-                                    pklmapformat=True,
+                                    pklmapformat=False,
                                     map_key='T'
         )
 
