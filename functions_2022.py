@@ -295,12 +295,25 @@ if __name__ == "__main__" and NULL == True:
     nside=8192
     banddef = np.arange(0,13000,500)
 
-    workdir='/big_scratch/pc/null90/'
+    workdir='/big_scratch/cr/xspec_2022/data/'
     setdef = np.zeros([100,2],dtype=np.int32)
     setdef[:,0]=np.arange(0,100,dtype=np.int32)
     setdef[:,1]=np.arange(100,200,dtype=np.int32)
     mapfiles = create_real_file_list('/sptgrid/user/pc/obs_shts/',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
 
+    spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+                                              lmax=13000,
+                                              resume=True,
+                                              basedir=workdir,
+                                              persistdir=workdir,
+                                              setdef=setdef,
+                                              jackknife=False, auto=False,
+                                              kmask=None,
+                                              cmbweighting=True)
+    file_out = workdir + 'spectrum_nullbins.pkl'
+    with open(file_out,'wb') as fp:
+        pkl.dump(spectrum,fp)
+    
     null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                               lmax=13000,
                                               resume=True,
@@ -310,13 +323,13 @@ if __name__ == "__main__" and NULL == True:
                                               jackknife=True, auto=False,
                                               kmask=None,
                                               cmbweighting=True)
-    file_out = workdir + 'null_spectrum.pkl'
+    file_out = workdir + 'null_spectrum_90.pkl'
     with open(file_out,'wb') as fp:
         pkl.dump(null_spectrum,fp)
 
 
 
-    workdir='/big_scratch/pc/null150/'
+
     setdef = np.zeros([100,2],dtype=np.int32)
     setdef[:,0]=np.arange(0,100,dtype=np.int32)+200
     setdef[:,1]=np.arange(100,200,dtype=np.int32)+200
@@ -330,12 +343,10 @@ if __name__ == "__main__" and NULL == True:
                                               jackknife=True, auto=False,
                                               kmask=None,
                                               cmbweighting=True)
-    file_out = workdir + 'null_spectrum.pkl'
+    file_out = workdir + 'null_spectrum_150.pkl'
     with open(file_out,'wb') as fp:
         pkl.dump(null_spectrum,fp)
 
-
-    workdir='/big_scratch/pc/null220/'
     setdef = np.zeros([100,2],dtype=np.int32)
     setdef[:,0]=np.arange(0,100,dtype=np.int32)+400
     setdef[:,1]=np.arange(100,200,dtype=np.int32)+400
@@ -349,7 +360,7 @@ if __name__ == "__main__" and NULL == True:
                                               jackknife=True, auto=False,
                                               kmask=None,
                                               cmbweighting=True)
-    file_out = workdir + 'null_spectrum.pkl'
+    file_out = workdir + 'null_spectrum_220.pkl'
     with open(file_out,'wb') as fp:
         pkl.dump(null_spectrum,fp)
 
