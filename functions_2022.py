@@ -296,9 +296,10 @@ if __name__ == "__main__" and NULL == True:
     banddef = np.arange(0,13000,500)
 
     workdir='/big_scratch/cr/xspec_2022/data/'
-    setdef = np.zeros([100,2],dtype=np.int32)
-    setdef[:,0]=np.arange(0,100,dtype=np.int32)
-    setdef[:,1]=np.arange(100,200,dtype=np.int32)
+    setdef = np.zeros([200,3],dtype=np.int32)
+    setdef[:,0]=np.arange(0,200,dtype=np.int32)
+    setdef[:,1]=np.arange(200,400,dtype=np.int32)
+    setdef[:,2]=np.arange(400,600,dtype=np.int32)
     mapfiles = create_real_file_list('/sptgrid/user/pc/obs_shts/',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
 
     spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
@@ -313,7 +314,12 @@ if __name__ == "__main__" and NULL == True:
     file_out = workdir + 'spectrum_nullbins.pkl'
     with open(file_out,'wb') as fp:
         pkl.dump(spectrum,fp)
+
+    exit()
     
+    setdef = np.zeros([100,2],dtype=np.int32)
+    setdef[:,0]=np.arange(0,100,dtype=np.int32)
+    setdef[:,1]=np.arange(100,200,dtype=np.int32)
     null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                               lmax=13000,
                                               resume=True,
