@@ -293,13 +293,13 @@ if __name__ == "__main__" and NULL == True:
     mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
     mask = np.load(mask_file)
     nside=8192
-    banddef = np.arange(0,13000,500)
+    banddef = np.arange(0,12000,500)
 
     workdir='/big_scratch/cr/xspec_2022/data/'
     setdef = np.zeros([200,1],dtype=np.int32)
     setdef[:,0]=np.arange(0,200,dtype=np.int32)
     mapfiles = create_real_file_list('/sptgrid/user/pc/obs_shts/',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
-    if False:
+    if True:
         spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                               lmax=13000,
                                               resume=True,
@@ -437,7 +437,6 @@ if __name__ == "__main__" and NULL == True:
         pkl.dump(null_spectrum,fp)
     del null_spectrum
 
-    exit()
     
     setdef = np.zeros([100,2],dtype=np.int32)
     setdef[:,0]=np.arange(0,100,dtype=np.int32)
