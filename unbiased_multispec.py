@@ -406,7 +406,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
     # number of arrays we need to make to do this efficiently: 6 or less
     # number of pixels in an fft: winsize^2
     #ram_required=16*6*lmax**2
-    max_nmodes=ram_limit/nshts/32 #64 b complex 
+    max_nmodes=ram_limit/nshts/12 #64 b complex - uses 8 bytes, and gave it an extra x1.5 for other arrays 
 
 
     assert(banddef[0] == 0 and banddef[-1] < lmax)
@@ -422,6 +422,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
         istop = np.where((band_start_idx - band_start_idx[i]) < max_nmodes)[0][-1] # get out of tuple, then take last elem of array
 
         if istop <= i:
+            pdb.set_trace()
             raise Exception("Insufficient ram for processing even a single bin")
 
         print('take_all_cross_spectra: loading bands {} {}'.format(i,istop-1))
