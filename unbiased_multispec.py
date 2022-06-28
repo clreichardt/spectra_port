@@ -405,8 +405,9 @@ def take_all_cross_spectra( processedshtfile, lmax,
     # number of bytes in a Dcomplex: 16
     # number of arrays we need to make to do this efficiently: 6 or less
     # number of pixels in an fft: winsize^2
-    ram_required=16*6*lmax**2
+    #ram_required=16*6*lmax**2
     max_nmodes=ram_limit/nshts/32 #64 b complex 
+
 
     assert(banddef[0] == 0 and banddef[-1] < lmax)
     #assumes banddef[0]=0
