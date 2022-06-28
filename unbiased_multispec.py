@@ -356,14 +356,16 @@ def generate_coadd_shts( processed_shtfile, coadd_shtfile,  lmax,
     return(np.reshape(np.arange(setsize,dtype=np.int32),[setsize,1]))
 
 
-def load_cross_spectra_data_from_disk(shtfile, nshts, npersht, start, stop):
+def load_cross_spectra_data_from_disk(shtfile, startsht,stopsht, npersht, start, stop):
     nelems = stop - start + 1
+    nshts = stopsht - startsht + 1
     buffer_bytes = np.zeros(1,dtype=AlmType).nbytes
     data = np.zeros([nshts,nelems],dtype=AlmType)
     print(nshts,nelems)
     with open(shtfile,'r') as fp:
         for i in range(nshts):
-            fp.seek((i*npersht+start) * buffer_bytes)
+            j = i + startsht
+            fp.seek((j*npersht+start) * buffer_bytes)
             data[i,:] = np.fromfile(fp,count=nelems,dtype=AlmType)
     return data
 
@@ -393,7 +395,14 @@ def take_all_cross_spectra( processedshtfile, lmax,
 
     nbands = banddef.shape[0]-1
     if nshts is  None:
-        nshts  = np.int(np.max(setdef)+1.001)
+        startsht = np.int(np.min(setdef)+0.001)
+        stopsht = np.int(np.max(setdef)+0.001)
+        nshts  = stopsht-startsht+1
+        revsetdef = setdef - startsht
+    else:
+        startsht=0
+        stopsht = nshts-1
+        revsetdef=setdef
 
     npersht = healpy.sphtfunc.Alm.getsize(lmax)
     #pdb.set_trace()
@@ -431,7 +440,8 @@ def take_all_cross_spectra( processedshtfile, lmax,
         # get data for as many bins as will fit in our ramlimit
 
         banddata_big=load_cross_spectra_data_from_disk(processedshtfile, 
-                                                       nshts, npersht,   
+                                                       startsht, stopsht, 
+                                                       npersht,   
                                                        band_start_idx[i],
                                                        band_start_idx[istop]-1 )
         #process this data
@@ -449,7 +459,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
                 for k in range(j, nsets):
                     if not auto:
 
-                        tmpresult  = np.real(np.matmul(banddata[setdef[:,j],:],np.conj(banddata[setdef[:,k],:]).T)) #need to check dims -- intended to end up for 3 freqs with 3x3 matrix
+                        tmpresult  = np.real(np.matmul(banddata[revsetdef[:,j],:],np.conj(banddata[revsetdef[:,k],:]).T)) #need to check dims -- intended to end up for 3 freqs with 3x3 matrix
 
                         tmpresult += tmpresult.T # imposing the ab + ba condition
                         tmpresult /= (2*nmodes)
@@ -462,7 +472,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
                             a+=rowlength
                     else:
                         idx=np.arange(setsize,dtype=np.int)
-                        tmpresult=np.sum(np.real(banddata[setdef[:, j],:]*np.conj(banddata[setdef[:, k],:])), 1,dtype=np.float64) / (nmodes) # had been in flatsky: *reso^2*winsize^2)
+                        tmpresult=np.sum(np.real(banddata[revsetdef[:, j],:]*np.conj(banddata[revsetdef[:, k],:])), 1,dtype=np.float64) / (nmodes) # had been in flatsky: *reso^2*winsize^2)
                         allspectra_out[iprime, spectrum_idx, :]=tmpresult.astype(np.float32)
                     spectrum_idx+=1
                     #           pdb.set_trace()
@@ -497,7 +507,13 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
 
     nbands = banddef.shape[0]-1
 
-    nshts  = np.int(np.max([setdef1,setdef2])+1.001)
+    startsht = np.int(np.min([setdef1,setdef2])+0.001)
+    stopsht = np.int(np.max([setdef1,setdef2])+0.001)
+    nshts  = stopsht-startsht + 1
+    revsetdef1 = setdef1 - startsht
+    if setdef2 is not None:
+        revsetdef2 = setdef2 - startsht
+        
     npersht = healpy.sphtfunc.Alm.getsize(lmax)
     #pdb.set_trace()
     allspectra_out = np.zeros([nbands,nspectra,nrealizations],dtype=np.float32)
@@ -534,7 +550,8 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
         # get data for as many bins as will fit in our ramlimit
 
         banddata_big=load_cross_spectra_data_from_disk(processedshtfile, 
-                                                       nshts, npersht,   
+                                                       startsht, stopsht, 
+                                                       npersht,   
                                                        band_start_idx[i],
                                                        band_start_idx[istop]-1 )
         #process this data
@@ -556,8 +573,8 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
                         #want to end with:
                         # 150a * 220b + 150b * 220a
                         #iew 1j* 2k + 2j* 1k
-                        tmpresult  =np.sum(np.real(banddata[setdef1[:, j],:]*np.conj(banddata[setdef2[:, k],:])), 1,dtype=np.float64)
-                        tmpresult +=np.sum(np.real(banddata[setdef2[:, j],:]*np.conj(banddata[setdef1[:, k],:])), 1,dtype=np.float64)
+                        tmpresult  =np.sum(np.real(banddata[revsetdef1[:, j],:]*np.conj(banddata[revsetdef2[:, k],:])), 1,dtype=np.float64)
+                        tmpresult +=np.sum(np.real(banddata[revsetdef2[:, j],:]*np.conj(banddata[revsetdef1[:, k],:])), 1,dtype=np.float64)
                         tmpresult /= (2*nmodes)
                         
                         allspectra_out[iprime, spectrum_idx, :]=tmpresult.astype(np.float32)
@@ -565,7 +582,7 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
                     else:
                         #j/k are freqs
                         #first index is nrealizations
-                        tmpresult=np.sum(np.real(banddata[setdef1[:, j],:]*np.conj(banddata[setdef1[:, k],:])), 1,dtype=np.float64) / (nmodes) # had been in flatsky: *reso^2*winsize^2)
+                        tmpresult=np.sum(np.real(banddata[revsetdef1[:, j],:]*np.conj(banddata[revsetdef1[:, k],:])), 1,dtype=np.float64) / (nmodes) # had been in flatsky: *reso^2*winsize^2)
                         #tmpresult is nrealizations long
                         allspectra_out[iprime, spectrum_idx, :]=tmpresult.astype(np.float32)
                     spectrum_idx+=1
