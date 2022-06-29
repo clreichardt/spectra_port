@@ -390,7 +390,7 @@ if __name__ == "__main__" and LR == True:
                                               basedir=workdir,
                                               persistdir=workdir,
                                               setdef=setdef,
-                                              jackknife=True, auto=False,
+                                              jackknife=False, auto=True,
                                               kmask=None,
                                               cmbweighting=True)
     file_out = workdir + 'null_spectrum150.pkl'
@@ -418,7 +418,7 @@ if __name__ == "__main__" and LR == True:
                                               basedir=workdir,
                                               persistdir=workdir,
                                               setdef=setdef,
-                                              jackknife=True, auto=False,
+                                              jackknife=False, auto=True,
                                               kmask=None,
                                               cmbweighting=True)
     file_out = workdir + 'null_spectrum220.pkl'
@@ -440,7 +440,7 @@ if __name__ == "__main__" and LR == True:
                                               basedir=workdir,
                                               persistdir=workdir,
                                               setdef=setdef,
-                                              jackknife=True, auto=False,
+                                              jackknife=False, auto=True,
                                               kmask=None,
                                               cmbweighting=True)
     file_out = workdir + 'null_spectrum220.pkl'
