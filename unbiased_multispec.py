@@ -8,7 +8,7 @@ import healpy
 
 import os
 from spt3g import core,maps, calibration
-from spectra_port import utils
+import utils
 import pickle as pkl
 import pdb
 import time
@@ -628,6 +628,7 @@ class unbiased_multispec:
                  window, # required -- mask to apply for SHT
                  banddef, # required. [0,lmax_bin1, lmax_bin2, ...]
                  nside, #required. eg 8192
+                 processed_sht_file, #required. the binary file with cross spectra
                  lmax=None, #optional, but should be set. Defaults to 2*nside      
                  cmbweighting=True, # True ==> return Dl. False ==> Return Cl
                  kmask = None, #If not none, must be the right size for the Alms. A numpy array/vector
@@ -704,7 +705,7 @@ class unbiased_multispec:
         #maybe at some point, we'll use status. right now nothing is done. Resume will only affect the full step level - no partial steps yet.
         status_file = self.persistdir + '/status.pkl'
         
-        processed_sht_file = self.persistdir + '/shts_processed.bin'
+        # processed_sht_file = self.persistdir + '/shts_processed.bin'
         if not self.resume:
             try: 
                 os.remove(processed_sht_file)
