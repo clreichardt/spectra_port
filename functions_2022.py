@@ -2,6 +2,7 @@ import os
 os.environ['OMP_NUM_THREADS'] = "6"
 import numpy as np
 import glob
+from pathlib import Path
 
 import unbiased_multispec as spec
 import utils
@@ -14,18 +15,21 @@ PREP= False
 END = False
 NULL= False
 COADD= False
+LR = False
 
 my_parser = argparse.ArgumentParser()
 my_parser.add_argument('-prep', action='store_true',dest='prep')
 my_parser.add_argument('-end', action='store_true',dest='end')
 my_parser.add_argument('-null', action='store_true',dest='null')
 my_parser.add_argument('-coadd', action='store_true',dest='coadd')
+my_parser.add_argument('-leftright', action='store_true',dest='leftright')
 args = my_parser.parse_args()
 
 PREP=args.prep
 END=args.end
 NULL=args.null
 COADD=args.coadd
+LR = args.leftright
 
 
 def create_bundle_maps_and_coadds(freq,nbundles=200):
@@ -94,8 +98,6 @@ def create_real_file_list2(dir, freqs=['90', '150', '220'], nbundle=200):
     for n_freq, freq in enumerate(freqs):
         for i in range(nbundle):
             file_list.append( f'{dir}/bundle_{i}_{freq}GHz.npz' )
-    print(f'file list: {file_list}')
-    exit()
     return file_list
 
 def create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100):
@@ -157,21 +159,22 @@ if __name__ == "__main__" and PREP is True:
 
     mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
     processedshtfile = workdir + '/mc/shts_processed.bin'
-    spec.reformat_shts(mcshtfilelist, processedshtfile,
-                           lmax,
-                           cmbweighting = True, 
-                           mask  = None,
-                           kmask = None,
-                           ell_reordering=None,
-                           no_reorder=False,
-                           ram_limit = None,
-                          )
+
+    # spec.reformat_shts(mcshtfilelist, processedshtfile,
+    #                        lmax,
+    #                        cmbweighting = True, 
+    #                        mask  = None,
+    #                        kmask = None,
+    #                        ell_reordering=None,
+    #                        no_reorder=False,
+    #                        ram_limit = None,
+    #                       )
 
     print("Now real")
     #    exit()
 
-    datashtfilelist = create_real_file_list2('/sptgrid/analysis/highell_TT_19-20/v4/obs_shts',freqs=['90','150','220'],nbundle=200)
-    processedshtfile = workdir + '/data/shts_processed.bin'
+    datashtfilelist = create_real_file_list2('/sptgrid/analysis/highell_TT_19-20/v4/diff_shts',freqs=['90','150','220'],nbundle=200)
+    processedshtfile = workdir + '/data/sht_processed.bin'
     spec.reformat_shts(datashtfilelist, processedshtfile,
                            lmax,
                            cmbweighting = True, 
@@ -322,6 +325,128 @@ if __name__ == "__main__" and NULL == True:
     file_out = workdir + 'null_spectrum.pkl'
     with open(file_out,'wb') as fp:
         pkl.dump(null_spectrum,fp)
+
+if __name__ == "__main__" and LR == True:
+
+    print('doing left right nulls')
+
+    mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
+    mask = np.load(mask_file)
+    nside=8192
+    lmax = 13000
+    banddef = np.arange(0,lmax,500)
+
+    workdir='/big_scratch/pc/lr_null/'
+    Path(workdir).mkdir(parents=True, exist_ok=True)
+
+    setdef = np.zeros([200,1],dtype=np.int32)
+    setdef[:,0]=np.arange(0,200,dtype=np.int32)
+
+    # First for 90 GHz
+    processed_sht_file = workdir + 'sht_lr_90.bin' 
+    diffshtfilelist = create_real_file_list2('/sptgrid/analysis/highell_TT_19-20/v4/diff_shts',freqs=['90'],nbundle=200)
+
+    # spec.reformat_shts(diffshtfilelist, processed_sht_file,
+    #                        lmax=lmax,
+    #                        cmbweighting = True, 
+    #                        mask  = None,
+    #                        kmask = None,
+    #                        ell_reordering=None,
+    #                        no_reorder=False,
+    #                        ram_limit = None,
+    #                       ) 
+
+    null_spectrum      = spec.unbiased_multispec(diffshtfilelist,mask,banddef,nside,
+                                              lmax=lmax,
+                                              resume=True,
+                                              processed_sht_file=processed_sht_file, 
+                                              basedir=workdir,
+                                              persistdir=workdir,
+                                              setdef=setdef,
+                                              jackknife=True, auto=False,
+                                              kmask=None,
+                                              cmbweighting=True)
+    file_out = workdir + 'null_spectrum90.pkl'
+    with open(file_out,'wb') as fp:
+        pkl.dump(null_spectrum,fp)
+
+
+    # Now 150 GHz
+    processed_sht_file = workdir + 'sht_lr_150.bin' 
+    diffshtfilelist = create_real_file_list2('/sptgrid/analysis/highell_TT_19-20/v4/diff_shts',freqs=['150'],nbundle=200)
+    spec.reformat_shts(diffshtfilelist, processed_sht_file,
+                           lmax=lmax,
+                           cmbweighting = True, 
+                           mask  = None,
+                           kmask = None,
+                           ell_reordering=None,
+                           no_reorder=False,
+                           ram_limit = None,
+                          ) 
+    null_spectrum      = spec.unbiased_multispec(diffshtfilelist,mask,banddef,nside,
+                                              lmax=lmax,
+                                              resume=True,
+                                              processed_sht_file=processed_sht_file, 
+                                              basedir=workdir,
+                                              persistdir=workdir,
+                                              setdef=setdef,
+                                              jackknife=True, auto=False,
+                                              kmask=None,
+                                              cmbweighting=True)
+    file_out = workdir + 'null_spectrum150.pkl'
+    with open(file_out,'wb') as fp:
+        pkl.dump(null_spectrum,fp)
+
+
+
+    # Now 220 GHz
+    processed_sht_file = workdir + 'sht_lr_220.bin' 
+    diffshtfilelist = create_real_file_list2('/sptgrid/analysis/highell_TT_19-20/v4/diff_shts',freqs=['220'],nbundle=200)
+    spec.reformat_shts(diffshtfilelist, processed_sht_file,
+                           lmax=lmax,
+                           cmbweighting = True, 
+                           mask  = None,
+                           kmask = None,
+                           ell_reordering=None,
+                           no_reorder=False,
+                           ram_limit = None,
+                          ) 
+    null_spectrum      = spec.unbiased_multispec(diffshtfilelist,mask,banddef,nside,
+                                              lmax=lmax,
+                                              resume=True,
+                                              processed_sht_file=processed_sht_file, 
+                                              basedir=workdir,
+                                              persistdir=workdir,
+                                              setdef=setdef,
+                                              jackknife=True, auto=False,
+                                              kmask=None,
+                                              cmbweighting=True)
+    file_out = workdir + 'null_spectrum220.pkl'
+    with open(file_out,'wb') as fp:
+        pkl.dump(null_spectrum,fp)
+
+
+
+
+
+
+    workdir='/big_scratch/pc/null220'
+    setdef = np.zeros([100,2],dtype=np.int32)
+    setdef[:,0]=np.arange(0,100,dtype=np.int32)+400
+    setdef[:,1]=np.arange(100,200,dtype=np.int32)+400
+    null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+                                              lmax=13000,
+                                              resume=True,
+                                              basedir=workdir,
+                                              persistdir=workdir,
+                                              setdef=setdef,
+                                              jackknife=True, auto=False,
+                                              kmask=None,
+                                              cmbweighting=True)
+    file_out = workdir + 'null_spectrum220.pkl'
+    with open(file_out,'wb') as fp:
+        pkl.dump(null_spectrum,fp)
+
 
 
 if __name__ == "__main__" and COADD == True:
