@@ -334,7 +334,7 @@ if __name__ == "__main__" and LR == True:
     mask = np.load(mask_file)
     nside=8192
     lmax = 13000
-    banddef = np.arange(0,lmax,500)
+    banddef = np.arange(0,lmax,50)
 
     workdir='/big_scratch/pc/lr_null/'
     Path(workdir).mkdir(parents=True, exist_ok=True)
@@ -374,15 +374,17 @@ if __name__ == "__main__" and LR == True:
     # Now 150 GHz
     processed_sht_file = workdir + 'sht_lr_150.bin' 
     diffshtfilelist = create_real_file_list2('/sptgrid/analysis/highell_TT_19-20/v4/diff_shts',freqs=['150'],nbundle=200)
-    spec.reformat_shts(diffshtfilelist, processed_sht_file,
-                           lmax=lmax,
-                           cmbweighting = True, 
-                           mask  = None,
-                           kmask = None,
-                           ell_reordering=None,
-                           no_reorder=False,
-                           ram_limit = None,
-                          ) 
+
+    # spec.reformat_shts(diffshtfilelist, processed_sht_file,
+    #                        lmax=lmax,
+    #                        cmbweighting = True, 
+    #                        mask  = None,
+    #                        kmask = None,
+    #                        ell_reordering=None,
+    #                        no_reorder=False,
+    #                        ram_limit = None,
+    #                       ) 
+
     null_spectrum      = spec.unbiased_multispec(diffshtfilelist,mask,banddef,nside,
                                               lmax=lmax,
                                               resume=True,
@@ -402,41 +404,21 @@ if __name__ == "__main__" and LR == True:
     # Now 220 GHz
     processed_sht_file = workdir + 'sht_lr_220.bin' 
     diffshtfilelist = create_real_file_list2('/sptgrid/analysis/highell_TT_19-20/v4/diff_shts',freqs=['220'],nbundle=200)
-    spec.reformat_shts(diffshtfilelist, processed_sht_file,
-                           lmax=lmax,
-                           cmbweighting = True, 
-                           mask  = None,
-                           kmask = None,
-                           ell_reordering=None,
-                           no_reorder=False,
-                           ram_limit = None,
-                          ) 
+
+    # spec.reformat_shts(diffshtfilelist, processed_sht_file,
+    #                        lmax=lmax,
+    #                        cmbweighting = True, 
+    #                        mask  = None,
+    #                        kmask = None,
+    #                        ell_reordering=None,
+    #                        no_reorder=False,
+    #                        ram_limit = None,
+    #                       ) 
+
     null_spectrum      = spec.unbiased_multispec(diffshtfilelist,mask,banddef,nside,
                                               lmax=lmax,
                                               resume=True,
                                               processed_sht_file=processed_sht_file, 
-                                              basedir=workdir,
-                                              persistdir=workdir,
-                                              setdef=setdef,
-                                              jackknife=False, auto=True,
-                                              kmask=None,
-                                              cmbweighting=True)
-    file_out = workdir + 'null_spectrum220.pkl'
-    with open(file_out,'wb') as fp:
-        pkl.dump(null_spectrum,fp)
-
-
-
-
-
-
-    workdir='/big_scratch/pc/null220'
-    setdef = np.zeros([100,2],dtype=np.int32)
-    setdef[:,0]=np.arange(0,100,dtype=np.int32)+400
-    setdef[:,1]=np.arange(100,200,dtype=np.int32)+400
-    null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
-                                              lmax=13000,
-                                              resume=True,
                                               basedir=workdir,
                                               persistdir=workdir,
                                               setdef=setdef,
