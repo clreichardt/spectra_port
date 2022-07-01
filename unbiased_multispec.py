@@ -8,7 +8,7 @@ import healpy
 
 import os
 from spt3g import core,maps, calibration
-import utils
+from spectra_port import utils
 import pickle as pkl
 import pdb
 import time
@@ -156,7 +156,8 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
                            ell_reordering=None,
                            no_reorder=False,
                            ram_limit = None,
-                           npmapformat=False, 
+                           npmapformat=False,
+                           pklmapformat=False,
                            map_key='T'
                           ) -> 'May be done in Fortran - output is a file':
     ''' 
@@ -236,7 +237,16 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
             count += 1
 
             #TBD get a map
-            if not npmapformat:
+            if pklmapformat:
+                with open(file,'rb') as fb:
+                    map_scratch = pkl.load(fb)
+                if mask is not None:
+                    map_scratch  = mask*map_scratch
+            elif npmapformat:
+                map_tmp = utils.load_spt3g_cutsky_healpix_ring_map(file,npix)
+                map_scratch[map_inds]=map_tmp * cut_mask
+
+            else:
                 ring_indices, map_tmp = load_spt3g_healpix_ring_map(file,map_key=map_key)
 
                 map_scratch[:]=0 #reset
@@ -246,9 +256,8 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
                 #may need to change the next line based on formatting
                 if mask is not None:
                     map_scratch  = mask*map_scratch
-            else:
-                map_tmp = utils.load_spt3g_cutsky_healpix_ring_map(file,npix)
-                map_scratch[map_inds]=map_tmp * cut_mask
+
+
                     
             #gets alms
             alms = healpy.sphtfunc.map2alm(map_scratch,lmax = lmax, pol=False, use_pixel_weights=False, iter = 1,datapath='/sptlocal/user/creichardt/healpy-data/')
@@ -347,14 +356,16 @@ def generate_coadd_shts( processed_shtfile, coadd_shtfile,  lmax,
     return(np.reshape(np.arange(setsize,dtype=np.int32),[setsize,1]))
 
 
-def load_cross_spectra_data_from_disk(shtfile, nshts, npersht, start, stop):
+def load_cross_spectra_data_from_disk(shtfile, startsht,stopsht, npersht, start, stop):
     nelems = stop - start + 1
+    nshts = stopsht - startsht + 1
     buffer_bytes = np.zeros(1,dtype=AlmType).nbytes
     data = np.zeros([nshts,nelems],dtype=AlmType)
     print(nshts,nelems)
     with open(shtfile,'r') as fp:
         for i in range(nshts):
-            fp.seek((i*npersht+start) * buffer_bytes)
+            j = i + startsht
+            fp.seek((j*npersht+start) * buffer_bytes)
             data[i,:] = np.fromfile(fp,count=nelems,dtype=AlmType)
     return data
 
@@ -384,7 +395,14 @@ def take_all_cross_spectra( processedshtfile, lmax,
 
     nbands = banddef.shape[0]-1
     if nshts is  None:
-        nshts  = np.int(np.max(setdef)+1.001)
+        startsht = np.int(np.min(setdef)+0.001)
+        stopsht = np.int(np.max(setdef)+0.001)
+        nshts  = stopsht-startsht+1
+        revsetdef = setdef - startsht
+    else:
+        startsht=0
+        stopsht = nshts-1
+        revsetdef=setdef
 
     npersht = healpy.sphtfunc.Alm.getsize(lmax)
     #pdb.set_trace()
@@ -396,8 +414,9 @@ def take_all_cross_spectra( processedshtfile, lmax,
     # number of bytes in a Dcomplex: 16
     # number of arrays we need to make to do this efficiently: 6 or less
     # number of pixels in an fft: winsize^2
-    ram_required=16*6*lmax**2
-    max_nmodes=ram_limit/nshts/32 #64 b complex 
+    #ram_required=16*6*lmax**2
+    max_nmodes=ram_limit/nshts/12 #64 b complex - uses 8 bytes, and gave it an extra x1.5 for other arrays 
+
 
     assert(banddef[0] == 0 and banddef[-1] < lmax)
     #assumes banddef[0]=0
@@ -412,6 +431,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
         istop = np.where((band_start_idx - band_start_idx[i]) < max_nmodes)[0][-1] # get out of tuple, then take last elem of array
 
         if istop <= i:
+            pdb.set_trace()
             raise Exception("Insufficient ram for processing even a single bin")
 
         print('take_all_cross_spectra: loading bands {} {}'.format(i,istop-1))
@@ -420,7 +440,8 @@ def take_all_cross_spectra( processedshtfile, lmax,
         # get data for as many bins as will fit in our ramlimit
 
         banddata_big=load_cross_spectra_data_from_disk(processedshtfile, 
-                                                       nshts, npersht,   
+                                                       startsht, stopsht, 
+                                                       npersht,   
                                                        band_start_idx[i],
                                                        band_start_idx[istop]-1 )
         #process this data
@@ -438,7 +459,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
                 for k in range(j, nsets):
                     if not auto:
 
-                        tmpresult  = np.real(np.matmul(banddata[setdef[:,j],:],np.conj(banddata[setdef[:,k],:]).T)) #need to check dims -- intended to end up for 3 freqs with 3x3 matrix
+                        tmpresult  = np.real(np.matmul(banddata[revsetdef[:,j],:],np.conj(banddata[revsetdef[:,k],:]).T)) #need to check dims -- intended to end up for 3 freqs with 3x3 matrix
 
                         tmpresult += tmpresult.T # imposing the ab + ba condition
                         tmpresult /= (2*nmodes)
@@ -451,7 +472,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
                             a+=rowlength
                     else:
                         idx=np.arange(setsize,dtype=np.int)
-                        tmpresult=np.sum(np.real(banddata[setdef[:, j],:]*np.conj(banddata[setdef[:, k],:])), 1,dtype=np.float64) / (nmodes) # had been in flatsky: *reso^2*winsize^2)
+                        tmpresult=np.sum(np.real(banddata[revsetdef[:, j],:]*np.conj(banddata[revsetdef[:, k],:])), 1,dtype=np.float64) / (nmodes) # had been in flatsky: *reso^2*winsize^2)
                         allspectra_out[iprime, spectrum_idx, :]=tmpresult.astype(np.float32)
                     spectrum_idx+=1
                     #           pdb.set_trace()
@@ -486,7 +507,13 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
 
     nbands = banddef.shape[0]-1
 
-    nshts  = np.int(np.max([setdef1,setdef2])+1.001)
+    startsht = np.int(np.min([setdef1,setdef2])+0.001)
+    stopsht = np.int(np.max([setdef1,setdef2])+0.001)
+    nshts  = stopsht-startsht + 1
+    revsetdef1 = setdef1 - startsht
+    if setdef2 is not None:
+        revsetdef2 = setdef2 - startsht
+        
     npersht = healpy.sphtfunc.Alm.getsize(lmax)
     #pdb.set_trace()
     allspectra_out = np.zeros([nbands,nspectra,nrealizations],dtype=np.float32)
@@ -523,7 +550,8 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
         # get data for as many bins as will fit in our ramlimit
 
         banddata_big=load_cross_spectra_data_from_disk(processedshtfile, 
-                                                       nshts, npersht,   
+                                                       startsht, stopsht, 
+                                                       npersht,   
                                                        band_start_idx[i],
                                                        band_start_idx[istop]-1 )
         #process this data
@@ -545,8 +573,8 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
                         #want to end with:
                         # 150a * 220b + 150b * 220a
                         #iew 1j* 2k + 2j* 1k
-                        tmpresult  =np.sum(np.real(banddata[setdef1[:, j],:]*np.conj(banddata[setdef2[:, k],:])), 1,dtype=np.float64)
-                        tmpresult +=np.sum(np.real(banddata[setdef2[:, j],:]*np.conj(banddata[setdef1[:, k],:])), 1,dtype=np.float64)
+                        tmpresult  =np.sum(np.real(banddata[revsetdef1[:, j],:]*np.conj(banddata[revsetdef2[:, k],:])), 1,dtype=np.float64)
+                        tmpresult +=np.sum(np.real(banddata[revsetdef2[:, j],:]*np.conj(banddata[revsetdef1[:, k],:])), 1,dtype=np.float64)
                         tmpresult /= (2*nmodes)
                         
                         allspectra_out[iprime, spectrum_idx, :]=tmpresult.astype(np.float32)
@@ -554,7 +582,7 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
                     else:
                         #j/k are freqs
                         #first index is nrealizations
-                        tmpresult=np.sum(np.real(banddata[setdef1[:, j],:]*np.conj(banddata[setdef1[:, k],:])), 1,dtype=np.float64) / (nmodes) # had been in flatsky: *reso^2*winsize^2)
+                        tmpresult=np.sum(np.real(banddata[revsetdef1[:, j],:]*np.conj(banddata[revsetdef1[:, k],:])), 1,dtype=np.float64) / (nmodes) # had been in flatsky: *reso^2*winsize^2)
                         #tmpresult is nrealizations long
                         allspectra_out[iprime, spectrum_idx, :]=tmpresult.astype(np.float32)
                     spectrum_idx+=1
@@ -628,7 +656,6 @@ class unbiased_multispec:
                  window, # required -- mask to apply for SHT
                  banddef, # required. [0,lmax_bin1, lmax_bin2, ...]
                  nside, #required. eg 8192
-                 processed_sht_file, #required. the binary file with cross spectra
                  lmax=None, #optional, but should be set. Defaults to 2*nside      
                  cmbweighting=True, # True ==> return Dl. False ==> Return Cl
                  kmask = None, #If not none, must be the right size for the Alms. A numpy array/vector
@@ -705,7 +732,7 @@ class unbiased_multispec:
         #maybe at some point, we'll use status. right now nothing is done. Resume will only affect the full step level - no partial steps yet.
         status_file = self.persistdir + '/status.pkl'
         
-        # processed_sht_file = self.persistdir + '/shts_processed.bin'
+        processed_sht_file = self.persistdir + '/shts_processed.bin'
         if not self.resume:
             try: 
                 os.remove(processed_sht_file)
