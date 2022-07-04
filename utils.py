@@ -499,3 +499,88 @@ def rebin_coupling_matrix( matrix, ell, bindef, transferfunc=None,
     #print(p.shape,matrix.shape,scaling.shape,q.shape)
     return np.matmul(p,np.matmul(np.multiply(matrix,scaling),q))
 
+def window_function_calc(banddef, transfer_dic, nskip=1, ellmin = 10, ellmax=10000):
+    '''
+    ;this version assumes the real spectra are binned to final bins and
+    ;tries to juryrig a correction for overlapping bins compared to the
+    ;kernel binning.
+    
+    ;Plan -
+    ; for all ell, make a vector of all zeroes, except 1 at ell
+    ; Apply Tf, Mll to get a "simulated" Dl
+    ; apply inversion and binner to get the output bins
+    ; (use cuts as in code)
+    '''
+
+    nl = ellmax - ellmin + 1
+    ells = np.arange(ellmin, ellmax+1)
+
+    ellbin = transfer_dic['ell']
+    kernel = transfer_dic['kernel']
+    bl     = transfer_dic['bl']
+    transfer=transfer_dic['transfer']
+    btrans  = transfer * bl**2
+
+    #upper / lower edges
+    dell = 0.5 * (ellbin[1]-ellbin[0])
+    ellbin0 = ellbin-dell
+    ellbin1 = ellbin+dell
+
+    binned_kernel    = rebin_coupling_matrix(kernel, ellbin, banddef, transferfunc=transfer, beamfunc = bl)
+    inv_kernel = np.linalg.inv(binned_kernel[nskip:,nskip:])
+    usedbands = np.arange(nskip,len(banddef)+1)
+    nkept = len(usedbands)
+    kept = np.arange(nkept)
+    win = np.zeros([nkept,nl])
+    nb = len(banddef)
+    tmp = np.zeros(nbands+1)
+    tmp[1:]=banddef
+    nbandctrr = 0.5*(tmp[0:-1]+tmp[1:])
+
+    basebininds = np.zeros([nb,3],dtype=np.int64)
+    wtbins = np.zeros([nb,nellbin])
+
+    modefac = ellbin
+    if no_mode_wt:
+        modefac = modefac * 0 + 1.
+
+    for i in range(nb):
+        jnds, = np.nonzero( (ellbin1 > tmp[i]) * (ellbin0 <= tmp[i+1]))
+        ni = jnds.shape[0]
+        if ni: #don't want 0 length
+            basebininds[i,0]=ni
+            basebininds[i,1]=jnds[0]
+            basebininds[i,2]=jnds[-1]
+            wtbins[i,jnds[0]:jnds[-1]]=1.
+            wtbins[i,jnds[0]] = (ellbin1[jnds[0]]-tmp[i])/dellbin
+            wtbins[i,jnds[ni-1]] = (tmp[i+1]-ellbin0[jnds[-1]])/dellbin
+            wtbins[i,:] *=modefac
+            wtbins[i,:] /= np.sum(wtbins[i,:])
+            
+    basetmp = np.zeros(nb-nskip)
+    effbin  = ellbin1
+    tmp2 = effbin * 0
+    tmp = tmp2 * 0
+
+    for i in range(nl):
+        if i % 200 == 0:
+            print(i)
+        tmp[:]  = 0
+        tmp2[:] = 0
+        basetmp[:] = 0
+        ind = np.nonzero(ells[i] < effbin)
+        tmp2[ind[0]]= btrans[ind[0]] / ( ( 2 * dl) * ells[i] * (ells[i]+1))
+        tmp2 = np.matmul(kernel, tmp2)
+        tmp2 *= ellbin * (ellbin+1)
+
+        for j in range(nb-nskip):
+            jj = j+nskip
+            basettmp[j] = np.sum(tmp2 * wtbins[jj,:])
+        #maybe do with tile
+
+        specfixed = np.matmul(invkern , basetmp)
+
+        win[:,i] = specfixed
+
+    return win
+
