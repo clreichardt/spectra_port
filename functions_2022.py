@@ -299,7 +299,7 @@ if __name__ == "__main__" and NULL == True:
     setdef = np.zeros([200,1],dtype=np.int32)
     setdef[:,0]=np.arange(0,200,dtype=np.int32)
     mapfiles = create_real_file_list('/sptgrid/user/pc/obs_shts/',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
-    if True:
+    if False:
         spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                               lmax=13000,
                                               resume=True,
