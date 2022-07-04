@@ -239,7 +239,7 @@ if __name__ == "__main__" and NULL == True:
     nside=8192
     banddef = np.arange(0,13000,500)
 
-    workdir='/big_scratch/pc/null90'
+    workdir='/big_scratch/pc/null90/'
     setdef = np.zeros([100,2],dtype=np.int32)
     setdef[:,0]=np.arange(0,100,dtype=np.int32)
     setdef[:,1]=np.arange(100,200,dtype=np.int32)
