@@ -112,7 +112,7 @@ def end_to_end(mapfiles,
         with open(mcdir+'mc_spectrum.pkl', 'wb') as f:
             pkl.dump(mc_spectrum,f)
             
-            
+    return
             
     try:
         if not resume:
