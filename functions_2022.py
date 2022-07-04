@@ -187,13 +187,14 @@ if __name__ == "__main__" and PREP is True:
     workdir = '/sptlocal/user/creichardt/xspec_2022/'
     workdir = '/big_scratch/cr/xspec_2022/'
     lmax = 13000
-    dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
+    dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v2.0_testinputsv2/'
+#/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
     
 
     if True:
-        mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
+        mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=10)
         print(mcshtfilelist)        
-        processedshtfile = workdir + '/mc/shts_processed.bin'
+        processedshtfile = workdir + '/mc-test/shts_processed.bin'
         spec.reformat_shts(mcshtfilelist, processedshtfile,
                            lmax,
                            cmbweighting = True, 
@@ -205,7 +206,7 @@ if __name__ == "__main__" and PREP is True:
                           )
         
     print("Now real")
-    if True:
+    if False:
     #    exit()
         dir='/sptgrid/analysis/highell_TT_19-20/v4/obs_shts/'
         datashtfilelist = create_real_file_list(dir,stub='bundle_',sfreqs=['90','150','220'],estub='GHz.npz',nbundle=200)
