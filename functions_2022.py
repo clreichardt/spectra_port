@@ -239,9 +239,9 @@ if __name__ == "__main__" and END == True:
     beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
     
 
- #   >>> namaster_file='/sptlocal/user/pc/mll/mll_tpltz.npy'
-#>>> kernel_file = '/sptlocal/user/creichardt/mll_dl_13000.npz'
-#>>> utils.rebin_and_convert_namaster_mll(namaster_file,kernel_file,5,13000)
+    #   >>> namaster_file='/sptlocal/user/pc/mll/mll_tpltz.npy'
+    #>>> kernel_file = '/sptlocal/user/creichardt/mll_dl_13000.npz'
+    #>>> utils.rebin_and_convert_namaster_mll(namaster_file,kernel_file,5,13000)
     kernel_file = '/sptlocal/user/creichardt/mll_dl_13000.npz'
 
     workdir = '/sptlocal/user/creichardt/xspec_2022/'
@@ -437,7 +437,6 @@ if __name__ == "__main__" and NULL == True:
         pkl.dump(null_spectrum,fp)
     del null_spectrum
 
-    
     setdef = np.zeros([100,2],dtype=np.int32)
     setdef[:,0]=np.arange(0,100,dtype=np.int32)
     setdef[:,1]=np.arange(100,200,dtype=np.int32)
