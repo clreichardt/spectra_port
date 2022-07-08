@@ -5,7 +5,13 @@ from spectra_port import unbiased_multispec as spec
 import time,os
 import pickle as pkl
     
-    
+def trim_end_to_end_output(fullsize):
+    fullsize['data_spectrum'].allspectra=None
+    fullsize['mc_spectrum'].allspectra=None
+    fullsize['mc_spectrum_fine'].allspectra=None
+    fullsize['mask']=None
+    fullsize['kmask']=None
+    return fullsize
     
 def end_to_end(mapfiles,
                mcmapfiles,
