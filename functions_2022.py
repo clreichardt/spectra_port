@@ -246,7 +246,7 @@ if __name__ == "__main__" and END == True:
     #workdir = '/sptlocal/user/creichardt/xspec_2022/'
     workdir = '/big_scratch/cr/xspec_2022/'
     file_out = workdir + 'spectrum.pkl'
-    file_out = workdir + 'spectrum_small.pkl'
+    file_out_small = workdir + 'spectrum_small.pkl'
     
     mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
     mask = np.load(mask_file)
