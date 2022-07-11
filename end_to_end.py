@@ -7,8 +7,17 @@ import pickle as pkl
     
 def trim_end_to_end_output(fullsize):
     fullsize['data_spectrum'].allspectra=None
+    fullsize['data_spectrum'].kmask=None
+    fullsize['data_spectrum'].window=None
     fullsize['mc_spectrum'].allspectra=None
+    fullsize['mc_spectrum'].kmask=None
+    fullsize['mc_spectrum'].window=None
     fullsize['mc_spectrum_fine'].allspectra=None
+    fullsize['mc_spectrum_fine'].kmask=None
+    fullsize['mc_spectrum_fine'].window=None
+    fullsize['mc_spectrum_fine'].cov=None
+    fullsize['mc_spectrum_fine'].est2_cov=None
+    fullsize['mc_spectrum_fine'].est1_cov=None
     fullsize['mask']=None
     fullsize['kmask']=None
     return fullsize
