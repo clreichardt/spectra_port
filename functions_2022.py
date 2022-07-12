@@ -194,7 +194,7 @@ if __name__ == "__main__" and PREP is True:
     if True:
         mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=10)
         print(mcshtfilelist)        
-        processedshtfile = workdir + '/mc-test/shts_processed.bin'
+        processedshtfile = workdir + '/mc/shts_processed.bin'
         spec.reformat_shts(mcshtfilelist, processedshtfile,
                            lmax,
                            cmbweighting = True, 
