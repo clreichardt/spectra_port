@@ -18,12 +18,14 @@ SHT = False
 CAL = False
 TEST= False
 NULLLR=False
+NULLLRSPLIT=False
 
 my_parser = argparse.ArgumentParser()
 my_parser.add_argument('-prep', action='store_true',dest='prep')
 my_parser.add_argument('-end', action='store_true',dest='end')
 my_parser.add_argument('-null', action='store_true',dest='null')
 my_parser.add_argument('-nulllr', action='store_true',dest='nulllr')
+my_parser.add_argument('-nulllrsplit', action='store_true',dest='nulllrsplit')
 my_parser.add_argument('-coadd', action='store_true',dest='coadd')
 my_parser.add_argument('-sht', action='store_true',dest='sht')
 my_parser.add_argument('-cal', action='store_true',dest='cal')
@@ -39,6 +41,7 @@ CAL = args.cal
 SHT = args.sht
 TEST= args.test
 NULLLR=args.nulllr
+NULLLRSPLIT=args.nulllrsplit
 
 
 def create_bundle_maps_and_coadds(freq,nbundles=200):
@@ -294,7 +297,115 @@ if __name__ == "__main__" and END == True:
     with open(file_out_small,'wb') as fp:
         pkl.dump(end_to_end.trim_end_to_end_output(output),fp)
 
+if __name__ == "__main__" and NULLLRSPLIT == True:
 
+    print('doing null lr year splits')
+
+    mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
+    mask = np.load(mask_file)
+    nside=8192
+    banddef = np.arange(0,12000,500)
+    os.system('rm /big_scratch/cr/xspec_2022/datalr/shts_processed.bin')
+    os.system('ln -s /big_scratch/pc/lr_null/sht_lr_90.bin /big_scratch/cr/xspec_2022/datalr/shts_processed.bin')
+    workdir='/big_scratch/cr/xspec_2022/datalr/'
+    setdef = np.zeros([90,1],dtype=np.int32)
+    setdef[:,0]=np.arange(0,90,dtype=np.int32)
+    mapfiles = create_real_file_list('/sptgrid/user/pc/obs_shts/',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
+    spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+                                            lmax=13000,
+                                            resume=True,
+                                            basedir=workdir,
+                                            persistdir=workdir,
+                                            setdef=setdef,
+                                            jackknife=False, auto=False,
+                                            kmask=None,
+                                            cmbweighting=True)
+    file_out = workdir + 'spectrum90_lrnull_year1.pkl'
+    with open(file_out,'wb') as fp:
+        pkl.dump(spectrum,fp)
+        del spectrum
+
+
+
+    os.system('rm /big_scratch/cr/xspec_2022/datalr/shts_processed.bin')
+    os.system('ln -s /big_scratch/pc/lr_null/sht_lr_150.bin /big_scratch/cr/xspec_2022/datalr/shts_processed.bin')
+    spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+                                            lmax=13000,
+                                            resume=True,
+                                            basedir=workdir,
+                                            persistdir=workdir,
+                                            setdef=setdef,
+                                            jackknife=False, auto=False,
+                                            kmask=None,
+                                            cmbweighting=True)
+    file_out = workdir + 'spectrum150_lrnull_year1.pkl'
+    with open(file_out,'wb') as fp:
+        pkl.dump(spectrum,fp)
+        del spectrum
+    os.system('rm /big_scratch/cr/xspec_2022/datalr/shts_processed.bin')
+    os.system('ln -s /big_scratch/pc/lr_null/sht_lr_220.bin /big_scratch/cr/xspec_2022/datalr/shts_processed.bin')
+    spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+                                            lmax=13000,
+                                            resume=True,
+                                            basedir=workdir,
+                                            persistdir=workdir,
+                                            setdef=setdef,
+                                            jackknife=False, auto=False,
+                                            kmask=None,
+                                            cmbweighting=True)
+    file_out = workdir + 'spectrum220_lrnull_year1.pkl'
+    with open(file_out,'wb') as fp:
+        pkl.dump(spectrum,fp)
+        del spectrum
+    os.system('rm /big_scratch/cr/xspec_2022/datalr/shts_processed.bin')
+    os.system('ln -s /big_scratch/pc/lr_null/sht_lr_90.bin /big_scratch/cr/xspec_2022/datalr/shts_processed.bin')
+    
+    setdef[:,0]=np.arange(0,90,dtype=np.int32)+110
+    mapfiles = create_real_file_list('/sptgrid/user/pc/obs_shts/',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
+    spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+                                            lmax=13000,
+                                            resume=True,
+                                            basedir=workdir,
+                                            persistdir=workdir,
+                                            setdef=setdef,
+                                            jackknife=False, auto=False,
+                                            kmask=None,
+                                            cmbweighting=True)
+    file_out = workdir + 'spectrum90_lrnull_year2.pkl'
+    with open(file_out,'wb') as fp:
+        pkl.dump(spectrum,fp)
+        del spectrum
+
+    os.system('rm /big_scratch/cr/xspec_2022/datalr/shts_processed.bin')
+    os.system('ln -s /big_scratch/pc/lr_null/sht_lr_150.bin /big_scratch/cr/xspec_2022/datalr/shts_processed.bin')
+    spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+                                            lmax=13000,
+                                            resume=True,
+                                            basedir=workdir,
+                                            persistdir=workdir,
+                                            setdef=setdef,
+                                            jackknife=False, auto=False,
+                                            kmask=None,
+                                            cmbweighting=True)
+    file_out = workdir + 'spectrum150_lrnull_year2.pkl'
+    with open(file_out,'wb') as fp:
+        pkl.dump(spectrum,fp)
+        del spectrum
+    os.system('rm /big_scratch/cr/xspec_2022/datalr/shts_processed.bin')
+    os.system('ln -s /big_scratch/pc/lr_null/sht_lr_220.bin /big_scratch/cr/xspec_2022/datalr/shts_processed.bin')
+    spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+                                            lmax=13000,
+                                            resume=True,
+                                            basedir=workdir,
+                                            persistdir=workdir,
+                                            setdef=setdef,
+                                            jackknife=False, auto=False,
+                                            kmask=None,
+                                            cmbweighting=True)
+    file_out = workdir + 'spectrum220_lrnull_year2.pkl'
+    with open(file_out,'wb') as fp:
+        pkl.dump(spectrum,fp)
+        del spectrum
 
 if __name__ == "__main__" and NULLLR == True:
 
