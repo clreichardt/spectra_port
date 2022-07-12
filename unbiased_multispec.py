@@ -379,7 +379,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
     ;; Step 2 (this function):  average all the bands to create binned x-spectra
     '''
     if ram_limit is None:
-        ram_limit = 64 * 2**30 # default limit is 64 GB
+        ram_limit = 32 * 2**30 # default limit is 64 GB
 
 
     # Simplifying assumption axb == (a^c b + b^c a)
@@ -436,7 +436,10 @@ def take_all_cross_spectra( processedshtfile, lmax,
 
         print('take_all_cross_spectra: loading bands {} {}'.format(i,istop-1))
         # technical: delete the last iteration of banddata_big first
-        banddata_big=0
+        try:
+            del banddata_big
+        except:
+            pass
         # get data for as many bins as will fit in our ramlimit
 
         banddata_big=load_cross_spectra_data_from_disk(processedshtfile, 
@@ -667,7 +670,7 @@ class unbiased_multispec:
                  map_key = 'T', #where to fetch maps from
                  skipcov=False, #don't calculate covariances
                  # Run time processing flags ################################################
-                 ramlimit=64 * 2**30, # optional -- set to change default RAM limit from 64gb
+                 ramlimit=32 * 2**30, # optional -- set to change default RAM limit from 64gb
                  resume=True, #optional -- will use existing files if true    
                  basedir=None, # strongly suggested. defaults to current directory and can use a lot of disk space
                  persistdir=None, # optional - can be unset. will create a temp directory within basedir

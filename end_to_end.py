@@ -285,7 +285,7 @@ def end_to_end(mapfiles,
         print(i,kernel.shape)
         super_kernel[i,:,i,:]     = utils.rebin_coupling_matrix(kernel, ellkern, banddef, transferfunc=transfer[i,:], beamfunc = beams[i,:])
         sim_super_kernel[i,:,i,:] = utils.rebin_coupling_matrix(kernel, ellkern, banddef, transferfunc=transfer[i,:], beamfunc = simbeams[i,:])
-        slice_kern = np.asarray([super_kernel[i,j,i,j] forr j in range(nbands)])
+        slice_kern = np.asarray([super_kernel[i,j,i,j] for j in range(nbands)])
         peak = np.max(slice_kern)
         slice = slice_kern < 1e-4 * peak
         try:
