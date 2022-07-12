@@ -491,7 +491,7 @@ def rebin_coupling_matrix( matrix, ell, bindef, transferfunc=None,
         print('using master scaling')
 
         scaling = np.tile(scale,[nell,1]) #may be transpose of what want...
-
+        #scaling = scaling.T #decided it was transpose. changed mind
     else:
         print('using non master scaling')
         scale = np.reshape(np.sqrt(scale),[1,nell])
@@ -500,7 +500,7 @@ def rebin_coupling_matrix( matrix, ell, bindef, transferfunc=None,
     #may have some transposes of what is desired... will need to check some
     #print(p.shape,matrix.shape,scaling.shape,q.shape)
     result = np.matmul(p,np.matmul(np.multiply(matrix,scaling),q))
-    pdb.set_trace()
+    #pdb.set_trace()
     return result
 
 
