@@ -292,6 +292,7 @@ def end_to_end(mapfiles,
             iskip = np.where(slice)[-1][-1]
         except IndexError:
             iskip=0 #end up here if np.where returned empty array -- all false
+        print(i,iskip)
         # leave first (or more) usually bogus bin out of inversion
         #don't try to divide by zero
         inv_super_kernel[i,iskip:,i,iskip:] = np.linalg.inv(super_kernel[i,iskip:,i,iskip:])
