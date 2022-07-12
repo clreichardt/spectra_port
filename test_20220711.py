@@ -13,11 +13,14 @@ files = glob.glob(dir+'*0002.fits')
 l = np.arange(10101)
 dlfac = l*(l+1)/(2*np.pi)
 
-for file in files:
-    map = hp.read_map(file)
-    cl = hp.anafast(map)
+for file1 in files:
+    print(file1)
+    tmap = hp.read_map(file1)
+    cl = hp.anafast(tmap,lmax=10100)
     dl = cl * dlfac
-    with open(file+'_dl.pkl','wb') as fp:
+    file2=file1+'_dl.pkl'
+    print('dumping to '+file2)
+    with open(file2,'wb') as fp:
         pkl.dump(dl,fp)
 
         

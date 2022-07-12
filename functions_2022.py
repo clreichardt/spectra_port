@@ -298,12 +298,13 @@ if __name__ == "__main__" and END == True:
 
 if __name__ == "__main__" and NULLLR == True:
 
-    print('doing null')
+    print('doing null lr')
 
     mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
     mask = np.load(mask_file)
     nside=8192
     banddef = np.arange(0,12000,500)
+    os.system('rm /big_scratch/cr/xspec_2022/datalr/shts_processed.bin')
     os.system('ln -s /big_scratch/pc/lr_null/sht_lr_90.bin /big_scratch/cr/xspec_2022/datalr/shts_processed.bin')
     workdir='/big_scratch/cr/xspec_2022/datalr/'
     setdef = np.zeros([200,1],dtype=np.int32)
@@ -322,7 +323,7 @@ if __name__ == "__main__" and NULLLR == True:
     with open(file_out,'wb') as fp:
         pkl.dump(spectrum,fp)
         del spectrum
-
+    os.system('rm /big_scratch/cr/xspec_2022/datalr/shts_processed.bin')
     os.system('ln -s /big_scratch/pc/lr_null/sht_lr_150.bin /big_scratch/cr/xspec_2022/datalr/shts_processed.bin')
     spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                             lmax=13000,
@@ -337,7 +338,7 @@ if __name__ == "__main__" and NULLLR == True:
     with open(file_out,'wb') as fp:
         pkl.dump(spectrum,fp)
         del spectrum
-    
+    os.system('rm /big_scratch/cr/xspec_2022/datalr/shts_processed.bin')
     os.system('ln -s /big_scratch/pc/lr_null/sht_lr_220.bin /big_scratch/cr/xspec_2022/datalr/shts_processed.bin')
     spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                             lmax=13000,
