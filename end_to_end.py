@@ -4,6 +4,7 @@ from spectra_port import utils
 from spectra_port import unbiased_multispec as spec
 import time,os
 import pickle as pkl
+import pdb
     
 def trim_end_to_end_output(fullsize):
     fullsize['data_spectrum'].allspectra=None

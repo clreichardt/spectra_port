@@ -340,6 +340,7 @@ def transfer_initial_estimate(cl_mc, cl_theory, bl, fsky_w2):
     # 1.2
     F0 = cl_mc / ( fsky_w2 * cl_theory_beam2 )
     F0[np.where(cl_theory_beam2 < 0.)] = 1.
+    F0[F0<0] = 0.0
     return F0
 
 def transfer_iteration( F0, cl_mc, cl_theory, bl, fsky_w2, M_ll):
@@ -360,6 +361,7 @@ def transfer_iteration( F0, cl_mc, cl_theory, bl, fsky_w2, M_ll):
     cl_theory_beam2 = cl_theory * bl**2
     F = F0 + (cl_mc -  np.matmul(M_ll, (F0 * cl_theory_beam2 )) ) / (cl_theory_beam2 * fsky_w2)
     F[np.where(cl_theory_beam2 < 0.)] = 1.
+    F[F<0] = 0.0
     return F
 
 
