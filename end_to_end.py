@@ -293,8 +293,9 @@ def end_to_end(mapfiles,
             iskip = np.where(slice)[-1][-1]
         except IndexError:
             iskip=0 #end up here if np.where returned empty array -- all false
-        pdb.set_trace()
-        print(i,iskip)
+        #pdb.set_trace()
+        #print(i,iskip)
+        iskips[i]=iskip
         # leave first (or more) usually bogus bin out of inversion
         #don't try to divide by zero
         inv_super_kernel[i,iskip:,i,iskip:] = np.linalg.inv(super_kernel[i,iskip:,i,iskip:])
@@ -313,6 +314,7 @@ def end_to_end(mapfiles,
     output['invkernmatt']=invkernmattr
     output['invsimkernmat']=invsimkernmat
     output['invsimkernmatt']=invsimkernmattr
+    output['iksips']=iskips
                 
     ##################
     # 6: Multiply data bandpowers by Inverse Kernel

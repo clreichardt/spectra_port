@@ -499,7 +499,10 @@ def rebin_coupling_matrix( matrix, ell, bindef, transferfunc=None,
 
     #may have some transposes of what is desired... will need to check some
     #print(p.shape,matrix.shape,scaling.shape,q.shape)
-    return np.matmul(p,np.matmul(np.multiply(matrix,scaling),q))
+    result = np.matmul(p,np.matmul(np.multiply(matrix,scaling),q))
+    pdb.set_trace()
+    return result
+
 
 def window_function_calc(banddef, transfer_dic, nskip=1, ellmin = 10, ellmax=10000):
     '''
