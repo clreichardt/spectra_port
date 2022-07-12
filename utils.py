@@ -439,7 +439,7 @@ def transfer_iteration( F0, cl_mc, cl_theory, bl, fsky_w2, M_ll):
 
 def rebin_coupling_matrix( matrix, ell, bindef, transferfunc=None, 
                                 beamfunc=None, pixelfunc=None, 
-                                nocmbweighting=False,
+                                nocmbweighting=True, #Already in Dl's and doing weights in Dls
                                 onesidecmbweighting=False,
                                 master=True, 
                                 allow_negative_transfer=False):

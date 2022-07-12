@@ -248,11 +248,11 @@ def end_to_end(mapfiles,
     transfer_iter = np.zeros([ntfs,niter,nkern])
     ii=0
     for i in range(nsets):        
-        cl_mc = mc_spectrum_fine.spectrum[:,ii]
+        dl_mc = mc_spectrum_fine.spectrum[:,ii]
         ii += (nsets -i)
-        transfer_iter[i,0,:] = utils.transfer_initial_estimate(cl_mc, theory_dls_interp[i,:], simbeams_interp[i,:], fskyw2)
+        transfer_iter[i,0,:] = utils.transfer_initial_estimate(dl_mc, theory_dls_interp[i,:], simbeams_interp[i,:], fskyw2)
         for j in range(1,niter):
-            transfer_iter[i,j,:] = utils.transfer_iteration( transfer_iter[i,j-1,:], cl_mc, theory_dls_interp[i,:], simbeams_interp[i,:], fskyw2, kernel)
+            transfer_iter[i,j,:] = utils.transfer_iteration( transfer_iter[i,j-1,:], dl_mc, theory_dls_interp[i,:], simbeams_interp[i,:], fskyw2, kernel)
     
     transfer = np.zeros([nspectra,nkern])
     k=0
@@ -315,7 +315,7 @@ def end_to_end(mapfiles,
     output['invsimkernmat']=invsimkernmat
     output['invsimkernmatt']=invsimkernmattr
     output['iksips']=iskips
-                
+
     ##################
     # 6: Multiply data bandpowers by Inverse Kernel
     ##################
