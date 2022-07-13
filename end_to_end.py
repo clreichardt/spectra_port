@@ -282,24 +282,35 @@ def end_to_end(mapfiles,
     inv_super_kernel    = np.zeros([nspectra, nbands, nspectra, nbands],dtype=np.float64)
     inv_sim_super_kernel= np.zeros([nspectra, nbands, nspectra, nbands],dtype=np.float64)
     iskips = np.zeros(nspectra, dtype=np.int32)
+    eskips = np.zeros(nspectra, dtype=np.int32)
     for i in range(nspectra):
         print(i,kernel.shape)
         super_kernel[i,:,i,:]     = utils.rebin_coupling_matrix(kernel, ellkern, banddef, transferfunc=transfer[i,:], beamfunc = beams[i,:])
         sim_super_kernel[i,:,i,:] = utils.rebin_coupling_matrix(kernel, ellkern, banddef, transferfunc=transfer[i,:], beamfunc = simbeams[i,:])
         slice_kern = np.asarray([super_kernel[i,j,i,j] for j in range(nbands)])
         peak = np.max(slice_kern)
-        slice = slice_kern < 1e-4 * peak
+        ipeak = np.argmax(slice_kern)
+        slice = slice_kern < 1e-3 * peak
+
+        #we potentially want to slice elements off the end and almost certainly the start. 
+        #start first
         try:
-            iskip = np.where(slice)[-1][-1]
+            iskip = np.where(slice[:ipeak])[-1][-1] +1 #want to start 1 after
         except IndexError:
             iskip=0 #end up here if np.where returned empty array -- all false
+        try:
+            eskip = np.where(slice[ipeak:])[-1][0]+ipeak
+        except IndexError:
+            eskip=len(slice) #end up here if np.where returned empty array -- all false
+              
         #pdb.set_trace()
         #print(i,iskip)
         iskips[i]=iskip
+        eskips[i]=eskip
         # leave first (or more) usually bogus bin out of inversion
         #don't try to divide by zero
-        inv_super_kernel[i,iskip:,i,iskip:] = np.linalg.inv(super_kernel[i,iskip:,i,iskip:])
-        inv_sim_super_kernel[i,iskip:,i,iskip:] = np.linalg.inv(sim_super_kernel[i,iskip:,i,iskip:])
+        inv_super_kernel[i,iskip:eskip,i,iskip:eskip] = np.linalg.inv(super_kernel[i,iskip:eskip,i,iskip:eskip])
+        inv_sim_super_kernel[i,iskip:eskip,i,iskip:eskip] = np.linalg.inv(sim_super_kernel[i,iskip:eskip,i,iskip:eskip])
         
     invkernmat      = np.reshape(inv_super_kernel,[nspectra*nbands, nbands*nspectra])
     invkernmattr    = np.transpose(invkernmat)
@@ -315,6 +326,7 @@ def end_to_end(mapfiles,
     output['invsimkernmat']=invsimkernmat
     output['invsimkernmatt']=invsimkernmattr
     output['iksips']=iskips
+    output['eksips']=eskips
 
     ##################
     # 6: Multiply data bandpowers by Inverse Kernel
