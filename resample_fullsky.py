@@ -25,6 +25,6 @@ phioff = np.pi * np.asarray([0,1.,1.])
 for i in range(3):
     newtheta = thetamult[i] * theta + thetaoff[i]
     newphi = phi + phioff[i]
-    newphi[newphi > 2*np.phi] -= 2*np.pi
+    newphi[newphi > 2*np.pi] -= 2*np.pi
     newind = hp.ang2pix(nside,newtheta,newphi)
     print(newind.shape)
