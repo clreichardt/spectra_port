@@ -6,7 +6,7 @@ import healpy as hp
 from spectra_port import utils
 from spectra_port import unbiased_multispec as spec
 import pickle as pkl
-
+from spt3g import core, maps
 
 def get_indices():
     ind,tmap = spec.load_spt3g_healpix_ring_map('/sptlocal/user/pc/g3files_v2/combined_T_148ghz_00024.g3')
