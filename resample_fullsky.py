@@ -61,7 +61,7 @@ def save_as_g3(cutsky, ind, file_name):
     return
 
 
-def loop_and_cut(ostub='/sptlocal/user/creichardt/out_maps/sim_150ghz_{}.g3',file_list):
+def loop_and_cut(file_list,ostub='/sptlocal/user/creichardt/out_maps/sim_150ghz_{}.g3'):
 
     nf = len(file_list)
     ind0,ind1,ind2,ind3 = get_indices()
@@ -92,11 +92,11 @@ def do_all():
     dir='/sptlocal/user/creichardt/out_maps/xfer/'
     file_list = glob.glob(dir+stub)
 
-    loop_and_cut(ostub='/sptlocal/user/creichardt/out_maps/sim_150ghz_{}.g3',file_list)
+    loop_and_cut(file_list,ostub='/sptlocal/user/creichardt/out_maps/sim_150ghz_{}.g3')
     file_list2=[file.replace('150ghz_map.dat','220ghz_map.dat') for file in file_list]
-    loop_and_cut(ostub='/sptlocal/user/creichardt/out_maps/sim_220ghz_{}.g3',file_list2)
+    loop_and_cut(ile_list2,ostub='/sptlocal/user/creichardt/out_maps/sim_220ghz_{}.g3')
     file_list3=[file.replace('150ghz_map.dat','95ghz_map.dat') for file in file_list]
-    loop_and_cut(ostub='/sptlocal/user/creichardt/out_maps/sim_95ghz_{}.g3',file_list3)
+    loop_and_cut(ile_list3,ostub='/sptlocal/user/creichardt/out_maps/sim_95ghz_{}.g3')
     
 if __name__ == "__main__":
     do_all()
