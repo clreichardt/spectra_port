@@ -20,8 +20,8 @@ theta,phi = hp.pixelfunc.pix2ang(nside,ind)
 
 
 thetamult = [-1,1,-1]
-thetaoff = np.pi * [1.,0,1.]
-phioff = np.pi * [0,1.,1.]
+thetaoff = np.pi * np.asarray([1.,0,1.])
+phioff = np.pi * np.asarray([0,1.,1.])
 for i in range(3):
     newtheta = thetamult[i] * theta + thetaoff[i]
     newphi = phi + phioff[i]
