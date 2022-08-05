@@ -7,6 +7,7 @@ from spectra_port import utils
 from spectra_port import unbiased_multispec as spec
 import pickle as pkl
 from spt3g import core, maps
+import pdb
 
 def get_indices():
     ind,tmap = spec.load_spt3g_healpix_ring_map('/sptlocal/user/pc/g3files_v2/combined_T_148ghz_00024.g3')
@@ -34,7 +35,15 @@ def get_indices():
     newphi[newphi > 2*np.pi] -= 2*np.pi
     ind3 = hp.ang2pix(nside,newtheta,newphi)
 
+    #now sort
+    ai = np.argsort(ind)
+    ind=ind[ai]
+    ind1=ind1[ai]
+    ind2=ind2[ai]
+    ind3=ind3[ai]
+
     return ind, ind1, ind2, ind3
+
 
 
 
@@ -49,44 +58,52 @@ def save_as_g3(cutsky, ind, file_name,nside=8192):
     print(file_name)
     #
     #cutsky *= core.G3Units.uK
-    cutsky = cutsky.astype(dtype=np.float64)
-    store = ind, cutsky, nside
-    m = maps.HealpixSkyMap(store)
-    
+    cutskyb = cutsky.astype(dtype=np.float64)
+    indb = ind.astype(dtype=np.int_)
+    #print(indb[-1])
+    #store = indb, cutskyb, nside
+    m = maps.HealpixSkyMap((indb,cutskyb,nside))
+    iz,mz=m.nonzero_pixels()
+    #print(iz[-1])
     #create a g3 frame to store the date
     frame = core.G3Frame(core.G3FrameType.Map)
-    m.ringparse = True
+    #m.ringparse = True
+    m.weighted=False
     frame['T'] = m
     writer = core.G3Writer(file_name)
     writer(frame)
-    return
+    return frame
 
 
 def loop_and_cut(file_list,ostub='/sptlocal/user/creichardt/out_maps/sim_150ghz_{}.g3'):
 
     nf = len(file_list)
     ind0,ind1,ind2,ind3 = get_indices()
+    print(ind0.shape,ind1.shape,ind2.shape,ind3.shape)
     i=0
+    #don't need the .ocpy()'s below -- tried it when debugging index ordering
     for j in range(nf):
         ifile=file_list[j]
         print('reading: ',ifile)
         fullmap = hp.read_map(ifile)
         cutsky = fullmap[ind0]
         file_name=ostub.format(i)
-        save_as_g3(cutsky, ind0, file_name)
+        f0=save_as_g3(cutsky.copy(), ind0.copy(), file_name)
         i=i+1
         cutsky = fullmap[ind1]
         file_name=ostub.format(i)
-        save_as_g3(cutsky, ind0, file_name)
+        f1=save_as_g3(cutsky.copy(), ind0.copy(), file_name)
         i=i+1
         cutsky = fullmap[ind2]
         file_name=ostub.format(i)
-        save_as_g3(cutsky, ind0, file_name)
+        f2=save_as_g3(cutsky.copy(), ind0.copy(), file_name)
         i=i+1
         cutsky = fullmap[ind3]
         file_name=ostub.format(i)
-        save_as_g3(cutsky, ind0, file_name)
+        f3=save_as_g3(cutsky.copy(), ind0.copy(), file_name)
         i=i+1
+
+        #pdb.set_trace()
 
 
 def do_all():
