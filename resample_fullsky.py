@@ -63,12 +63,14 @@ def save_as_g3(cutsky, ind, file_name,nside=8192):
     #print(indb[-1])
     #store = indb, cutskyb, nside
     m = maps.HealpixSkyMap((indb,cutskyb,nside))
-    iz,mz=m.nonzero_pixels()
+    m.indexedsparse=True
+    m.weighted=False
+    #iz,mz=m.nonzero_pixels()
     #print(iz[-1])
     #create a g3 frame to store the date
     frame = core.G3Frame(core.G3FrameType.Map)
     #m.ringparse = True
-    m.weighted=False
+    #m.weighted=False
     frame['T'] = m
     writer = core.G3Writer(file_name)
     writer(frame)
