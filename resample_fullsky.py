@@ -86,6 +86,13 @@ def loop_and_cut(file_list,ostub='/sptlocal/user/creichardt/out_maps/sim_150ghz_
     #don't need the .ocpy()'s below -- tried it when debugging index ordering
     for j in range(nf):
         ifile=file_list[j]
+        if (os.path.exists(ostub.format(i)) and 
+            os.path.exists(ostub.format(i+1)) and 
+            os.path.exists(ostub.format(i+2)) and 
+            os.path.exists(ostub.format(i+3))):
+            print('skipping {} sim as outputs exist'.format(j))
+            i = i+4
+            continue #skip it
         print('reading: ',ifile)
         fullmap = hp.read_map(ifile)
         cutsky = fullmap[ind0] / 1000. # was in uK. g3 units default to mK
@@ -112,7 +119,7 @@ def do_all():
     stub='sim*150ghz_map.fits'
     dir='/sptlocal/user/creichardt/out_maps/xfer/'
     file_list = glob.glob(dir+stub)
-    print(file_list)
+    print('have input Nsim: ',len(file_list))
     loop_and_cut(file_list,ostub='/sptlocal/user/creichardt/out_maps/sim_150ghz_{}.g3')
     file_list2=[file.replace('150ghz_map.fits','220ghz_map.fits') for file in file_list]
     print(file_list2)
