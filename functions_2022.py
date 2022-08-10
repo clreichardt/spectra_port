@@ -173,8 +173,9 @@ if __name__ == "__main__" and PREP is True:
     print("Now real")
     #    exit()
 
-    datashtfilelist = create_real_file_list2('/sptgrid/analysis/highell_TT_19-20/v4/diff_shts',freqs=['90','150','220'],nbundle=200)
+    datashtfilelist = create_real_file_list2('/sptgrid/analysis/highell_TT_19-20/v4/obs_shts/',freqs=['90','150','220'],nbundle=200)
     processedshtfile = workdir + '/data/sht_processed.bin'
+    kmask = np.load('/home/pc/hiell/k_weighing/w2s_150.npy')
     spec.reformat_shts(datashtfilelist, processedshtfile,
                            lmax,
                            cmbweighting = True, 
