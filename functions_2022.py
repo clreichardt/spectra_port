@@ -180,7 +180,7 @@ if __name__ == "__main__" and PREP is True:
                            lmax,
                            cmbweighting = True, 
                            mask  = None,
-                           kmask = None,
+                           kmask = kmask,
                            ell_reordering=None,
                            no_reorder=False,
                            ram_limit = None,
