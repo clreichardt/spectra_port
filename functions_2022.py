@@ -227,7 +227,7 @@ if __name__ == "__main__" and PREP is True:
         #datashtfilelist = create_real_file_list(dir,stub='bundle_',sfreqs=['90','150','220'],estub='GHz.npz',nbundle=200)
         datashtfilelist = create_real_file_list(dir,stub='bundle_',sfreqs=['150'],estub='GHz.npz',nbundle=200)
         processedshtfile = workdir + '/data/shts_processed.bin'
-        os.makedirs(workdir+'/data/',exists_ok=True)
+        os.makedirs(workdir+'/data/',exist_ok=True)
         spec.reformat_shts(datashtfilelist, processedshtfile,
                            lmax,
                            cmbweighting = True, 
