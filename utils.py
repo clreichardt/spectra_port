@@ -21,7 +21,7 @@ def cast_clonly_to_theory_format(filein,fileout):
     
     
 def flatten_kmask(kmask, lmax):
-    flat_kmask = np.zeros(hp.sphtfunc.Alm.getsize(lmax),dtype=np.float32)
+    flat_kmask = np.zeros(healpy.sphtfunc.Alm.getsize(lmax),dtype=np.float32)
     
     k=0
     for i in range(lmax+1):
