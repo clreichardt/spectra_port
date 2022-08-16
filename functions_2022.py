@@ -186,6 +186,17 @@ def create_sim_setdefs(nsim,nfreq):
         set2[:,i] = np.arange(0,nsim) + (2*i+1)*nsim
     return set1, set2
 
+def flatten_kmask(kmask, lmax):
+    l = np.arange(lmax+1)
+    m = np.arange(lmax+1)
+    ll,mm = np.meshgrid(l,m)
+    ll = ll.ravel()
+    mm = mm.ravel()
+    flat_kmask = np.zeros(hp.spht.Alm.getsize(lmax))
+    idx = hp.spht.Alm.getidx(lmax,ll,mm)
+    flat_kmask[idx] = kmask[ll,mm]
+    return flat_kmask
+
 
 if __name__ == "__main__" and PREP is True:
     print("First sims")
@@ -193,6 +204,7 @@ if __name__ == "__main__" and PREP is True:
     workdir = '/big_scratch/cr/xspec_2022/'
     lmax = 13000
     dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v2.0_testinputsv2/'
+    kmask = flatten_kmask( np.load('/home/pc/hiell/k_weighing/w2s_150.npy'), lmax)
 #/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
     
 
@@ -204,7 +216,7 @@ if __name__ == "__main__" and PREP is True:
                            lmax,
                            cmbweighting = True, 
                            mask  = None,
-                           kmask = None,
+                           kmask = kmask,
                            ell_reordering=None,
                            no_reorder=False,
                            ram_limit = None,
@@ -220,7 +232,7 @@ if __name__ == "__main__" and PREP is True:
                            lmax,
                            cmbweighting = True, 
                            mask  = None,
-                           kmask = None,
+                           kmask = kmask,
                            ell_reordering=None,
                            no_reorder=False,
                            ram_limit = None,
@@ -472,6 +484,7 @@ if __name__ == "__main__" and NULL == True:
 
     mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
     mask = np.load(mask_file)
+    kmask = flatten_kmask( np.load('/home/pc/hiell/k_weighing/w2s_150.npy'), lmax)
     nside=8192
     banddef = np.arange(0,12000,500)
 
@@ -487,7 +500,7 @@ if __name__ == "__main__" and NULL == True:
                                               persistdir=workdir,
                                               setdef=setdef,
                                               jackknife=False, auto=False,
-                                              kmask=None,
+                                              kmask=kmask,
                                               cmbweighting=True)
         file_out = workdir + 'spectrum90_nullbins.pkl'
         with open(file_out,'wb') as fp:
@@ -501,7 +514,7 @@ if __name__ == "__main__" and NULL == True:
                                               persistdir=workdir,
                                               setdef=setdef,
                                               jackknife=False, auto=False,
-                                              kmask=None,
+                                              kmask=kmask,
                                               cmbweighting=True)
     file_out = workdir + 'spectrum150_nullbins.pkl'
     with open(file_out,'wb') as fp:
@@ -515,7 +528,7 @@ if __name__ == "__main__" and NULL == True:
                                               persistdir=workdir,
                                               setdef=setdef,
                                               jackknife=False, auto=False,
-                                              kmask=None,
+                                              kmask=kmask,
                                               cmbweighting=True)
     file_out = workdir + 'spectrum220_nullbins.pkl'
     with open(file_out,'wb') as fp:
@@ -531,7 +544,7 @@ if __name__ == "__main__" and NULL == True:
                                               persistdir=workdir,
                                               setdef=setdef,
                                               jackknife=True, auto=False,
-                                              kmask=None,
+                                              kmask=kmask,
                                               cmbweighting=True)
     file_out = workdir + 'null_spectrum_90_year1.pkl'
     with open(file_out,'wb') as fp:
@@ -546,7 +559,7 @@ if __name__ == "__main__" and NULL == True:
                                               persistdir=workdir,
                                               setdef=setdef,
                                               jackknife=True, auto=False,
-                                              kmask=None,
+                                              kmask=kmask,
                                               cmbweighting=True)
     file_out = workdir + 'null_spectrum_90_year2.pkl'
     with open(file_out,'wb') as fp:
@@ -564,7 +577,7 @@ if __name__ == "__main__" and NULL == True:
                                               persistdir=workdir,
                                               setdef=setdef,
                                               jackknife=True, auto=False,
-                                              kmask=None,
+                                              kmask=kmask,
                                               cmbweighting=True)
     file_out = workdir + 'null_spectrum_150_year1.pkl'
     with open(file_out,'wb') as fp:
@@ -579,7 +592,7 @@ if __name__ == "__main__" and NULL == True:
                                               persistdir=workdir,
                                               setdef=setdef,
                                               jackknife=True, auto=False,
-                                              kmask=None,
+                                              kmask=kmask,
                                               cmbweighting=True)
     file_out = workdir + 'null_spectrum_150_year2.pkl'
     with open(file_out,'wb') as fp:
@@ -595,7 +608,7 @@ if __name__ == "__main__" and NULL == True:
                                               persistdir=workdir,
                                               setdef=setdef,
                                               jackknife=True, auto=False,
-                                              kmask=None,
+                                              kmask=kmask,
                                               cmbweighting=True)
     file_out = workdir + 'null_spectrum_220_year1.pkl'
     with open(file_out,'wb') as fp:
@@ -610,7 +623,7 @@ if __name__ == "__main__" and NULL == True:
                                               persistdir=workdir,
                                               setdef=setdef,
                                               jackknife=True, auto=False,
-                                              kmask=None,
+                                              kmask=kmask,
                                               cmbweighting=True)
     file_out = workdir + 'null_spectrum_220_year2.pkl'
     with open(file_out,'wb') as fp:
@@ -627,7 +640,7 @@ if __name__ == "__main__" and NULL == True:
                                               persistdir=workdir,
                                               setdef=setdef,
                                               jackknife=True, auto=False,
-                                              kmask=None,
+                                              kmask=kmask,
                                               cmbweighting=True)
     file_out = workdir + 'null_spectrum_90.pkl'
     with open(file_out,'wb') as fp:
@@ -647,7 +660,7 @@ if __name__ == "__main__" and NULL == True:
                                               persistdir=workdir,
                                               setdef=setdef,
                                               jackknife=True, auto=False,
-                                              kmask=None,
+                                              kmask=kmask,
                                               cmbweighting=True)
     file_out = workdir + 'null_spectrum_150.pkl'
     with open(file_out,'wb') as fp:
@@ -664,7 +677,7 @@ if __name__ == "__main__" and NULL == True:
                                               persistdir=workdir,
                                               setdef=setdef,
                                               jackknife=True, auto=False,
-                                              kmask=None,
+                                              kmask=kmask,
                                               cmbweighting=True)
     file_out = workdir + 'null_spectrum_220.pkl'
     with open(file_out,'wb') as fp:
