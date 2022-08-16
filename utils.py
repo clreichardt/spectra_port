@@ -18,6 +18,18 @@ def cast_clonly_to_theory_format(filein,fileout):
     tmp[:,0]=l
     tmp[:,1]=dl
     np.savetxt(fileout,tmp)
+    
+    
+def flatten_kmask(kmask, lmax):
+    flat_kmask = np.zeros(hp.sphtfunc.Alm.getsize(lmax),dtype=np.float32)
+    
+    k=0
+    for i in range(lmax+1):
+        nn = lmax+1 - i
+        flat_kmask[k:k+nn] = kmask[i:,i]    
+        k+=nn
+    return flat_kmask
+
 
 def great_circle_distance(vec_border_lon, vec_border_lat, this_lon, this_lat):
     '''
