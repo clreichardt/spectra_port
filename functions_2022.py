@@ -212,7 +212,7 @@ if __name__ == "__main__" and PREP is True:
 #/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
     
 
-    if True:
+    if False:
         mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=10)
         print(mcshtfilelist)        
         processedshtfile = workdir + '/mc/shts_processed.bin'
@@ -227,10 +227,13 @@ if __name__ == "__main__" and PREP is True:
                           )
         
     print("Now real")
-    if False:
+    if True:
     #    exit()
+        print("kmask mean {} std {}".format(np.mean(kmask),np.std(kmask)))
         dir='/sptgrid/analysis/highell_TT_19-20/v4/obs_shts/'
-        datashtfilelist = create_real_file_list(dir,stub='bundle_',sfreqs=['90','150','220'],estub='GHz.npz',nbundle=200)
+        print("Warning -- only 150s for testing")
+        #datashtfilelist = create_real_file_list(dir,stub='bundle_',sfreqs=['90','150','220'],estub='GHz.npz',nbundle=200)
+        datashtfilelist = create_real_file_list(dir,stub='bundle_',sfreqs=['150'],estub='GHz.npz',nbundle=200)
         processedshtfile = workdir + '/data/shts_processed.bin'
         spec.reformat_shts(datashtfilelist, processedshtfile,
                            lmax,
