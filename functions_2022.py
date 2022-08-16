@@ -20,6 +20,7 @@ CAL = False
 TEST= False
 NULLLR=False
 NULLLRSPLIT=False
+PK=False
 
 my_parser = argparse.ArgumentParser()
 my_parser.add_argument('-prep', action='store_true',dest='prep')
@@ -31,6 +32,7 @@ my_parser.add_argument('-coadd', action='store_true',dest='coadd')
 my_parser.add_argument('-sht', action='store_true',dest='sht')
 my_parser.add_argument('-cal', action='store_true',dest='cal')
 my_parser.add_argument('-test', action='store_true',dest='test')
+my_parser.add_argument('-pk', action='store_true',dest='pk')
 #my_parser.add_argument('-freq', default=None ,dest='freq')
 args = my_parser.parse_args()
 
@@ -41,6 +43,7 @@ COADD=args.coadd
 CAL = args.cal
 SHT = args.sht
 TEST= args.test
+PK= args.pk
 NULLLR=args.nulllr
 NULLLRSPLIT=args.nulllrsplit
 
