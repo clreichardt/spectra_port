@@ -485,14 +485,16 @@ if __name__ == "__main__" and NULL == True:
 
     mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
     mask = np.load(mask_file)
+    lmax = 13000
     kmask = utils.flatten_kmask( np.load('/home/pc/hiell/k_weighing/w2s_150.npy'), lmax)
     nside=8192
-    banddef = np.arange(0,12000,500)
+    banddef = np.arange(0,6000,500)
 
     workdir='/big_scratch/cr/xspec_2022/data/'
     setdef = np.zeros([200,1],dtype=np.int32)
     setdef[:,0]=np.arange(0,200,dtype=np.int32)
     mapfiles = create_real_file_list('/sptgrid/user/pc/obs_shts/',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
+    mapfiles = create_real_file_list('/sptgrid/user/pc/obs_shts/',stub='GHz_bundle_',sfreqs=['150'],estub='.npz',nbundle=200)
     if False:
         spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                               lmax=13000,
@@ -507,19 +509,23 @@ if __name__ == "__main__" and NULL == True:
         with open(file_out,'wb') as fp:
             pkl.dump(spectrum,fp)
         del spectrum
-    setdef[:,0]+=200
+    setdef[:,0]+=0#200
+    setdef = np.zeros([100,2],dtype=np.int32)
+    setdef[:,0]=np.arange(0,100,dtype=np.int32)
+    setdef[:,1]=np.arange(100,200,dtype=np.int32)
     spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                               lmax=13000,
                                               resume=True,
                                               basedir=workdir,
                                               persistdir=workdir,
                                               setdef=setdef,
-                                              jackknife=False, auto=False,
+                                              jackknife=True, auto=False,
                                               kmask=kmask,
                                               cmbweighting=True)
     file_out = workdir + 'spectrum150_nullbins.pkl'
     with open(file_out,'wb') as fp:
         pkl.dump(spectrum,fp)
+    exit()
     del spectrum
     setdef[:,0]+=200
     spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,

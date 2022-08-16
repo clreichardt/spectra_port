@@ -93,7 +93,7 @@ def reformat_shts(shtfilelist, processedshtfile,
         j=0
         for i in range(lmax+1):
             nm = lmax+1-i
-            local_kmask[j:j+nm]=dummy_vec[i:]
+            local_kmask[j:j+nm]*=dummy_vec[i:]
             j=j+nm
 
 
