@@ -193,8 +193,11 @@ def flatten_kmask(kmask, lmax):
     ll,mm = np.meshgrid(l,m)
     ll = ll.ravel()
     mm = mm.ravel()
-    flat_kmask = np.zeros(hp.spht.Alm.getsize(lmax))
-    idx = hp.spht.Alm.getidx(lmax,ll,mm)
+    ind =  np.where(mm < ll ) 
+    ll, mm = ll[ind], mm[ind]
+
+    flat_kmask = np.zeros(hp.sphtfunc.Alm.getsize(lmax))
+    idx = hp.sphtfunc.Alm.getidx(lmax,ll,mm)
     flat_kmask[idx] = kmask[ll,mm]
     return flat_kmask
 
