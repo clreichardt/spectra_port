@@ -196,8 +196,8 @@ def flatten_kmask(kmask, lmax):
     ll,mm = np.meshgrid(l,m)
     ll = ll.ravel()
     mm = mm.ravel()
-    flat_kmask = np.zeros(hp.spht.Alm.getsize(lmax))
-    idx = hp.spht.Alm.getidx(lmax,ll,mm)
+    flat_kmask = np.zeros(hp.sphtfunc.Alm.getsize(lmax),dtype=np.float32)
+    idx = hp.sphtfunc.Alm.getidx(lmax,ll,mm)
     flat_kmask[idx] = kmask[ll,mm]
     return flat_kmask
 
@@ -215,7 +215,9 @@ if __name__ == "__main__" and PREP is True:
     if False:
         mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=10)
         print(mcshtfilelist)        
+        
         processedshtfile = workdir + '/mc/shts_processed.bin'
+        os.makedirs(workdir+'/mc/',exists_ok=True)
         spec.reformat_shts(mcshtfilelist, processedshtfile,
                            lmax,
                            cmbweighting = True, 
@@ -235,6 +237,7 @@ if __name__ == "__main__" and PREP is True:
         #datashtfilelist = create_real_file_list(dir,stub='bundle_',sfreqs=['90','150','220'],estub='GHz.npz',nbundle=200)
         datashtfilelist = create_real_file_list(dir,stub='bundle_',sfreqs=['150'],estub='GHz.npz',nbundle=200)
         processedshtfile = workdir + '/data/shts_processed.bin'
+        os.makedirs(workdir+'/data/',exists_ok=True)
         spec.reformat_shts(datashtfilelist, processedshtfile,
                            lmax,
                            cmbweighting = True, 
@@ -269,6 +272,7 @@ if __name__ == "__main__" and END == True:
 
     #workdir = '/sptlocal/user/creichardt/xspec_2022/'
     workdir = '/big_scratch/cr/xspec_2022/'
+    os.makedirs(workdir,exists_ok=True)
     file_out = workdir + 'spectrum.pkl'
     file_out_small = workdir + 'spectrum_small.pkl'
     
