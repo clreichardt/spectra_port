@@ -81,8 +81,10 @@ def reformat_shts(shtfilelist, processedshtfile,
         if kmask.shape[0] != size:
             raise Exception("kmask provided is wrong size ({} vs {}), exiting".format(size,kmask.shape[0]))
         local_kmask = kmask.astype(np.float32)
+        print("using provided kmask")
     else:
         local_kmask = np.ones(size,dtype=np.float32)
+        print("kmask  is unity")
 
         
     if cmbweighting:
