@@ -190,16 +190,6 @@ def create_sim_setdefs(nsim,nfreq):
         set2[:,i] = np.arange(0,nsim) + (2*i+1)*nsim
     return set1, set2
 
-def flatten_kmask(kmask, lmax):
-    l = np.arange(lmax+1)
-    m = np.arange(lmax+1)
-    ll,mm = np.meshgrid(l,m)
-    ll = ll.ravel()
-    mm = mm.ravel()
-    flat_kmask = np.zeros(hp.sphtfunc.Alm.getsize(lmax),dtype=np.float32)
-    idx = hp.sphtfunc.Alm.getidx(lmax,ll,mm)
-    flat_kmask[idx] = kmask[ll,mm]
-    return flat_kmask
 
 
 if __name__ == "__main__" and PREP is True:
@@ -208,7 +198,7 @@ if __name__ == "__main__" and PREP is True:
     workdir = '/big_scratch/cr/xspec_2022/'
     lmax = 13000
     dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v2.0_testinputsv2/'
-    kmask = flatten_kmask( np.load('/home/pc/hiell/k_weighing/w2s_150.npy'), lmax)
+    kmask = utils.flatten_kmask( np.load('/home/pc/hiell/k_weighing/w2s_150.npy'), lmax)
 #/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
     
 
@@ -495,7 +485,7 @@ if __name__ == "__main__" and NULL == True:
 
     mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
     mask = np.load(mask_file)
-    kmask = flatten_kmask( np.load('/home/pc/hiell/k_weighing/w2s_150.npy'), lmax)
+    kmask = utils.flatten_kmask( np.load('/home/pc/hiell/k_weighing/w2s_150.npy'), lmax)
     nside=8192
     banddef = np.arange(0,12000,500)
 
