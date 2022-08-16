@@ -207,7 +207,7 @@ if __name__ == "__main__" and PREP is True:
         print(mcshtfilelist)        
         
         processedshtfile = workdir + '/mc/shts_processed.bin'
-        os.makedirs(workdir+'/mc/',exists_ok=True)
+        os.makedirs(workdir+'/mc/',exist_ok=True)
         spec.reformat_shts(mcshtfilelist, processedshtfile,
                            lmax,
                            cmbweighting = True, 
@@ -262,7 +262,7 @@ if __name__ == "__main__" and END == True:
 
     #workdir = '/sptlocal/user/creichardt/xspec_2022/'
     workdir = '/big_scratch/cr/xspec_2022/'
-    os.makedirs(workdir,exists_ok=True)
+    os.makedirs(workdir,exist_ok=True)
     file_out = workdir + 'spectrum.pkl'
     file_out_small = workdir + 'spectrum_small.pkl'
     
