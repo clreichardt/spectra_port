@@ -2,6 +2,7 @@ import os
 os.environ['OMP_NUM_THREADS'] = "6"
 import numpy as np
 import glob
+import healpy as hp
 
 import unbiased_multispec as spec
 import utils
