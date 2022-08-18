@@ -10,6 +10,7 @@ import end_to_end
 from spt3g import core,maps, calibration
 import argparse
 import pickle as pkl
+import pdb
 
 PREP= False
 END = False
@@ -160,6 +161,8 @@ def create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',
     maxlen = 0
     for i in range(nsim):
         files = glob.glob(os.path.join(dir, dstub.format(i),bstub+'*_'+sfreqs[0]+estub))
+        print(i)
+#    pdb.set_trace()
         if len(files[0])+2 > maxlen:
             maxlen = len(files[0])+2
         if len(files[1])+2 > maxlen:
@@ -176,6 +179,50 @@ def create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',
         for j in range(nfreq):
             file_list[j*2*nsim + i]     = os.path.join(dir, dstub.format(i),bstub+'{:03d}_'.format(bundle_list[i,0])+sfreqs[j]+estub)
             file_list[(j*2+1)*nsim + i] = os.path.join(dir, dstub.format(i),bstub+'{:03d}_'.format(bundle_list[i,1])+sfreqs[j]+estub)
+            
+    return file_list
+
+
+def create_sim_file_list_v2(dir,bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100):
+    nfreq=len(sfreqs)
+    listA  = []
+    listB  = []
+    
+    #file_list = np.zeros(6*nsim,dtype='<U265') #max len 256
+    bundle_list = np.zeros([nsim,2],dtype=np.int32)
+    '''
+    desired output order (for 100 sims)
+      0-99: 90 bundleA
+      100-199: 90 bundle B
+      200-299: 150 bundleA
+      300-399: 150 bundleB
+      400-499: 220 bundleA
+      500-599: 220 bundleB
+    '''
+    ll = os.listdir(dir)
+    dirlist = [dir+x for x in ll]
+    maxlen = 0
+    for i in range(nsim):
+        files = glob.glob(os.path.join(dirlist[i], bstub+'*_'+sfreqs[0]+estub))
+        print(i)
+        
+        #pdb.set_trace()
+        if len(files[0])+2 > maxlen:
+            maxlen = len(files[0])+2
+        if len(files[1])+2 > maxlen:
+            maxlen = len(files[1])+2
+        endlength= len(sfreqs[0]+estub)+1 # for '_'
+        beglength = len(os.path.join(dirlist[i],bstub))
+
+        bundle_list[i,0] = int(files[0][beglength:-endlength])
+        bundle_list[i,1] = int(files[0][beglength:-endlength])
+
+    file_list = np.zeros(6*nsim,dtype='<U{:d}'.format(maxlen)) 
+
+    for i in range(nsim):
+        for j in range(nfreq):
+            file_list[j*2*nsim + i]     = os.path.join(dirlist[i],bstub+'{:03d}_'.format(bundle_list[i,0])+sfreqs[j]+estub)
+            file_list[(j*2+1)*nsim + i] = os.path.join(dirlist[i],bstub+'{:03d}_'.format(bundle_list[i,1])+sfreqs[j]+estub)
             
     return file_list
 
@@ -197,13 +244,14 @@ if __name__ == "__main__" and PREP is True:
     workdir = '/sptlocal/user/creichardt/xspec_2022/'
     workdir = '/big_scratch/cr/xspec_2022/'
     lmax = 13000
-    dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v2.0_testinputsv2/'
-    kmask = utils.flatten_kmask( np.load('/home/pc/hiell/k_weighing/w2s_150.npy'), lmax)
+    dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.0_gaussian_inputs/'
+    #kmask = utils.flatten_kmask( np.load('/home/pc/hiell/k_weighing/w2s_150.npy'), lmax)
 #/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
-    
+    kmask=None
 
-    if False:
-        mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=10)
+    if True:
+#        mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.npz',nsim=200)
+        mcshtfilelist = create_sim_file_list_v2(dir,bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.npz',nsim=100)
         print(mcshtfilelist)        
         
         processedshtfile = workdir + '/mc/shts_processed.bin'
@@ -219,7 +267,7 @@ if __name__ == "__main__" and PREP is True:
                           )
         
     print("Now real")
-    if True:
+    if False:
     #    exit()
         print("kmask mean {} std {}".format(np.mean(kmask),np.std(kmask)))
         dir='/sptgrid/analysis/highell_TT_19-20/v4/obs_shts/'
@@ -509,25 +557,8 @@ if __name__ == "__main__" and NULL == True:
         with open(file_out,'wb') as fp:
             pkl.dump(spectrum,fp)
         del spectrum
+    print("changed indices for test")
     setdef[:,0]+=0#200
-    setdef = np.zeros([100,2],dtype=np.int32)
-    setdef[:,0]=np.arange(0,100,dtype=np.int32)
-    setdef[:,1]=np.arange(100,200,dtype=np.int32)
-    spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
-                                              lmax=13000,
-                                              resume=True,
-                                              basedir=workdir,
-                                              persistdir=workdir,
-                                              setdef=setdef,
-                                              jackknife=True, auto=False,
-                                              kmask=kmask,
-                                              cmbweighting=True)
-    file_out = workdir + 'spectrum150_nullbins.pkl'
-    with open(file_out,'wb') as fp:
-        pkl.dump(spectrum,fp)
-    exit()
-    del spectrum
-    setdef[:,0]+=200
     spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                               lmax=13000,
                                               resume=True,
@@ -537,14 +568,30 @@ if __name__ == "__main__" and NULL == True:
                                               jackknife=False, auto=False,
                                               kmask=kmask,
                                               cmbweighting=True)
-    file_out = workdir + 'spectrum220_nullbins.pkl'
+    file_out = workdir + 'spectrum150_nullbins.pkl'
     with open(file_out,'wb') as fp:
         pkl.dump(spectrum,fp)
     del spectrum
-    setdef = np.zeros([45,2],dtype=np.int32)
-    setdef[:,0]=np.arange(0,45,dtype=np.int32)
-    setdef[:,1]=np.arange(45,90,dtype=np.int32)
-    null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+    if False:
+        setdef[:,0]+=200
+        spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+                                              lmax=13000,
+                                              resume=True,
+                                              basedir=workdir,
+                                              persistdir=workdir,
+                                              setdef=setdef,
+                                              jackknife=False, auto=False,
+                                              kmask=kmask,
+                                              cmbweighting=True)
+        file_out = workdir + 'spectrum220_nullbins.pkl'
+        with open(file_out,'wb') as fp:
+            pkl.dump(spectrum,fp)
+        del spectrum
+    if False:
+        setdef = np.zeros([45,2],dtype=np.int32)
+        setdef[:,0]=np.arange(0,45,dtype=np.int32)
+        setdef[:,1]=np.arange(45,90,dtype=np.int32)
+        null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                               lmax=13000,
                                               resume=True,
                                               basedir=workdir,
@@ -553,13 +600,13 @@ if __name__ == "__main__" and NULL == True:
                                               jackknife=True, auto=False,
                                               kmask=kmask,
                                               cmbweighting=True)
-    file_out = workdir + 'null_spectrum_90_year1.pkl'
-    with open(file_out,'wb') as fp:
-        pkl.dump(null_spectrum,fp)
-    del null_spectrum
-    setdef[:,0]=np.arange(0,45,dtype=np.int32)+110
-    setdef[:,1]=np.arange(45,90,dtype=np.int32)+110
-    null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+        file_out = workdir + 'null_spectrum_90_year1.pkl'
+        with open(file_out,'wb') as fp:
+            pkl.dump(null_spectrum,fp)
+        del null_spectrum
+        setdef[:,0]=np.arange(0,45,dtype=np.int32)+110
+        setdef[:,1]=np.arange(45,90,dtype=np.int32)+110
+        null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                               lmax=13000,
                                               resume=True,
                                               basedir=workdir,
@@ -568,16 +615,16 @@ if __name__ == "__main__" and NULL == True:
                                               jackknife=True, auto=False,
                                               kmask=kmask,
                                               cmbweighting=True)
-    file_out = workdir + 'null_spectrum_90_year2.pkl'
-    with open(file_out,'wb') as fp:
-        pkl.dump(null_spectrum,fp)
-    del null_spectrum        
+        file_out = workdir + 'null_spectrum_90_year2.pkl'
+        with open(file_out,'wb') as fp:
+            pkl.dump(null_spectrum,fp)
+        del null_spectrum        
         
         
-    setdef = np.zeros([45,2],dtype=np.int32)
-    setdef[:,0]=np.arange(0,45,dtype=np.int32)+200
-    setdef[:,1]=np.arange(45,90,dtype=np.int32)+200
-    null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+        setdef = np.zeros([45,2],dtype=np.int32)
+        setdef[:,0]=np.arange(0,45,dtype=np.int32)+200
+        setdef[:,1]=np.arange(45,90,dtype=np.int32)+200
+        null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                               lmax=13000,
                                               resume=True,
                                               basedir=workdir,
@@ -586,13 +633,13 @@ if __name__ == "__main__" and NULL == True:
                                               jackknife=True, auto=False,
                                               kmask=kmask,
                                               cmbweighting=True)
-    file_out = workdir + 'null_spectrum_150_year1.pkl'
-    with open(file_out,'wb') as fp:
-        pkl.dump(null_spectrum,fp)
-    del null_spectrum
-    setdef[:,0]=np.arange(0,45,dtype=np.int32)+110+200
-    setdef[:,1]=np.arange(45,90,dtype=np.int32)+110+200
-    null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+        file_out = workdir + 'null_spectrum_150_year1.pkl'
+        with open(file_out,'wb') as fp:
+            pkl.dump(null_spectrum,fp)
+        del null_spectrum
+        setdef[:,0]=np.arange(0,45,dtype=np.int32)+110+200
+        setdef[:,1]=np.arange(45,90,dtype=np.int32)+110+200
+        null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                               lmax=13000,
                                               resume=True,
                                               basedir=workdir,
@@ -601,14 +648,14 @@ if __name__ == "__main__" and NULL == True:
                                               jackknife=True, auto=False,
                                               kmask=kmask,
                                               cmbweighting=True)
-    file_out = workdir + 'null_spectrum_150_year2.pkl'
-    with open(file_out,'wb') as fp:
-        pkl.dump(null_spectrum,fp)
-    del null_spectrum
+        file_out = workdir + 'null_spectrum_150_year2.pkl'
+        with open(file_out,'wb') as fp:
+            pkl.dump(null_spectrum,fp)
+        del null_spectrum
     
-    setdef[:,0]=np.arange(0,45,dtype=np.int32)+400
-    setdef[:,1]=np.arange(45,90,dtype=np.int32)+400
-    null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+        setdef[:,0]=np.arange(0,45,dtype=np.int32)+400
+        setdef[:,1]=np.arange(45,90,dtype=np.int32)+400
+        null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                               lmax=13000,
                                               resume=True,
                                               basedir=workdir,
@@ -617,13 +664,13 @@ if __name__ == "__main__" and NULL == True:
                                               jackknife=True, auto=False,
                                               kmask=kmask,
                                               cmbweighting=True)
-    file_out = workdir + 'null_spectrum_220_year1.pkl'
-    with open(file_out,'wb') as fp:
-        pkl.dump(null_spectrum,fp)
-    del null_spectrum
-    setdef[:,0]=np.arange(0,45,dtype=np.int32)+110+400
-    setdef[:,1]=np.arange(45,90,dtype=np.int32)+110+400
-    null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+        file_out = workdir + 'null_spectrum_220_year1.pkl'
+        with open(file_out,'wb') as fp:
+            pkl.dump(null_spectrum,fp)
+        del null_spectrum
+        setdef[:,0]=np.arange(0,45,dtype=np.int32)+110+400
+        setdef[:,1]=np.arange(45,90,dtype=np.int32)+110+400
+        null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                               lmax=13000,
                                               resume=True,
                                               basedir=workdir,
@@ -632,15 +679,16 @@ if __name__ == "__main__" and NULL == True:
                                               jackknife=True, auto=False,
                                               kmask=kmask,
                                               cmbweighting=True)
-    file_out = workdir + 'null_spectrum_220_year2.pkl'
-    with open(file_out,'wb') as fp:
-        pkl.dump(null_spectrum,fp)
-    del null_spectrum
+        file_out = workdir + 'null_spectrum_220_year2.pkl'
+        with open(file_out,'wb') as fp:
+            pkl.dump(null_spectrum,fp)
+        del null_spectrum
 
-    setdef = np.zeros([100,2],dtype=np.int32)
-    setdef[:,0]=np.arange(0,100,dtype=np.int32)
-    setdef[:,1]=np.arange(100,200,dtype=np.int32)
-    null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+    if False:
+        setdef = np.zeros([100,2],dtype=np.int32)
+        setdef[:,0]=np.arange(0,100,dtype=np.int32)
+        setdef[:,1]=np.arange(100,200,dtype=np.int32)
+        null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                               lmax=13000,
                                               resume=True,
                                               basedir=workdir,
@@ -649,29 +697,31 @@ if __name__ == "__main__" and NULL == True:
                                               jackknife=True, auto=False,
                                               kmask=kmask,
                                               cmbweighting=True)
-    file_out = workdir + 'null_spectrum_90.pkl'
-    with open(file_out,'wb') as fp:
-        pkl.dump(null_spectrum,fp)
+        file_out = workdir + 'null_spectrum_90.pkl'
+        with open(file_out,'wb') as fp:
+            pkl.dump(null_spectrum,fp)
 
 
-
-
-    setdef = np.zeros([100,2],dtype=np.int32)
-    setdef[:,0]=np.arange(0,100,dtype=np.int32)+200
-    setdef[:,1]=np.arange(100,200,dtype=np.int32)+200
-
-    null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
-                                              lmax=13000,
-                                              resume=True,
-                                              basedir=workdir,
-                                              persistdir=workdir,
-                                              setdef=setdef,
-                                              jackknife=True, auto=False,
-                                              kmask=kmask,
-                                              cmbweighting=True)
-    file_out = workdir + 'null_spectrum_150.pkl'
-    with open(file_out,'wb') as fp:
-        pkl.dump(null_spectrum,fp)
+    if True:
+        print("changed indices for test")
+        setdef = np.zeros([100,2],dtype=np.int32)
+        setdef[:,0]=np.arange(0,100,dtype=np.int32)+0#200
+        setdef[:,1]=np.arange(100,200,dtype=np.int32)+0#200
+        
+        null_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+                                                     lmax=13000,
+                                                     resume=True,
+                                                     basedir=workdir,
+                                                     persistdir=workdir,
+                                                     setdef=setdef,
+                                                     jackknife=True, auto=False,
+                                                     kmask=kmask,
+                                                     cmbweighting=True)
+        file_out = workdir + 'null_spectrum_150.pkl'
+        with open(file_out,'wb') as fp:
+            pkl.dump(null_spectrum,fp)
+            
+    exit()
 
     setdef = np.zeros([100,2],dtype=np.int32)
     setdef[:,0]=np.arange(0,100,dtype=np.int32)+400
