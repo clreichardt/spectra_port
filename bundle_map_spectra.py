@@ -5,12 +5,13 @@ import glob
 
 def make_mean_spectrum(stub):
     flist = glob.glob(stub)
+    nf = len(flist)
     odl = 0
     for file in flist:
         vec = np.loadtxt(file)
         odl += vec[:,1]
     odl[:2]=0
-    vec[:,1]=odl
+    vec[:,1]=odl/nf
     return vec
 
 
