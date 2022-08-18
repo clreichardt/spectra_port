@@ -294,7 +294,7 @@ if __name__ == "__main__" and END == True:
 
     #change for testing
     #setdef_mc1, setdef_mc2 = create_sim_setdefs(100,3)
-    setdef_mc1, setdef_mc2 = create_sim_setdefs(10,3)
+    setdef_mc1, setdef_mc2 = create_sim_setdefs(100,3)
 
     setdef = np.zeros([200,3],dtype=np.int32)
     setdef[:,0]=np.arange(200,dtype=np.int32)
@@ -328,7 +328,8 @@ if __name__ == "__main__" and END == True:
 
     #change for testing
     dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v2.0_testinputsv2/'
-    mcmapfiles = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=10)
+    #mcmapfiles = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=10)
+    mcmapfiles = create_sim_file_list_v2(dir,bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.npz',nsim=100)
     #dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
     #mcmapfiles = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
     
