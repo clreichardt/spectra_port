@@ -436,7 +436,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
             pdb.set_trace()
             raise Exception("Insufficient ram for processing even a single bin")
 
-        print('take_all_cross_spectra: loading bands {} {}'.format(i,istop-1))
+        print('take_all_cross_spectra: loading bands {} {} of {}'.format(i,istop-1,nbands))
         # technical: delete the last iteration of banddata_big first
         try:
             del banddata_big
