@@ -48,6 +48,30 @@ PK= args.pk
 NULLLR=args.nulllr
 NULLLRSPLIT=args.nulllrsplit
 
+def create_coadds(freq,nbundles=200):
+    stub='/sptgrid/analysis/highell_TT_19-20/v4/coadds/bundle_{}_{}GHz.g3'
+    ofile = '/sptlocal/user/creichardt/hiell2022/coadd_{}ghz.pkl'.format(freq)
+
+    
+    nside=8192
+    coadd = np.zeros(12*nside**2,dtype=np.float64)
+    wt    = np.zeros(12*nside**2,dtype=np.float64)
+    for i in range(nbundles):
+        a=list(core.G3File(dir+filestub.format(i)))
+        loc_ind1,loc_map1 = a[0]['left'].nonzero_pixels()
+        coadd[loc_ind1] += loc_map1
+        loc_ind1,loc_map1 = a[0]['right'].nonzero_pixels()
+        coadd[loc_ind1] += loc_map1
+        loc_ind1,loc_map1 = (a[0]['weight']).nonzero_pixels()
+        wt[loc_ind1] += loc_map1
+    ind = wt.nonzero()
+    coadd = coadd[ind] 
+    wt = wt[ind]
+    coadd /= wt
+    with open(ofile,'wb') as fp:
+        pkl.dump(ind,fp)
+        pkl.dump(coadd,fp)
+        pkl.dump(wt,fp)
 
 def create_bundle_maps_and_coadds(freq,nbundles=200):
     if freq == 150:
@@ -744,9 +768,12 @@ if __name__ == "__main__" and NULL == True:
 
 
 if __name__ == "__main__" and COADD == True:
-    create_bundle_maps_and_coadds(90,nbundles=200)
-    create_bundle_maps_and_coadds(150,nbundles=200)
-    create_bundle_maps_and_coadds(220,nbundles=200)
+    create_coadds(90,nbundles=200)
+    create_coadds(150,nbundles=200)
+    create_coadds(220,nbundles=200)
+    #create_bundle_maps_and_coadds(90,nbundles=200)
+    #create_bundle_maps_and_coadds(150,nbundles=200)
+    #create_bundle_maps_and_coadds(220,nbundles=200)
 
 
 
