@@ -336,7 +336,7 @@ def end_to_end(mapfiles,
     lasttime=newtime
     print('unbias spectra')
     print(invkernmat.shape,data_spectrum.spectrum.shape)
-    spectrum = np.reshape(np.matmul(invkernmat, np.reshape(data_spectrum.spectrum,[nspectra*nbands])),[nspectra,nbands])
+    spectrum = np.reshape(np.matmul(invkernmat, np.reshape(data_spectrum.spectrum.T,[nspectra*nbands])),[nspectra,nbands])
 
     output['spectrum']=spectrum
     ##################
