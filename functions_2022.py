@@ -60,7 +60,7 @@ def create_coadds(freq,nbundles=200):
     last = time.time()
     for i in range(nbundles):
         newt = time.time()
-        print('{}, last took {} s'.format(i,(newt-last).total_seconds()))
+        print('{}, last took {} s'.format(i,(newt-last)))
         last = newt
         a=list(core.G3File(stub.format(i,freq)))
         loc_ind1,loc_map1 = a[0]['left'].nonzero_pixels()
