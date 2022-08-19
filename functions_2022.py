@@ -11,6 +11,7 @@ from spt3g import core,maps, calibration
 import argparse
 import pickle as pkl
 import pdb
+import time
 
 PREP= False
 END = False
@@ -56,7 +57,11 @@ def create_coadds(freq,nbundles=200):
     nside=8192
     coadd = np.zeros(12*nside**2,dtype=np.float64)
     wt    = np.zeros(12*nside**2,dtype=np.float64)
+    last = time.time()
     for i in range(nbundles):
+        newt = time.time()
+        print('{}, last took {} s'.format(i,(newt-last).total_seconds()))
+        last = newt
         a=list(core.G3File(stub.format(i,freq)))
         loc_ind1,loc_map1 = a[0]['left'].nonzero_pixels()
         coadd[loc_ind1] += loc_map1
