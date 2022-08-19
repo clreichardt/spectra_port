@@ -57,7 +57,7 @@ def create_coadds(freq,nbundles=200):
     coadd = np.zeros(12*nside**2,dtype=np.float64)
     wt    = np.zeros(12*nside**2,dtype=np.float64)
     for i in range(nbundles):
-        a=list(core.G3File(dir+filestub.format(i)))
+        a=list(core.G3File(stub.format(i,freq)))
         loc_ind1,loc_map1 = a[0]['left'].nonzero_pixels()
         coadd[loc_ind1] += loc_map1
         loc_ind1,loc_map1 = a[0]['right'].nonzero_pixels()
