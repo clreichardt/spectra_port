@@ -195,10 +195,10 @@ def create_sim_setdefs(nsim,nfreq):
 if __name__ == "__main__" and PREP is True:
     print("First sims")
     workdir = '/sptlocal/user/creichardt/xspec_2022/'
-    workdir = '/big_scratch/cr/xspec_2022/'
+    workdir = '/big_scratch/pc/xspec_2022/data/withkmask/'
     lmax = 13000
     dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v2.0_testinputsv2/'
-    kmask = utils.flatten_kmask( np.load('/home/pc/hiell/k_weighing/w2s_150.npy'), lmax)
+    kmask = ['/home/pc/hiell/k_weighing/w2s_90.npy', '/home/pc/hiell/k_weighing/w2s_150.npy', '/home/pc/hiell/k_weighing/w2s_220.npy']
 #/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
     
 
@@ -221,7 +221,7 @@ if __name__ == "__main__" and PREP is True:
     print("Now real")
     if True:
     #    exit()
-        print("kmask mean {} std {}".format(np.mean(kmask),np.std(kmask)))
+        # print(f"kmask mean {} std {}".format(np.mean(kmask),np.std(kmask)))
         dir='/sptgrid/analysis/highell_TT_19-20/v4/obs_shts/'
         print("Warning -- only 150s for testing")
         #datashtfilelist = create_real_file_list(dir,stub='bundle_',sfreqs=['90','150','220'],estub='GHz.npz',nbundle=200)

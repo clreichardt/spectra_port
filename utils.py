@@ -3,6 +3,7 @@ import numpy as np
 from spt3g import core
 import pdb
 import healpy
+import os
 
 def quickplot(tmap,max=0.5):
     hp.visufunc.cartview(tmap,min=-1*max,max=max,latra=[-73,-38],lonra=[-55,55])
@@ -19,7 +20,6 @@ def cast_clonly_to_theory_format(filein,fileout):
     tmp[:,1]=dl
     np.savetxt(fileout,tmp)
     
-    
 def flatten_kmask(kmask, lmax):
     flat_kmask = np.zeros(healpy.sphtfunc.Alm.getsize(lmax),dtype=np.float32)
     
@@ -30,6 +30,24 @@ def flatten_kmask(kmask, lmax):
         k+=nn
     return flat_kmask
 
+def load_kmask(fname, cmbweighting, lmax):
+    if not os.path.isfile(fname):
+        raise Exception(f'The given kmask file : {fname} does not exist')
+    local_kmask = flatten_kmask(np.load(fname), lmax)
+    local_kmask = local_kmask.astype(np.float32)
+    size = healpy.sphtfunc.Alm.getsize(lmax)
+    if local_kmask.shape[0] != size:
+        raise Exception(f"kmask provided in {fname} is wrong size ({size} vs {local_kmask.shape[0]}), exiting")
+
+    if cmbweighting:
+        dummy_vec = np.arange(lmax+1,dtype=np.float32)
+        dummy_vec = np.sqrt((dummy_vec*(dummy_vec+1.))/(2*np.pi)) # This will be squared since Cl =a*a
+        j=0
+        for i in range(lmax+1):
+            nm = lmax+1-i
+            local_kmask[j:j+nm]*=dummy_vec[i:]
+            j=j+nm
+    return
 
 def great_circle_distance(vec_border_lon, vec_border_lat, this_lon, this_lat):
     '''

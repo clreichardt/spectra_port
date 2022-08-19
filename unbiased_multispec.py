@@ -76,8 +76,11 @@ def reformat_shts(shtfilelist, processedshtfile,
         inv_mask_factor = np.sqrt(1./np.mean(mask**2))
 
     #ie do parallelism SHTs at once...
+    load_separate_kmask = False
     size = healpy.sphtfunc.Alm.getsize(lmax)
-    if kmask is not None:
+    if isinstance(kmask,list):
+        load_separate_kmask = True
+    elif kmask is not None:
         if kmask.shape[0] != size:
             raise Exception("kmask provided is wrong size ({} vs {}), exiting".format(size,kmask.shape[0]))
         local_kmask = kmask.astype(np.float32)
@@ -87,7 +90,7 @@ def reformat_shts(shtfilelist, processedshtfile,
         print("kmask  is unity")
 
         
-    if cmbweighting:
+    if (cmbweighting and not load_separate_kmask):
         dummy_vec = np.arange(lmax+1,dtype=np.float32)
         dummy_vec = np.sqrt((dummy_vec*(dummy_vec+1.))/(2*np.pi)) # This will be squared since Cl =a*a
         j=0
@@ -135,6 +138,14 @@ def reformat_shts(shtfilelist, processedshtfile,
             # TBD if worthwhile
 
             #apply weighting (ie cl-dl) and kmask 
+            if load_separate_kmask:
+                if (count == 0):
+                    local_kmask = utils.load_kmask(kmask[0], cmbweighting, lmax)
+                elif (count == 200):
+                    local_kmask = utils.load_kmask(kmask[1], cmbweighting, lmax)
+                elif (count == 400):
+                    local_kmask = utils.load_kmask(kmask[2], cmbweighting, lmax)
+
             alms *= local_kmask
 
             #TBD, possibly adjust for mask factor here
