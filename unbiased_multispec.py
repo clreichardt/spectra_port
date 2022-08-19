@@ -145,6 +145,8 @@ def reformat_shts(shtfilelist, processedshtfile,
                     local_kmask = utils.load_kmask(kmask[1], cmbweighting, lmax)
                 elif (count == 400):
                     local_kmask = utils.load_kmask(kmask[2], cmbweighting, lmax)
+                else:
+                    continue
 
             alms *= local_kmask
 
