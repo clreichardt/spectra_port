@@ -516,7 +516,7 @@ def rebin_coupling_matrix( matrix, ell, bindef, transferfunc=None,
     return result
 
 
-def window_function_calc(banddef, transfer_dic, nskip=1, ellmin = 10, ellmax=10000):
+def window_function_calc(banddef, transfer_dic, nskip=0, ellmin = 10, ellmax=13000):
     '''
     ;this version assumes the real spectra are binned to final bins and
     ;tries to juryrig a correction for overlapping bins compared to the
@@ -533,7 +533,8 @@ def window_function_calc(banddef, transfer_dic, nskip=1, ellmin = 10, ellmax=100
     ells = np.arange(ellmin, ellmax+1)
 
     ellbin = transfer_dic['ell']
-    kernel = transfer_dic['kernel']
+    kernel = transfer_dic['Mll']
+    inv_binned_kernel = transfer_dic['invkernel']
     bl     = transfer_dic['bl']
     transfer=transfer_dic['transfer']
     btrans  = transfer * bl**2
@@ -543,8 +544,6 @@ def window_function_calc(banddef, transfer_dic, nskip=1, ellmin = 10, ellmax=100
     ellbin0 = ellbin-dell
     ellbin1 = ellbin+dell
 
-    binned_kernel    = rebin_coupling_matrix(kernel, ellbin, banddef, transferfunc=transfer, beamfunc = bl)
-    inv_kernel = np.linalg.inv(binned_kernel[nskip:,nskip:])
     usedbands = np.arange(nskip,len(banddef)+1)
     nkept = len(usedbands)
     kept = np.arange(nkept)
@@ -552,7 +551,8 @@ def window_function_calc(banddef, transfer_dic, nskip=1, ellmin = 10, ellmax=100
     nb = len(banddef)
     tmp = np.zeros(nbands+1)
     tmp[1:]=banddef
-    nbandctrr = 0.5*(tmp[0:-1]+tmp[1:])
+    pdb.set_trace() # check banddef - start at 0 or not?. tmp created to have a 0-starting one
+    #nbandctrr = 0.5*(tmp[0:-1]+tmp[1:])
 
     basebininds = np.zeros([nb,3],dtype=np.int64)
     wtbins = np.zeros([nb,nellbin])
@@ -595,7 +595,7 @@ def window_function_calc(banddef, transfer_dic, nskip=1, ellmin = 10, ellmax=100
             basettmp[j] = np.sum(tmp2 * wtbins[jj,:])
         #maybe do with tile
 
-        specfixed = np.matmul(invkern , basetmp)
+        specfixed = np.matmul(inv_binned_kernel , basetmp)
 
         win[:,i] = specfixed
 

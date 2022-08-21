@@ -303,8 +303,6 @@ def end_to_end(mapfiles,
         except IndexError:
             eskip=len(slice) #end up here if np.where returned empty array -- all false
               
-        #pdb.set_trace()
-        #print(i,iskip)
         iskips[i]=iskip
         eskips[i]=eskip
         # leave first (or more) usually bogus bin out of inversion
@@ -372,14 +370,18 @@ def end_to_end(mapfiles,
         print('window funcs')
         assert(win_minell < win_maxell)
         nlwin = win_maxell-win_minell+1
-        windowfunc = np.zeros([nbands*nspectra,nlwin],dtype=np.float32)
+        windowfunc = np.zeros([nbands*nspectra, nlwin], dtype=np.float32)
         for i in range(nspectra):
             iskip = iskips[i]
+            eskip = eskips[i]
+            nb0 = eskip-iskip+1
             transdic = {'ell':ellkern, 
-                        'kernel':kernel,
-                        'transfer':transfer[i,:],
-                        'bl':beams[i,:]}
-            windowfunc[iskip+i*nbands:nbands+i*nbands,:] = window_function_calc(banddef,transdic,nskip=iskip,ellmin = win_minell,ellmax=win_maxell)
+                        'kernel':np.squeeze(super_kernel[i,:,i,:]),
+                        'invkernel':np.squeeze(inv_super_kernel[i,:,i,:])
+                        'transfer':np.squeeze(transfer[i,:]),
+                        'bl':np.squeeze(beams[i,:])}
+            windowfunc[iskip+i*nbands:eskip+i*nbands,:] = (utils.window_function_calc(banddef, transdic, 
+                                                                                      ellmin = win_minell, ellmax=win_maxell))[iskip:eskip,:]
 
 
         output['windowfunc']=windowfunc
