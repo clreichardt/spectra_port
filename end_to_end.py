@@ -377,7 +377,7 @@ def end_to_end(mapfiles,
             nb0 = eskip-iskip+1
             transdic = {'ell':ellkern, 
                         'kernel':np.squeeze(super_kernel[i,:,i,:]),
-                        'invkernel':np.squeeze(inv_super_kernel[i,:,i,:])
+                        'invkernel':np.squeeze(inv_super_kernel[i,:,i,:]),
                         'transfer':np.squeeze(transfer[i,:]),
                         'bl':np.squeeze(beams[i,:])}
             windowfunc[iskip+i*nbands:eskip+i*nbands,:] = (utils.window_function_calc(banddef, transdic, 
