@@ -74,7 +74,10 @@ def save_as_g3(cutsky, ind, file_name,nside=8192):
     frame['T'] = m
     writer = core.G3Writer(file_name)
     writer(frame)
-    return frame
+    del writer
+    del frame
+    del m
+    return #frame
 
 
 def loop_and_cut(file_list,ostub='/sptlocal/user/creichardt/out_maps/sim_150ghz_{}.g3'):
@@ -97,19 +100,19 @@ def loop_and_cut(file_list,ostub='/sptlocal/user/creichardt/out_maps/sim_150ghz_
         fullmap = hp.read_map(ifile)
         cutsky = fullmap[ind0] / 1000. # was in uK. g3 units default to mK
         file_name=ostub.format(i)
-        f0=save_as_g3(cutsky.copy(), ind0.copy(), file_name)
+        save_as_g3(cutsky, ind0, file_name)
         i=i+1
         cutsky = fullmap[ind1] / 1000.
         file_name=ostub.format(i)
-        f1=save_as_g3(cutsky.copy(), ind0.copy(), file_name)
+        save_as_g3(cutsky, ind0, file_name)
         i=i+1
         cutsky = fullmap[ind2] / 1000.
         file_name=ostub.format(i)
-        f2=save_as_g3(cutsky.copy(), ind0.copy(), file_name)
+        save_as_g3(cutsky, ind0, file_name)
         i=i+1
         cutsky = fullmap[ind3] / 1000.
         file_name=ostub.format(i)
-        f3=save_as_g3(cutsky.copy(), ind0.copy(), file_name)
+        save_as_g3(cutsky, ind0, file_name)
         i=i+1
 
         #pdb.set_trace()

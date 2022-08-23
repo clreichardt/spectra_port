@@ -81,8 +81,10 @@ def reformat_shts(shtfilelist, processedshtfile,
         if kmask.shape[0] != size:
             raise Exception("kmask provided is wrong size ({} vs {}), exiting".format(size,kmask.shape[0]))
         local_kmask = kmask.astype(np.float32)
+        print("using provided kmask")
     else:
         local_kmask = np.ones(size,dtype=np.float32)
+        print("kmask  is unity")
 
         
     if cmbweighting:
@@ -91,7 +93,7 @@ def reformat_shts(shtfilelist, processedshtfile,
         j=0
         for i in range(lmax+1):
             nm = lmax+1-i
-            local_kmask[j:j+nm]=dummy_vec[i:]
+            local_kmask[j:j+nm]*=dummy_vec[i:]
             j=j+nm
 
 
@@ -434,7 +436,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
             pdb.set_trace()
             raise Exception("Insufficient ram for processing even a single bin")
 
-        print('take_all_cross_spectra: loading bands {} {}'.format(i,istop-1))
+        print('take_all_cross_spectra: loading bands {} {} of {}'.format(i,istop-1,nbands))
         # technical: delete the last iteration of banddata_big first
         try:
             del banddata_big
