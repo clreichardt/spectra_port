@@ -274,13 +274,14 @@ if __name__ == "__main__" and PREP is True:
     workdir = '/big_scratch/cr/xspec_2022/'
     lmax = 13000
     dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.0_gaussian_inputs/'
+    dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.1_mask5/'
     #kmask = utils.flatten_kmask( np.load('/home/pc/hiell/k_weighing/w2s_150.npy'), lmax)
 #/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
     kmask=None
 
     if True:
 #        mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.npz',nsim=200)
-        mcshtfilelist = create_sim_file_list_v2(dir,bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.npz',nsim=100)
+        mcshtfilelist = create_sim_file_list_v2(dir,bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
         print(mcshtfilelist)        
         
         processedshtfile = workdir + '/mc/shts_processed.bin'
@@ -296,13 +297,14 @@ if __name__ == "__main__" and PREP is True:
                           )
         
     print("Now real")
-    if False:
+    if True:
     #    exit()
-        print("kmask mean {} std {}".format(np.mean(kmask),np.std(kmask)))
-        dir='/sptgrid/analysis/highell_TT_19-20/v4/obs_shts/'
-        print("Warning -- only 150s for testing")
-        #datashtfilelist = create_real_file_list(dir,stub='bundle_',sfreqs=['90','150','220'],estub='GHz.npz',nbundle=200)
-        datashtfilelist = create_real_file_list(dir,stub='bundle_',sfreqs=['150'],estub='GHz.npz',nbundle=200)
+        if kmask is not None:
+            print("kmask mean {} std {}".format(np.mean(kmask),np.std(kmask)))
+        dir='/sptgrid/analysis/highell_TT_19-20/v4/obs_shts_v2/'
+        #print("Warning -- only 150s for testing")
+        datashtfilelist = create_real_file_list(dir,stub='bundle_',sfreqs=['90','150','220'],estub='GHz.npz',nbundle=200)
+        #datashtfilelist = create_real_file_list(dir,stub='bundle_',sfreqs=['150'],estub='GHz.npz',nbundle=200)
         processedshtfile = workdir + '/data/shts_processed.bin'
         os.makedirs(workdir+'/data/',exist_ok=True)
         spec.reformat_shts(datashtfilelist, processedshtfile,
