@@ -13,6 +13,7 @@ import pickle as pkl
 import pdb
 import time
 
+PREPCAL= False
 PREP= False
 END = False
 NULL= False
@@ -26,6 +27,7 @@ PK=False
 
 my_parser = argparse.ArgumentParser()
 my_parser.add_argument('-prep', action='store_true',dest='prep')
+my_parser.add_argument('-prepcal', action='store_true',dest='prepcal')
 my_parser.add_argument('-end', action='store_true',dest='end')
 my_parser.add_argument('-null', action='store_true',dest='null')
 my_parser.add_argument('-nulllr', action='store_true',dest='nulllr')
@@ -39,6 +41,7 @@ my_parser.add_argument('-pk', action='store_true',dest='pk')
 args = my_parser.parse_args()
 
 PREP=args.prep
+PREPCAL=args.prepcal
 END=args.end
 NULL=args.null
 COADD=args.coadd
@@ -279,9 +282,43 @@ def create_sim_setdefs(nsim,nfreq):
 
 
 
+if __name__ == "__main__" and PREPCAL is True:
+    print("First sims")
+    workdir = '/big_scratch/cr/xspec_2022/cal/'
+    #workdir = '/big_scratch/pc/xspec_2022/data/mask_v5/'
+    lmax = 3100
+    #dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.0_gaussian_inputs/'
+    dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.1_mask5/subfield_shts/'
+    #kmask = utils.flatten_kmask( np.load('/home/pc/hiell/k_weighing/w2s_150.npy'), lmax)
+#/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
+    # kmask = utils.flatten_kmask( np.load('/home/pc/hiell/k_weighing/w2s_150.npy'), lmax)
+
+    kmask=None
+
+    if True:
+#        mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.npz',nsim=200)
+        mcshtfilelist = create_sim_file_list_v2(dir,bstub='bundles/alm_subfield',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
+        print(mcshtfilelist)        
+        fieldlist = ['ra0hdec-44.75', 'ra0hdec-52.25', 'ra0hdec-59.75', 'ra0hdec-67.25']
+        processedshtfilebase = workdir + '{}/mc/shts_processed.bin'
+        for field in fieldlist:
+            os.makedirs(workdir+'{}/mc/'.format(field),exist_ok=True)
+        spec.reformat_multifield_shts(mcshtfilelist, processedshtfilebase,
+                           lmax,
+                           cmbweighting = True, 
+                           mask  = None,
+                           kmask = kmask,
+                           ell_reordering=None,
+                           no_reorder=False,
+                           ram_limit = None,
+                           fieldlist = fieldlist,
+                           alm_key = '{}_alm',
+                          )
+
+
 if __name__ == "__main__" and PREP is True:
     print("First sims")
-    workdir = '/sptlocal/user/creichardt/xspec_2022/'
+    workdir = '/big_scratch/cr/xspec_2022/'
     #workdir = '/big_scratch/pc/xspec_2022/data/mask_v5/'
     lmax = 13000
     #dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.0_gaussian_inputs/'
@@ -292,12 +329,12 @@ if __name__ == "__main__" and PREP is True:
 
     kmask=None
 
-    if False:
+    if True:
 #        mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.npz',nsim=200)
         mcshtfilelist = create_sim_file_list_v2(dir,bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
         print(mcshtfilelist)        
         
-        processedshtfile = workdir + '/mc/shts_processed.bin'
+        processedshtfile = workdir + 'mc/shts_processed.bin'
         os.makedirs(workdir+'/mc/',exist_ok=True)
         spec.reformat_shts(mcshtfilelist, processedshtfile,
                            lmax,
