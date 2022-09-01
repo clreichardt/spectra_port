@@ -50,7 +50,7 @@ def load_spt3g_healpix_ring_map(file,require_order = 'Ring',require_nside=8192,m
 
 
 
-def reformat_multifield_shts(shtfilelist, processedshtfilebase
+def reformat_multifield_shts(shtfilelist, processedshtfilebase,
                            lmax,
                            cmbweighting = True, 
                            mask  = None,
