@@ -881,13 +881,15 @@ if __name__ == "__main__" and SHT == True:
 if __name__ == "__main__" and CAL == True:
 
     subfields = ['ra0hdec-44.75','ra0hdec-52.25','ra0hdec-59.75','ra0hdec-67.25']
-    subfields = ['ra0hdec-59.75','ra0hdec-67.25']
-    subfields = ['ra0hdec-44.75','ra0hdec-52.25']
-    subfields = ['ra0hdec-52.25']
-    subfields = ['ra0hdec-52.25','ra0hdec-59.75','ra0hdec-67.25']
-    subfields = ['ra0hdec-44.75']
+    #subfields = ['ra0hdec-59.75','ra0hdec-67.25']
+    #subfields = ['ra0hdec-44.75','ra0hdec-52.25']
+    #subfields = ['ra0hdec-52.25']
+    #subfields = ['ra0hdec-52.25','ra0hdec-59.75','ra0hdec-67.25']
+    #subfields = ['ra0hdec-44.75']
     dir='/sptlocal/user/creichardt/hiell2022/bundle10/'
     mapfiles = create_real_file_list_v4(dir, stub='bundle_',sfreqs=['90','150','220'],estub='GHz.pkl', nbundle=10)
+    dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.1_mask5/subfield_shts/'
+    mcmapfilelist = create_sim_file_list_v2(dir,bstub='bundles/alm_subfield',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
     #banddef = np.arange(0,3100,50)   
     banddef = np.asarray([0,188,288,388,  #dump bins
                424,  460,  496,  532,  568,  604,  640,  676,  712,  748,  # 4x planck binning = 36
@@ -897,31 +899,55 @@ if __name__ == "__main__" and CAL == True:
                1878, 1912, 1946, 1980, 2014, 
                2047, 2080, 2113, 2146, 2179, 2212, 2245, 2278, 2311, 2344, # moved to 1x planck = 33
                2377, 2410, 2443, 2476, 2509])
+    beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
 
- 
+    theoryfiles = ['/sptlocal/user/creichardt/hiell2022/sim_dls_90ghz.txt',
+                   '/sptlocal/user/creichardt/hiell2022/sim_dls_150ghz.txt',
+                   '/sptlocal/user/creichardt/hiell2022/sim_dls_220ghz.txt']
+    setdef = np.zeros([10,3],dtype=np.int32)
+    setdef[:,0]=np.arange(0,10,dtype=np.int32)
+    setdef[:,1]=np.arange(0,10,dtype=np.int32)+10
+    setdef[:,2]=np.arange(0,10,dtype=np.int32)+20
+    setdef_mc1, setdef_mc2 = create_sim_setdefs(100,3)
+    
+    kernel_files = {}
+    kernel_files['ra0hdec-44.75']=kdir+'mll_toeplitz_44.py'
+    
     for subfield in subfields:
-        workdir='/big_scratch/cr/xspec_2022/cal/'+subfield+'/data/'
-        shtfile = workdir+'shts_processed.bin'
-        setdef = np.zeros([10,3],dtype=np.int32)
-        setdef[:,0]=np.arange(0,10,dtype=np.int32)
-        setdef[:,1]=np.arange(0,10,dtype=np.int32)+10
-        setdef[:,2]=np.arange(0,10,dtype=np.int32)+20
-        maskfile=dir+'../mask_50mJy_'+subfield+'.pkl'
-        with open(maskfile,'rb') as fp:
+        workdir = '/big_scratch/cr/xspec_2022/cal/'+subfield+'/'
+        os.makedirs(workdir,exist_ok=True)
+        file_out = workdir + 'spectrum.pkl'
+        file_out_small = workdir + 'spectrum_small.pkl'
+        
+        mask_file='/sptlocal/user/creichardt/hiell2022/mask_50mJy_{}.pkl'.format(subfield)
+        with open(mask_file,'rb') as fp:
             mask = pkl.load(fp)
-        nside=8192
-        cal_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
-                                              lmax=3100,
-                                              resume=True,
-                                              basedir=workdir,
-                                              persistdir=workdir,
-                                              setdef=setdef,
-                                              jackknife=False, auto=False,
-                                              kmask=None,
-                                              cmbweighting=True)
-        file_out = workdir + 'cal_spectrum.pkl'
+        kernel_file = '/sptlocal/user/creichardt/hiell2022/mll_toeplitz_{}.npy'.format(subfield)
+
+        output = end_to_end.end_to_end( mapfiles,
+                         mcmapfiles,
+                         banddef,
+                         beam_arr,
+                         theoryfiles,
+                         workdir,
+                         simbeam_arr=None,
+                         setdef=setdef,
+                         setdef_mc1=setdef_mc1,
+                         setdef_mc2=setdef_mc2,
+                         do_window_func=False, 
+                         lmax=3100,
+#                         cl2dl=True,
+                         nside=8192,
+                         kmask=None,
+                         mask=mask,
+                         kernel_file =kernel_file,
+                         resume=True, 
+                         checkpoint=True
+                       )
         with open(file_out,'wb') as fp:
-            pkl.dump(cal_spectrum,fp)
+            pkl.dump(output,fp)
+        with open(file_out_small,'wb') as fp:
+            pkl.dump(end_to_end.trim_end_to_end_output(output),fp)
 
 
 if __name__ == "__main__" and TEST == True:
