@@ -910,9 +910,6 @@ if __name__ == "__main__" and CAL == True:
     setdef[:,2]=np.arange(0,10,dtype=np.int32)+20
     setdef_mc1, setdef_mc2 = create_sim_setdefs(100,3)
     
-    kernel_files = {}
-    kernel_files['ra0hdec-44.75']=kdir+'mll_toeplitz_44.py'
-    
     for subfield in subfields:
         workdir = '/big_scratch/cr/xspec_2022/cal/'+subfield+'/'
         os.makedirs(workdir,exist_ok=True)
@@ -922,10 +919,12 @@ if __name__ == "__main__" and CAL == True:
         mask_file='/sptlocal/user/creichardt/hiell2022/mask_50mJy_{}.pkl'.format(subfield)
         with open(mask_file,'rb') as fp:
             mask = pkl.load(fp)
-        kernel_file = '/sptlocal/user/creichardt/hiell2022/mll_toeplitz_{}.npy'.format(subfield)
+        kernel_file = '/sptlocal/user/creichardt/hiell2022/mll_3100_{}.npz'.format(subfield)
+#dl_13000.npz'
+#'/sptlocal/user/creichardt/hiell2022/mll_toeplitz_{}.npy'.format(subfield)
 
         output = end_to_end.end_to_end( mapfiles,
-                         mcmapfiles,
+                         mcmapfilelist,
                          banddef,
                          beam_arr,
                          theoryfiles,
