@@ -273,6 +273,7 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
                            ram_limit = None,
                            npmapformat=False,
                            pklmapformat=False,
+                           apply_mask_norm=True,
                            map_key='T'
                           ) -> 'May be done in Fortran - output is a file':
     ''' 
@@ -291,7 +292,7 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
     map_scratch = np.zeros(12*nside**2,dtype=np.float32)
 
     inv_mask_factor = 1.
-    if mask is not None:
+    if mask is not None and apply_mask_norm:
         inv_mask_factor = np.sqrt(1./np.mean(mask**2))
 
     if mask is not None:

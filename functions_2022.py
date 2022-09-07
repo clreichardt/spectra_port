@@ -845,25 +845,28 @@ if __name__ == "__main__" and COADD == True:
 
 
 if __name__ == "__main__" and SHT == True:
-    subfield='ra0hdec-44.75'
+    #subfield='ra0hdec-44.75'
     #subfield='ra0hdec-52.25'
     #subfield='ra0hdec-59.75'
     #subfield='ra0hdec-67.25'
-    calworkdir = '/big_scratch/cr/xspec_2022/cal/'+subfield+'/'
-    #os.makedirs(calworkdir+'data/',exist_ok=True)
-    print(calworkdir)
+    fields =['ra0hdec-44.75','ra0hdec-52.25','ra0hdec-59.75','ra0hdec-67.25']
+
     if True:
-        dir='/sptlocal/user/creichardt/hiell2022/bundle10/'
-        rlist = create_real_file_list_v4(dir, stub='bundle_',sfreqs=['90','150','220'],estub='GHz.pkl', nbundle=10)
-        #mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
-        print(rlist)
-        lmax = 3100
-        nside= 8192
-        with open(dir+'../mask_50mJy_'+subfield+'.pkl','rb') as fp:
-            mask = pkl.load(fp)
-        #mask = None
-        processedshtfile = calworkdir + '/data/shts_processed.bin'
-        spec.take_and_reformat_shts(rlist, processedshtfile,
+        for subfield in fields:
+            calworkdir = '/big_scratch/cr/xspec_2022/cal/'+subfield+'/'
+            #os.makedirs(calworkdir+'data/',exist_ok=True)
+            print(calworkdir)
+            dir='/sptlocal/user/creichardt/hiell2022/bundle10/'
+            rlist = create_real_file_list_v4(dir, stub='bundle_',sfreqs=['90','150','220'],estub='GHz.pkl', nbundle=10)
+            #mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
+            print(rlist)
+            lmax = 3100
+            nside= 8192
+            with open(dir+'../mask_50mJy_'+subfield+'.pkl','rb') as fp:
+                mask = pkl.load(fp)
+            #mask = None
+            processedshtfile = calworkdir + '/data/shts_processed.bin'
+            spec.take_and_reformat_shts(rlist, processedshtfile,
                                     nside,lmax,
                                     cmbweighting = True, 
                                     mask  = mask,
@@ -873,8 +876,9 @@ if __name__ == "__main__" and SHT == True:
                                     ram_limit = None,
                                     npmapformat=False,
                                     pklmapformat=True,
-                                    map_key='T'
-        ) 
+                                    map_key='T',
+                                    apply_mask_norm=False
+                                    ) 
 
     
 
@@ -899,6 +903,7 @@ if __name__ == "__main__" and CAL == True:
                1878, 1912, 1946, 1980, 2014, 
                2047, 2080, 2113, 2146, 2179, 2212, 2245, 2278, 2311, 2344, # moved to 1x planck = 33
                2377, 2410, 2443, 2476, 2509])
+    banddef = np.asarray([0,200,300,400,500,600,700,800,900,1000,1100,1200,1300,1400,1500,1600,1700,1800,1900,2000,2100,2200,2300,2400,2500,2600,2700,2800,2900,3000])
     beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
 
     theoryfiles = ['/sptlocal/user/creichardt/hiell2022/sim_dls_90ghz.txt',
