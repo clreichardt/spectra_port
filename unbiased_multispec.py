@@ -293,7 +293,7 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
 
     inv_mask_factor = 1.
     if mask is not None and apply_mask_norm:
-        inv_mask_factor = np.sqrt(1./np.mean(mask**2))
+        inv_mask_factor = np.sqrt(1./np.mean(mask**2,dtype=np.float64))
 
     if mask is not None:
         if type(mask) is np.ndarray:
@@ -791,6 +791,7 @@ class unbiased_multispec:
                  basedir=None, # strongly suggested. defaults to current directory and can use a lot of disk space
                  persistdir=None, # optional - can be unset. will create a temp directory within basedir
                  remove_temporary_files= False, # optional. Defaults to off (user has to do cleanup, but can restart runs later)
+                 dont_store_large_inputs = True, # reduces size of object returned, at the cost of potentially less tracking
                  verbose = False ): #extra print statements
                 #maybe sometime I'll put in more input file arguments...                  
         '''
@@ -803,14 +804,17 @@ class unbiased_multispec:
                  windowfactor -- value used to normalize spectrum for apodization window. May be 1 (ie not corrected)
         '''
         self.mapfile = mapfile
-        self.window = window
+        self.window = window.astype(np.float32)
         self.banddef = banddef
         self.nside = nside
         self.lmax = lmax
         if self.lmax is None: 
             self.lmax = 2*self.nside
         self.cmbweighting = cmbweighting
-        self.kmask = kmask
+        if kmask is not None:
+            self.kmask = kmask.astype(np.float32)
+        else:
+            self.kmask=None
         self.setdef = setdef
         self.jackknife = jackknife
         self.auto = auto
@@ -828,6 +832,7 @@ class unbiased_multispec:
         self.est2_cov = None
         self.nmodes = None
         self.windowfactor = 1.0
+        self.skipcov=skipcov
                 
                 
         #################
@@ -914,9 +919,14 @@ class unbiased_multispec:
 
         process_auto = self.auto or (setdef2 is not None) # only get 1 per set for the sim crosses too
         spectrum,cov,cov1,cov2 = process_all_cross_spectra(self.allspectra, nbands, nsets,setsize, 
-                                                            auto=process_auto)
+                                                            auto=process_auto,skipcov=skipcov)
         self.spectrum = spectrum
         self.cov      = cov
         self.est1_cov = cov1
         self.est2_cov = cov2
-                                 
+        
+        self.dont_store_large_inputs  = dont_store_large_inputs
+        
+        if dont_store_large_inputs:
+            self.mask = None
+            self.kmask = None
