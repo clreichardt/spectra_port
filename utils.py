@@ -537,6 +537,8 @@ def window_function_calc(banddef, transfer_dic, nskip=0, ellmin = 10, ellmax=130
     inv_binned_kernel = transfer_dic['invkernel']
     bl     = transfer_dic['bl']
     transfer=transfer_dic['transfer']
+    iskip = transfer_dic['iskip']
+    eskip = transfer_dic['eskip']
     btrans  = transfer * bl**2
 
     #upper / lower edges

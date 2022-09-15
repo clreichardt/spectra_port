@@ -12,6 +12,8 @@ from spectra_port import utils
 import pickle as pkl
 import pdb
 import time
+from contextlib import ExitStack
+
 AlmType = np.dtype(np.complex64)
 
 
@@ -48,6 +50,117 @@ def load_spt3g_healpix_ring_map(file,require_order = 'Ring',require_nside=8192,m
 
 
 
+def reformat_multifield_shts(shtfilelist, processedshtfilebase,
+                           lmax,
+                           cmbweighting = True, 
+                           mask  = None,
+                           kmask = None,
+                           ell_reordering=None,
+                           no_reorder=False,
+                           ram_limit = None,
+                           fieldlist = ['ra0hdec-44.75', 'ra0hdec-52.25', 'ra0hdec-59.75', 'ra0hdec-67.25'], 
+                           alm_key = '{}_alm',
+                          ) -> 'May be done in Fortran - output is a file':
+    ''' 
+    Like reformat_shts, except for a file format that was used for the subfield sim SHTs -- 4 SHTs per file
+    Outputs to 4 Files
+    Output is expected to be CL (Dl if cmbweighting=Trure) * mask normalization factor * kweights
+    Output ordering is expected to 
+    '''
+  
+    nout = len(fieldlist)
+    assert nout == 4 # won't gaurantee checked for general case  
+
+    if ram_limit is None:
+        ram_limit = 16 * 2**30 # 16 GB
+
+    # number of bytes in a Dcomplex: 16
+    # number of arrays we need to make to do this efficiently: 6 or less
+    # number of pixels in an fft: winsize^2
+    ram_required=16*6*lmax**2
+    parallelism = int(np.ceil(ram_limit/ram_required))
+
+    inv_mask_factor = 1.
+    if mask is not None:
+        inv_mask_factor = np.sqrt(1./np.mean(mask**2))
+
+    #ie do parallelism SHTs at once...
+    size = healpy.sphtfunc.Alm.getsize(lmax)
+    if kmask is not None:
+        if kmask.shape[0] != size:
+            raise Exception("kmask provided is wrong size ({} vs {}), exiting".format(size,kmask.shape[0]))
+        local_kmask = kmask.astype(np.float32)
+        print("using provided kmask")
+    else:
+        local_kmask = np.ones(size,dtype=np.float32)
+        print("kmask  is unity")
+
+        
+    if cmbweighting:
+        dummy_vec = np.arange(lmax+1,dtype=np.float32)
+        dummy_vec = np.sqrt((dummy_vec*(dummy_vec+1.))/(2*np.pi)) # This will be squared since Cl =a*a
+        j=0
+        for i in range(lmax+1):
+            nm = lmax+1-i
+            local_kmask[j:j+nm]*=dummy_vec[i:]
+            j=j+nm
+
+
+    if ell_reordering is None:  # need to make it
+        #have lmax+1 m=0's, followed by lmax m=1's.... (if does do l=0,m=0)
+        # healpy has indexing routines, but they only take 1 at a time...
+        #make dummy vec for use
+        dummy_vec = np.zeros(lmax+1,dtype=np.int)
+        k=0
+        for i in np.arange(lmax+1):
+            dummy_vec[i] = k
+            k=k+lmax-i
+        ell_reordering = np.zeros(size,dtype=np.int)
+        k=0
+        for i in range(lmax+1):
+            ell_reordering[k:k+i+1] = dummy_vec[0:i+1] + i
+            k += i+1
+
+    
+    #print('Warning: not using pixel weights in SHT')
+    #with open(processedshtfile,'wb') as fp:
+    
+    
+    with ExitStack() as stack:
+        files={}
+        for field in fieldlist:
+            files[field] = stack.enter_context(open(processedshtfilebase.format(field),'wb')) 
+        
+        
+        oldtime = time.time()
+        count = 0 
+        for file in shtfilelist:
+            newtime=time.time()
+            timeinminutes = (newtime - oldtime)/60.0
+            oldtime=newtime
+            printinplace('SHT map: {}  Last one took: {:.1f} minutes'.format(count,timeinminutes))
+            count += 1
+
+            #TBD get SHT
+            with np.load(file) as obs_alms:
+                for field in fieldlist:
+                    alms = obs_alms[alm_key.format(field)]
+                    assert lmax ==  healpy.sphtfunc.Alm.getlmax(alms.shape[0])
+
+                    #apply weighting (ie cl-dl) and kmask 
+                    alms *= local_kmask
+
+                    #TBD, possibly adjust for mask factor here
+                    alms *= inv_mask_factor
+
+            # Get reindexing
+            #reorder and write to disk
+            #need to check sizing
+            #32 bit floats/64b complex should be fine for this. will need to bump up by one for aggregation
+                    if no_reorder:
+                        (alms.astype(AlmType)).tofile(files[field])
+                    else:
+                        (alms[ell_reordering].astype(AlmType)).tofile(files[field])
 
 def reformat_shts(shtfilelist, processedshtfile,
                            lmax,
@@ -160,6 +273,7 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
                            ram_limit = None,
                            npmapformat=False,
                            pklmapformat=False,
+                           apply_mask_norm=True,
                            map_key='T'
                           ) -> 'May be done in Fortran - output is a file':
     ''' 
@@ -178,8 +292,8 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
     map_scratch = np.zeros(12*nside**2,dtype=np.float32)
 
     inv_mask_factor = 1.
-    if mask is not None:
-        inv_mask_factor = np.sqrt(1./np.mean(mask**2))
+    if mask is not None and apply_mask_norm:
+        inv_mask_factor = np.sqrt(1./np.mean(mask**2,dtype=np.float64))
 
     if mask is not None:
         if type(mask) is np.ndarray:
@@ -532,7 +646,7 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
     ram_required=16*6*lmax**2
     max_nmodes=ram_limit/nshts/32 #64 b complex 
 
-
+    print('ell bands',banddef[0],banddef[-1],lmax)
     assert(banddef[0] == 0 and banddef[-1] <= lmax)
     #assumes banddef[0]=0
     #so first bin goes 1 - banddef[1]
@@ -677,6 +791,7 @@ class unbiased_multispec:
                  basedir=None, # strongly suggested. defaults to current directory and can use a lot of disk space
                  persistdir=None, # optional - can be unset. will create a temp directory within basedir
                  remove_temporary_files= False, # optional. Defaults to off (user has to do cleanup, but can restart runs later)
+                 dont_store_large_inputs = True, # reduces size of object returned, at the cost of potentially less tracking
                  verbose = False ): #extra print statements
                 #maybe sometime I'll put in more input file arguments...                  
         '''
@@ -689,14 +804,17 @@ class unbiased_multispec:
                  windowfactor -- value used to normalize spectrum for apodization window. May be 1 (ie not corrected)
         '''
         self.mapfile = mapfile
-        self.window = window
+        self.window = window.astype(np.float32)
         self.banddef = banddef
         self.nside = nside
         self.lmax = lmax
         if self.lmax is None: 
             self.lmax = 2*self.nside
         self.cmbweighting = cmbweighting
-        self.kmask = kmask
+        if kmask is not None:
+            self.kmask = kmask.astype(np.float32)
+        else:
+            self.kmask=None
         self.setdef = setdef
         self.jackknife = jackknife
         self.auto = auto
@@ -714,6 +832,7 @@ class unbiased_multispec:
         self.est2_cov = None
         self.nmodes = None
         self.windowfactor = 1.0
+        self.skipcov=skipcov
                 
                 
         #################
@@ -800,9 +919,14 @@ class unbiased_multispec:
 
         process_auto = self.auto or (setdef2 is not None) # only get 1 per set for the sim crosses too
         spectrum,cov,cov1,cov2 = process_all_cross_spectra(self.allspectra, nbands, nsets,setsize, 
-                                                            auto=process_auto)
+                                                            auto=process_auto,skipcov=skipcov)
         self.spectrum = spectrum
         self.cov      = cov
         self.est1_cov = cov1
         self.est2_cov = cov2
-                                 
+        
+        self.dont_store_large_inputs  = dont_store_large_inputs
+        
+        if dont_store_large_inputs:
+            self.mask = None
+            self.kmask = None
