@@ -400,9 +400,12 @@ if __name__ == "__main__" and END == True:
     file_out = workdir + 'spectrum.pkl'
     file_out_small = workdir + 'spectrum_small.pkl'
     
-    mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
-    mask = np.load(mask_file)
-    
+    #mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
+    #mask = np.load(mask_file)
+    mask_file = '/sptlocal/user/creichardt/hiell2022/mask_0p4medwt_6mJy150ghzv2.pkl'
+    with open(mask_file,'rb') as fp:
+        mask  = pkl.load(fp)
+
     #may need to reformat theoryfiles
     theoryfiles = ['/sptlocal/user/creichardt/hiell2022/sim_dls_90ghz.txt',
                    '/sptlocal/user/creichardt/hiell2022/sim_dls_150ghz.txt',
@@ -431,7 +434,7 @@ if __name__ == "__main__" and END == True:
                          setdef=setdef,
                          setdef_mc1=setdef_mc1,
                          setdef_mc2=setdef_mc2,
-                         do_window_func=False, 
+                         do_window_func=True, 
                          lmax=13000,
 #                         cl2dl=True,
                          nside=8192,
