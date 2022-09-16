@@ -2,7 +2,7 @@ from re import A
 import numpy as np
 from spt3g import core
 import pdb
-import healpy
+import healpy as hp
 
 def quickplot(tmap,max=0.5):
     hp.visufunc.cartview(tmap,min=-1*max,max=max,latra=[-73,-38],lonra=[-55,55])
@@ -21,7 +21,7 @@ def cast_clonly_to_theory_format(filein,fileout):
     
     
 def flatten_kmask(kmask, lmax):
-    flat_kmask = np.zeros(healpy.sphtfunc.Alm.getsize(lmax),dtype=np.float32)
+    flat_kmask = np.zeros(hp.sphtfunc.Alm.getsize(lmax),dtype=np.float32)
     
     k=0
     for i in range(lmax+1):
@@ -116,8 +116,8 @@ def select_good_weight_region(weight,min_fraction):
     good == weight > min_fraction * median(non-zero weight)
     assumes untouched pixels are zero, not NAN!!!
     '''
-    medwt = np,median(weight[weight > 0])
-    threshold = medwt * fraction
+    medwt = np.median(weight[weight > 0])
+    threshold = medwt * min_fraction
     mask = np.zeros(weight.shape,dtype=np.bool)
     mask[weight > threshold] = True
 
@@ -163,7 +163,7 @@ def punch_holes(ras,decs,radii,nside,mask=None,pixel_list=None, ring=True, celes
     mask = np.ones(12*nside**2,dtype=np.float32)
     for i in range(npts):
         pixlist = hp.query_disc(nside,vectors[:,i],search_radii[i],inclusive=False,nest=(ring is False))
-        loc_ang = pix2ang(nside,pixlist,nest=(ring is False))
+        loc_ang = hp.pix2ang(nside,pixlist,nest=(ring is False))
         #check this
         this_ang = [thetas[i],phis[i]]
         dist_list = hp.rotator.angdist(loc_ang,this_ang)
@@ -551,7 +551,6 @@ def window_function_calc(banddef, transfer_dic, nskip=0, ellmin = 10, ellmax=130
     nb = len(banddef)
     tmp = np.zeros(nbands+1)
     tmp[1:]=banddef
-    pdb.set_trace() # check banddef - start at 0 or not?. tmp created to have a 0-starting one
     #nbandctrr = 0.5*(tmp[0:-1]+tmp[1:])
 
     basebininds = np.zeros([nb,3],dtype=np.int64)
