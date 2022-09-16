@@ -1,7 +1,9 @@
-from genericpath import getsize
+#from genericpath import getsize
 #from statistics import covariance
 import sys
-from turtle import setundobuffer
+import os
+os.environ['OMP_NUM_THREADS'] = "6"
+#from turtle import setundobuffer
 import numpy as np
 #sys.path=["/home/creichardt/.local/lib/python3.7/site-packages/","/home/creichardt/spt3g_software/build","/home/creichardt/.local/lib/python3.7/site-packages/healpy-1.15.0-py3.7-linux-x86_64.egg"]+sys.path
 import healpy
@@ -714,7 +716,7 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
 def process_all_cross_spectra(allspectra, nbands, nsets,setsize, 
                               auto=False,
                               skipcov=False ) -> 'Returns mean and covarariance estimates':
-
+    #changed: 8 Sep 2022 -- reordered shape
     print("Correlating Cross Spectra")
     nspectra = int( (nsets * (nsets+1))/2 + 0.001)
 
@@ -727,6 +729,7 @@ def process_all_cross_spectra(allspectra, nbands, nsets,setsize,
         nrealizations=int( (setsize*(setsize-1))/2 + 0.001)
 
     allspectra = np.reshape(allspectra, [nbands*nspectra, nrealizations])
+    #ordering of first bin is 0th bin of all spectra, then 1st bin, etc.
     #cov  = np.zeros([nbands*nspectra, nbands*nspectra],dtype=np.float64)
 
     spectrum = np.sum(allspectra,-1,dtype=np.float64)/nrealizations

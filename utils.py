@@ -1,4 +1,6 @@
-from re import A
+#from re import A
+import os
+os.environ['OMP_NUM_THREADS'] = "6"
 import numpy as np
 from spt3g import core
 import pdb
