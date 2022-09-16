@@ -326,8 +326,8 @@ def end_to_end(mapfiles,
     output['invkernmatt']=invkernmattr
     output['invsimkernmat']=invsimkernmat
     output['invsimkernmatt']=invsimkernmattr
-    output['iksips']=iskips
-    output['eksips']=eskips
+    output['iskips']=iskips
+    output['eskips']=eskips
 
     ##################
     # 6: Multiply data bandpowers by Inverse Kernel
@@ -394,6 +394,7 @@ def end_to_end(mapfiles,
 
 
         output['windowfunc']=windowfunc
-
+        output['win_minell']=win_minell
+        output['win_maxell']=win_maxell
     
     return output
