@@ -348,12 +348,12 @@ if __name__ == "__main__" and END == True:
     kernel_file = '/sptlocal/user/creichardt/mll_dl_13000.npz'
 
     #workdir = '/sptlocal/user/creichardt/xspec_2022/'
-    workdir = '/big_scratch/cr/xspec_2022/'
+    workdir = '/big_scratch/pc/xspec_2022/'
     os.makedirs(workdir,exist_ok=True)
     file_out = workdir + 'spectrum.pkl'
     file_out_small = workdir + 'spectrum_small.pkl'
     
-    mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
+    mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask5.npy'
     mask = np.load(mask_file)
     
     #may need to reformat theoryfiles
@@ -362,7 +362,7 @@ if __name__ == "__main__" and END == True:
                    '/sptlocal/user/creichardt/hiell2022/sim_dls_220ghz.txt']
 
     
-    dir='/sptgrid/analysis/highell_TT_19-20/v4/obs_shts/'
+    dir='/sptgrid/analysis/highell_TT_19-20/v4/obs_shts_v2/'
     mapfiles = create_real_file_list(dir,stub='bundle_',sfreqs=['90','150','220'],estub='GHz.npz',nbundle=200)
 
     #change for testing
@@ -384,7 +384,7 @@ if __name__ == "__main__" and END == True:
                          setdef=setdef,
                          setdef_mc1=setdef_mc1,
                          setdef_mc2=setdef_mc2,
-                         do_window_func=False, 
+                         do_window_func=True, 
                          lmax=13000,
 #                         cl2dl=True,
                          nside=8192,
