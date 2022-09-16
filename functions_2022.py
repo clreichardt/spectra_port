@@ -13,6 +13,7 @@ import pickle as pkl
 import pdb
 import time
 
+PREPCAL= False
 PREP= False
 END = False
 NULL= False
@@ -26,6 +27,7 @@ PK=False
 
 my_parser = argparse.ArgumentParser()
 my_parser.add_argument('-prep', action='store_true',dest='prep')
+my_parser.add_argument('-prepcal', action='store_true',dest='prepcal')
 my_parser.add_argument('-end', action='store_true',dest='end')
 my_parser.add_argument('-null', action='store_true',dest='null')
 my_parser.add_argument('-nulllr', action='store_true',dest='nulllr')
@@ -39,6 +41,7 @@ my_parser.add_argument('-pk', action='store_true',dest='pk')
 args = my_parser.parse_args()
 
 PREP=args.prep
+PREPCAL=args.prepcal
 END=args.end
 NULL=args.null
 COADD=args.coadd
@@ -279,21 +282,59 @@ def create_sim_setdefs(nsim,nfreq):
 
 
 
-if __name__ == "__main__" and PREP is True:
+if __name__ == "__main__" and PREPCAL is True:
     print("First sims")
-    workdir = '/sptlocal/user/creichardt/xspec_2022/'
-    workdir = '/big_scratch/pc/xspec_2022/data/mask_v5/'
-    lmax = 13000
-    dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.0_gaussian_inputs/'
+    workdir = '/big_scratch/cr/xspec_2022/cal/'
+    #workdir = '/big_scratch/pc/xspec_2022/data/mask_v5/'
+    lmax = 3100
+    #dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.0_gaussian_inputs/'
+    dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.1_mask5/subfield_shts/'
+    #kmask = utils.flatten_kmask( np.load('/home/pc/hiell/k_weighing/w2s_150.npy'), lmax)
+#/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
     # kmask = utils.flatten_kmask( np.load('/home/pc/hiell/k_weighing/w2s_150.npy'), lmax)
+
     kmask=None
 
-    if False:
+    if True:
 #        mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.npz',nsim=200)
-        mcshtfilelist = create_sim_file_list_v2(dir,bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.npz',nsim=100)
+        mcshtfilelist = create_sim_file_list_v2(dir,bstub='bundles/alm_subfield',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
+        print(mcshtfilelist)        
+        fieldlist = ['ra0hdec-44.75', 'ra0hdec-52.25', 'ra0hdec-59.75', 'ra0hdec-67.25']
+        processedshtfilebase = workdir + '{}/mc/shts_processed.bin'
+        for field in fieldlist:
+            os.makedirs(workdir+'{}/mc/'.format(field),exist_ok=True)
+        spec.reformat_multifield_shts(mcshtfilelist, processedshtfilebase,
+                           lmax,
+                           cmbweighting = True, 
+                           mask  = None,
+                           kmask = kmask,
+                           ell_reordering=None,
+                           no_reorder=False,
+                           ram_limit = None,
+                           fieldlist = fieldlist,
+                           alm_key = '{}_alm',
+                          )
+
+
+if __name__ == "__main__" and PREP is True:
+    print("First sims")
+    workdir = '/big_scratch/cr/xspec_2022/'
+    #workdir = '/big_scratch/pc/xspec_2022/data/mask_v5/'
+    lmax = 13000
+    #dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.0_gaussian_inputs/'
+    dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.1_mask5/'
+    #kmask = utils.flatten_kmask( np.load('/home/pc/hiell/k_weighing/w2s_150.npy'), lmax)
+#/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
+    # kmask = utils.flatten_kmask( np.load('/home/pc/hiell/k_weighing/w2s_150.npy'), lmax)
+
+    kmask=None
+
+    if True:
+#        mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.npz',nsim=200)
+        mcshtfilelist = create_sim_file_list_v2(dir,bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
         print(mcshtfilelist)        
         
-        processedshtfile = workdir + '/mc/shts_processed.bin'
+        processedshtfile = workdir + 'mc/shts_processed.bin'
         os.makedirs(workdir+'/mc/',exist_ok=True)
         spec.reformat_shts(mcshtfilelist, processedshtfile,
                            lmax,
@@ -308,13 +349,19 @@ if __name__ == "__main__" and PREP is True:
     print("Now real")
     if True:
     #    exit()
-        # print("kmask mean {} std {}".format(np.mean(kmask),np.std(kmask)))
+
+        if kmask is not None:
+            print("kmask mean {} std {}".format(np.mean(kmask),np.std(kmask)))
         dir='/sptgrid/analysis/highell_TT_19-20/v4/obs_shts_v2/'
-        # datashtfilelist = create_real_file_list(dir,stub='bundle_',sfreqs=['90','150','220'],estub='GHz.npz',nbundle=200)
-        # datashtfilelist = create_real_file_list(dir,stub='bundle_',sfreqs=['150'],estub='GHz.npz',nbundle=200)
-        datashtfilelist = create_real_file_list_v5(dir, freqs=['90', '150', '220'], nbundle=200)
+        #print("Warning -- only 150s for testing")
+        datashtfilelist = create_real_file_list(dir,stub='bundle_',sfreqs=['90','150','220'],estub='GHz.npz',nbundle=200)
+        #datashtfilelist = create_real_file_list(dir,stub='bundle_',sfreqs=['150'],estub='GHz.npz',nbundle=200)
+        processedshtfile = workdir + '/data/shts_processed.bin'
+        os.makedirs(workdir+'/data/',exist_ok=True)
+
         processedshtfile = workdir + 'shts_processed.bin'
         os.makedirs(workdir,exist_ok=True)
+
         spec.reformat_shts(datashtfilelist, processedshtfile,
                            lmax,
                            cmbweighting = True, 
@@ -353,9 +400,12 @@ if __name__ == "__main__" and END == True:
     file_out = workdir + 'spectrum.pkl'
     file_out_small = workdir + 'spectrum_small.pkl'
     
-    mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
-    mask = np.load(mask_file)
-    
+    #mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
+    #mask = np.load(mask_file)
+    mask_file = '/sptlocal/user/creichardt/hiell2022/mask_0p4medwt_6mJy150ghzv2.pkl'
+    with open(mask_file,'rb') as fp:
+        mask  = pkl.load(fp)
+
     #may need to reformat theoryfiles
     theoryfiles = ['/sptlocal/user/creichardt/hiell2022/sim_dls_90ghz.txt',
                    '/sptlocal/user/creichardt/hiell2022/sim_dls_150ghz.txt',
@@ -384,7 +434,7 @@ if __name__ == "__main__" and END == True:
                          setdef=setdef,
                          setdef_mc1=setdef_mc1,
                          setdef_mc2=setdef_mc2,
-                         do_window_func=False, 
+                         do_window_func=True, 
                          lmax=13000,
 #                         cl2dl=True,
                          nside=8192,
@@ -798,25 +848,28 @@ if __name__ == "__main__" and COADD == True:
 
 
 if __name__ == "__main__" and SHT == True:
-    subfield='ra0hdec-44.75'
+    #subfield='ra0hdec-44.75'
     #subfield='ra0hdec-52.25'
     #subfield='ra0hdec-59.75'
     #subfield='ra0hdec-67.25'
-    calworkdir = '/big_scratch/cr/xspec_2022/cal/'+subfield+'/'
-    #os.makedirs(calworkdir+'data/',exist_ok=True)
-    print(calworkdir)
+    fields =['ra0hdec-44.75','ra0hdec-52.25','ra0hdec-59.75','ra0hdec-67.25']
+
     if True:
-        dir='/sptlocal/user/creichardt/hiell2022/bundle10/'
-        rlist = create_real_file_list_v4(dir, stub='bundle_',sfreqs=['90','150','220'],estub='GHz.pkl', nbundle=10)
-        #mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
-        print(rlist)
-        lmax = 3100
-        nside= 8192
-        with open(dir+'../mask_50mJy_'+subfield+'.pkl','rb') as fp:
-            mask = pkl.load(fp)
-        #mask = None
-        processedshtfile = calworkdir + '/data/shts_processed.bin'
-        spec.take_and_reformat_shts(rlist, processedshtfile,
+        for subfield in fields:
+            calworkdir = '/big_scratch/cr/xspec_2022/cal/'+subfield+'/'
+            #os.makedirs(calworkdir+'data/',exist_ok=True)
+            print(calworkdir)
+            dir='/sptlocal/user/creichardt/hiell2022/bundle10/'
+            rlist = create_real_file_list_v4(dir, stub='bundle_',sfreqs=['90','150','220'],estub='GHz.pkl', nbundle=10)
+            #mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
+            print(rlist)
+            lmax = 3100
+            nside= 8192
+            with open(dir+'../mask_50mJy_'+subfield+'.pkl','rb') as fp:
+                mask = pkl.load(fp)
+            #mask = None
+            processedshtfile = calworkdir + '/data/shts_processed.bin'
+            spec.take_and_reformat_shts(rlist, processedshtfile,
                                     nside,lmax,
                                     cmbweighting = True, 
                                     mask  = mask,
@@ -826,21 +879,24 @@ if __name__ == "__main__" and SHT == True:
                                     ram_limit = None,
                                     npmapformat=False,
                                     pklmapformat=True,
-                                    map_key='T'
-        ) 
+                                    map_key='T',
+                                    apply_mask_norm=False
+                                    ) 
 
     
 
 if __name__ == "__main__" and CAL == True:
 
     subfields = ['ra0hdec-44.75','ra0hdec-52.25','ra0hdec-59.75','ra0hdec-67.25']
-    subfields = ['ra0hdec-59.75','ra0hdec-67.25']
-    subfields = ['ra0hdec-44.75','ra0hdec-52.25']
-    subfields = ['ra0hdec-52.25']
-    subfields = ['ra0hdec-52.25','ra0hdec-59.75','ra0hdec-67.25']
-    subfields = ['ra0hdec-44.75']
+    #subfields = ['ra0hdec-59.75','ra0hdec-67.25']
+    #subfields = ['ra0hdec-44.75','ra0hdec-52.25']
+    #subfields = ['ra0hdec-52.25']
+    #subfields = ['ra0hdec-52.25','ra0hdec-59.75','ra0hdec-67.25']
+    #subfields = ['ra0hdec-44.75']
     dir='/sptlocal/user/creichardt/hiell2022/bundle10/'
     mapfiles = create_real_file_list_v4(dir, stub='bundle_',sfreqs=['90','150','220'],estub='GHz.pkl', nbundle=10)
+    dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.1_mask5/subfield_shts/'
+    mcmapfilelist = create_sim_file_list_v2(dir,bstub='bundles/alm_subfield',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
     #banddef = np.arange(0,3100,50)   
     banddef = np.asarray([0,188,288,388,  #dump bins
                424,  460,  496,  532,  568,  604,  640,  676,  712,  748,  # 4x planck binning = 36
@@ -850,31 +906,55 @@ if __name__ == "__main__" and CAL == True:
                1878, 1912, 1946, 1980, 2014, 
                2047, 2080, 2113, 2146, 2179, 2212, 2245, 2278, 2311, 2344, # moved to 1x planck = 33
                2377, 2410, 2443, 2476, 2509])
+    banddef = np.asarray([0,200,300,400,500,600,700,800,900,1000,1100,1200,1300,1400,1500,1600,1700,1800,1900,2000,2100,2200,2300,2400,2500,2600,2700,2800,2900,3000])
+    beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
 
- 
+    theoryfiles = ['/sptlocal/user/creichardt/hiell2022/sim_dls_90ghz.txt',
+                   '/sptlocal/user/creichardt/hiell2022/sim_dls_150ghz.txt',
+                   '/sptlocal/user/creichardt/hiell2022/sim_dls_220ghz.txt']
+    setdef = np.zeros([10,3],dtype=np.int32)
+    setdef[:,0]=np.arange(0,10,dtype=np.int32)
+    setdef[:,1]=np.arange(0,10,dtype=np.int32)+10
+    setdef[:,2]=np.arange(0,10,dtype=np.int32)+20
+    setdef_mc1, setdef_mc2 = create_sim_setdefs(100,3)
+    
     for subfield in subfields:
-        workdir='/big_scratch/cr/xspec_2022/cal/'+subfield+'/data/'
-        shtfile = workdir+'shts_processed.bin'
-        setdef = np.zeros([10,3],dtype=np.int32)
-        setdef[:,0]=np.arange(0,10,dtype=np.int32)
-        setdef[:,1]=np.arange(0,10,dtype=np.int32)+10
-        setdef[:,2]=np.arange(0,10,dtype=np.int32)+20
-        maskfile=dir+'../mask_50mJy_'+subfield+'.pkl'
-        with open(maskfile,'rb') as fp:
+        workdir = '/big_scratch/cr/xspec_2022/cal/'+subfield+'/'
+        os.makedirs(workdir,exist_ok=True)
+        file_out = workdir + 'spectrum.pkl'
+        file_out_small = workdir + 'spectrum_small.pkl'
+        
+        mask_file='/sptlocal/user/creichardt/hiell2022/mask_50mJy_{}.pkl'.format(subfield)
+        with open(mask_file,'rb') as fp:
             mask = pkl.load(fp)
-        nside=8192
-        cal_spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
-                                              lmax=3100,
-                                              resume=True,
-                                              basedir=workdir,
-                                              persistdir=workdir,
-                                              setdef=setdef,
-                                              jackknife=False, auto=False,
-                                              kmask=None,
-                                              cmbweighting=True)
-        file_out = workdir + 'cal_spectrum.pkl'
+        kernel_file = '/sptlocal/user/creichardt/hiell2022/mll_3100_{}.npz'.format(subfield)
+#dl_13000.npz'
+#'/sptlocal/user/creichardt/hiell2022/mll_toeplitz_{}.npy'.format(subfield)
+
+        output = end_to_end.end_to_end( mapfiles,
+                         mcmapfilelist,
+                         banddef,
+                         beam_arr,
+                         theoryfiles,
+                         workdir,
+                         simbeam_arr=None,
+                         setdef=setdef,
+                         setdef_mc1=setdef_mc1,
+                         setdef_mc2=setdef_mc2,
+                         do_window_func=False, 
+                         lmax=3100,
+#                         cl2dl=True,
+                         nside=8192,
+                         kmask=None,
+                         mask=mask,
+                         kernel_file =kernel_file,
+                         resume=True, 
+                         checkpoint=True
+                       )
         with open(file_out,'wb') as fp:
-            pkl.dump(cal_spectrum,fp)
+            pkl.dump(output,fp)
+        with open(file_out_small,'wb') as fp:
+            pkl.dump(end_to_end.trim_end_to_end_output(output),fp)
 
 
 if __name__ == "__main__" and TEST == True:

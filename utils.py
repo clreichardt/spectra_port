@@ -1,4 +1,6 @@
-from re import A
+#from re import A
+import os
+os.environ['OMP_NUM_THREADS'] = "6"
 import numpy as np
 from spt3g import core
 import pdb
@@ -117,7 +119,7 @@ def select_good_weight_region(weight,min_fraction):
     assumes untouched pixels are zero, not NAN!!!
     '''
     medwt = np.median(weight[weight > 0])
-    threshold = medwt * min_fraction
+    threshold = medwt * fraction
     mask = np.zeros(weight.shape,dtype=np.bool)
     mask[weight > threshold] = True
 
@@ -516,7 +518,7 @@ def rebin_coupling_matrix( matrix, ell, bindef, transferfunc=None,
     return result
 
 
-def window_function_calc(banddef, transfer_dic, nskip=0, ellmin = 10, ellmax=13000):
+def window_function_calc(banddef, transfer_dic, ellmin = 10, ellmax=13000,no_mode_wt=False):
     '''
     ;this version assumes the real spectra are binned to final bins and
     ;tries to juryrig a correction for overlapping bins compared to the
@@ -533,47 +535,49 @@ def window_function_calc(banddef, transfer_dic, nskip=0, ellmin = 10, ellmax=130
     ells = np.arange(ellmin, ellmax+1)
 
     ellbin = transfer_dic['ell']
+    nellbin = ellbin.shape[0]
     kernel = transfer_dic['Mll']
     inv_binned_kernel = transfer_dic['invkernel']
     bl     = transfer_dic['bl']
     transfer=transfer_dic['transfer']
+    iskip = transfer_dic['iskip']
+    eskip = transfer_dic['eskip']
     btrans  = transfer * bl**2
 
     #upper / lower edges
+    #warning -- assumes equal spacing for all bins
     dell = 0.5 * (ellbin[1]-ellbin[0])
     ellbin0 = ellbin-dell
     ellbin1 = ellbin+dell
 
-    usedbands = np.arange(nskip,len(banddef)+1)
+    usedbands = np.arange(iskip,eskip)
     nkept = len(usedbands)
     kept = np.arange(nkept)
     win = np.zeros([nkept,nl])
     nb = len(banddef)
-    tmp = np.zeros(nbands+1)
-    tmp[1:]=banddef
-    #nbandctrr = 0.5*(tmp[0:-1]+tmp[1:])
 
-    basebininds = np.zeros([nb,3],dtype=np.int64)
-    wtbins = np.zeros([nb,nellbin])
+
+    basebininds = np.zeros([3,nb],dtype=np.int64)
+    wtbins = np.zeros([nellbin,nb])
 
     modefac = ellbin
     if no_mode_wt:
         modefac = modefac * 0 + 1.
 
-    for i in range(nb):
-        jnds, = np.nonzero( (ellbin1 > tmp[i]) * (ellbin0 <= tmp[i+1]))
+    for i in range(nb-1):
+        jnds, = np.nonzero( (ellbin1 > banddef[i]) * (ellbin0 <= banddef[i+1]))
         ni = jnds.shape[0]
-        if ni: #don't want 0 length
-            basebininds[i,0]=ni
-            basebininds[i,1]=jnds[0]
-            basebininds[i,2]=jnds[-1]
-            wtbins[i,jnds[0]:jnds[-1]]=1.
-            wtbins[i,jnds[0]] = (ellbin1[jnds[0]]-tmp[i])/dellbin
-            wtbins[i,jnds[ni-1]] = (tmp[i+1]-ellbin0[jnds[-1]])/dellbin
-            wtbins[i,:] *=modefac
-            wtbins[i,:] /= np.sum(wtbins[i,:])
+        if ni > 0: #don't want 0 length
+            basebininds[0,i]=ni
+            basebininds[1,i]=jnds[0]
+            basebininds[2,i]=jnds[-1]
+            wtbins[jnds[0]:jnds[-1],i]=1.
+            wtbins[jnds[0],i] = (ellbin1[jnds[0]]-banddef[i])/(2*dell)
+            wtbins[jnds[ni-1],i] = (banddef[i+1]-ellbin0[jnds[-1]])/(2*dell)
+            wtbins[:,i] *=modefac
+            wtbins[:,i] /= np.sum(wtbins[:,i])
             
-    basetmp = np.zeros(nb-nskip)
+    basetmp = np.zeros(nkept)
     effbin  = ellbin1
     tmp2 = effbin * 0
     tmp = tmp2 * 0
@@ -584,14 +588,15 @@ def window_function_calc(banddef, transfer_dic, nskip=0, ellmin = 10, ellmax=130
         tmp[:]  = 0
         tmp2[:] = 0
         basetmp[:] = 0
-        ind = np.nonzero(ells[i] < effbin)
-        tmp2[ind[0]]= btrans[ind[0]] / ( ( 2 * dl) * ells[i] * (ells[i]+1))
+        ind = (np.nonzero(ells[i] < effbin))[0]
+        #should be in the first of these bins that satisfy ell < lmax_bin
+        # we did Mll in Dl here 
+        tmp2[ind[0]]= btrans[ind[0]] / ( 2 * dell)
         tmp2 = np.matmul(kernel, tmp2)
-        tmp2 *= ellbin * (ellbin+1)
+        #tmp2 *= ellbin * (ellbin+1)
 
-        for j in range(nb-nskip):
-            jj = j+nskip
-            basettmp[j] = np.sum(tmp2 * wtbins[jj,:])
+        for j in usedbands:
+            basetmp[j-iskip] = np.sum(tmp2 * wtbins[:,j])
         #maybe do with tile
 
         specfixed = np.matmul(inv_binned_kernel , basetmp)

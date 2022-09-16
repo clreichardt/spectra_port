@@ -1,4 +1,5 @@
-
+import os
+os.environ['OMP_NUM_THREADS'] = "6"
 import numpy as np
 from spectra_port import utils
 from spectra_port import unbiased_multispec as spec
@@ -34,6 +35,8 @@ def end_to_end(mapfiles,
                setdef_mc2=None,
                simbeam_arr=None,
                do_window_func = True,
+               win_minell=10,
+               win_maxell=13000,
                lmax=13000,
                nside=8192,
                kmask=None,
@@ -344,8 +347,10 @@ def end_to_end(mapfiles,
     print('last step took {:.0f}'.format(newtime-lasttime))
     lasttime=newtime
     print('unbias cov')
-    sample_cov = np.reshape(np.matmul(np.matmul(invsimkernmat , mc_spectrum.cov) , invsimkernmattr),[nspectra,nbands,nspectra, nbands])
-    meas_cov = np.reshape(np.matmul(np.matmul(invkernmat , data_spectrum.cov), invkernmattr),[nspectra,nbands,nspectra, nbands])
+    scov = np.reshape(np.transpose(np.reshape(mc_spectrum.cov,[nbands,nspectra,nbands,nspectra]),[1,0,3,2]),[nbands*nspectra,nbands*nspectra])
+    sample_cov = np.reshape(np.matmul(np.matmul(invsimkernmat , scov) , invsimkernmattr),[nspectra,nbands,nspectra, nbands])
+    dcov = np.reshape(np.transpose(np.reshape(mc_spectrum.cov,[nbands,nspectra,nbands,nspectra]),[1,0,3,2]),[nbands*nspectra,nbands*nspectra])
+    meas_cov = np.reshape(np.matmul(np.matmul(invkernmat , dcov), invkernmattr),[nspectra,nbands,nspectra, nbands])
 
     output['sample_cov']=sample_cov
     output['meas_cov']=meas_cov
@@ -376,12 +381,16 @@ def end_to_end(mapfiles,
             eskip = eskips[i]
             nb0 = eskip-iskip+1
             transdic = {'ell':ellkern, 
-                        'kernel':np.squeeze(super_kernel[i,:,i,:]),
-                        'invkernel':np.squeeze(inv_super_kernel[i,:,i,:]),
+                        'Mll':kernel,
+                        'invkernel':np.squeeze(inv_super_kernel[i,iskip:eskip,i,iskip:eskip]),
                         'transfer':np.squeeze(transfer[i,:]),
-                        'bl':np.squeeze(beams[i,:])}
+                        'bl':np.squeeze(beams[i,:]),
+                        'eskip':eskip,
+                        'iskip':iskip
+                        }
+
             windowfunc[iskip+i*nbands:eskip+i*nbands,:] = (utils.window_function_calc(banddef, transdic, 
-                                                                                      ellmin = win_minell, ellmax=win_maxell))[iskip:eskip,:]
+                                                                                      ellmin = win_minell, ellmax=win_maxell))#[iskip:eskip,:]
 
 
         output['windowfunc']=windowfunc
