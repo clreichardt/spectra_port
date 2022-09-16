@@ -516,7 +516,7 @@ def rebin_coupling_matrix( matrix, ell, bindef, transferfunc=None,
     return result
 
 
-def window_function_calc(banddef, transfer_dic, ellmin = 10, ellmax=13000):
+def window_function_calc(banddef, transfer_dic, ellmin = 10, ellmax=13000,no_mode_wt=False):
     '''
     ;this version assumes the real spectra are binned to final bins and
     ;tries to juryrig a correction for overlapping bins compared to the
@@ -533,6 +533,7 @@ def window_function_calc(banddef, transfer_dic, ellmin = 10, ellmax=13000):
     ells = np.arange(ellmin, ellmax+1)
 
     ellbin = transfer_dic['ell']
+    nellbin = ellbin.shape[0]
     kernel = transfer_dic['Mll']
     inv_binned_kernel = transfer_dic['invkernel']
     bl     = transfer_dic['bl']
@@ -561,10 +562,10 @@ def window_function_calc(banddef, transfer_dic, ellmin = 10, ellmax=13000):
     if no_mode_wt:
         modefac = modefac * 0 + 1.
 
-    for i in range(nb):
+    for i in range(nb-1):
         jnds, = np.nonzero( (ellbin1 > banddef[i]) * (ellbin0 <= banddef[i+1]))
         ni = jnds.shape[0]
-        if ni: #don't want 0 length
+        if ni > 0: #don't want 0 length
             basebininds[0,i]=ni
             basebininds[1,i]=jnds[0]
             basebininds[2,i]=jnds[-1]
@@ -593,7 +594,7 @@ def window_function_calc(banddef, transfer_dic, ellmin = 10, ellmax=13000):
         #tmp2 *= ellbin * (ellbin+1)
 
         for j in usedbands:
-            basettmp[j-iskip] = np.sum(tmp2 * wtbins[:,j])
+            basetmp[j-iskip] = np.sum(tmp2 * wtbins[:,j])
         #maybe do with tile
 
         specfixed = np.matmul(inv_binned_kernel , basetmp)

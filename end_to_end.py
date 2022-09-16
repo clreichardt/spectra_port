@@ -1,4 +1,3 @@
-
 import numpy as np
 from spectra_port import utils
 from spectra_port import unbiased_multispec as spec
@@ -34,6 +33,8 @@ def end_to_end(mapfiles,
                setdef_mc2=None,
                simbeam_arr=None,
                do_window_func = True,
+               win_minell=10,
+               win_maxell=13000,
                lmax=13000,
                nside=8192,
                kmask=None,
@@ -387,7 +388,7 @@ def end_to_end(mapfiles,
                         }
 
             windowfunc[iskip+i*nbands:eskip+i*nbands,:] = (utils.window_function_calc(banddef, transdic, 
-                                                                                      ellmin = win_minell, ellmax=win_maxell))[iskip:eskip,:]
+                                                                                      ellmin = win_minell, ellmax=win_maxell))#[iskip:eskip,:]
 
 
         output['windowfunc']=windowfunc
