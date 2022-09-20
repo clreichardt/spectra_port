@@ -19,6 +19,10 @@ AlmType = np.dtype(np.complex64)
 
 
 def name_tempdir(basedir):
+    '''
+    Create a temporary directory name (not currently existing)
+    return dir name
+    '''
     while True:
         rand = np.random.randint(0,999999)
         path = "{}/workdir_{:6d}".format(basedir, rand)
@@ -26,6 +30,9 @@ def name_tempdir(basedir):
             return path
 
 def printinplace(myString):
+    '''
+    Print in place -- ie overwriting the last one, not on a new line
+    '''
     digits = len(myString)
     delete = "\b" * (digits)
     print("{0}{1:{2}}".format(delete, myString, digits), end="")
@@ -33,6 +40,15 @@ def printinplace(myString):
 
 
 def load_spt3g_healpix_ring_map(file,require_order = 'Ring',require_nside=8192,map_key='T'):
+    '''
+    file: string - g3 file to load 
+    require_order: ring or nest
+    require_nside: nside
+    map_key: dict key for map to load
+    returns two arrays:
+        indices [int64]
+        map [float32]
+    '''
     # only taking 1st map 
     frames = core.G3File(file)
     for frame in frames:
@@ -61,7 +77,7 @@ def reformat_multifield_shts(shtfilelist, processedshtfilebase,
                            ram_limit = None,
                            fieldlist = ['ra0hdec-44.75', 'ra0hdec-52.25', 'ra0hdec-59.75', 'ra0hdec-67.25'], 
                            alm_key = '{}_alm',
-                          ) -> 'May be done in Fortran - output is a file':
+                          ):
     ''' 
     Like reformat_shts, except for a file format that was used for the subfield sim SHTs -- 4 SHTs per file
     Outputs to 4 Files
