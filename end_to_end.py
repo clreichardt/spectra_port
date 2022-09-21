@@ -57,6 +57,7 @@ def end_to_end(mapfiles,
     output['fskyw2']=fskyw2
     output['kmask']=kmask
     output['lmax']=lmax
+    print('end of lmax of {}'.format(lmax))
     output['nside']=nside
     output['resume']=resume
     output['mapfiles']=mapfiles

@@ -495,7 +495,7 @@ def load_cross_spectra_data_from_disk(shtfile, startsht,stopsht, npersht, start,
     nshts = stopsht - startsht + 1
     buffer_bytes = np.zeros(1,dtype=AlmType).nbytes
     data = np.zeros([nshts,nelems],dtype=AlmType)
-    print(nshts,nelems)
+    print(nshts,nelems,npersht)
     with open(shtfile,'r') as fp:
         for i in range(nshts):
             j = i + startsht
@@ -540,6 +540,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
         revsetdef=setdef
 
     npersht = healpy.sphtfunc.Alm.getsize(lmax)
+    print('check modes: {} {}'.format(lmax,npersht))
     #pdb.set_trace()
     allspectra_out = np.zeros([nbands,nspectra,nrealizations],dtype=np.float32)
     nmodes_out     = np.zeros(nbands, dtype = np.int32)
@@ -833,6 +834,7 @@ class unbiased_multispec:
         self.lmax = lmax
         if self.lmax is None: 
             self.lmax = 2*self.nside
+        print('init with lmax of {}'.format(lmax))
         self.cmbweighting = cmbweighting
         if kmask is not None:
             self.kmask = kmask.astype(np.float32)
