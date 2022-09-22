@@ -504,7 +504,6 @@ def load_cross_spectra_data_from_disk(shtfile, startsht,stopsht, npersht, start,
             data[i,:] = np.fromfile(fp,count=nelems,dtype=AlmType)
     return data
 
-@profile
 def take_all_cross_spectra( processedshtfile, lmax,
                             setdef, banddef, ram_limit=None, auto = False,nshts=None):
     '''
