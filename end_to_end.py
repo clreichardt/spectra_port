@@ -1,3 +1,5 @@
+import os
+os.environ['OMP_NUM_THREADS'] = "6"
 import numpy as np
 from spectra_port import utils
 from spectra_port import unbiased_multispec as spec
@@ -40,6 +42,7 @@ def end_to_end(mapfiles,
                kmask=None,
                mask=None,
                kernel_file=None,
+               sim_kernel_file=None,
                checkpoint=True,
                resume=True):    
     '''
@@ -54,6 +57,7 @@ def end_to_end(mapfiles,
     output['fskyw2']=fskyw2
     output['kmask']=kmask
     output['lmax']=lmax
+    print('end of lmax of {}'.format(lmax))
     output['nside']=nside
     output['resume']=resume
     output['mapfiles']=mapfiles
@@ -63,6 +67,7 @@ def end_to_end(mapfiles,
     output['beam_arr']=beam_arr
     output['simbeam_arr']=simbeam_arr
     output['kernel_file']=kernel_file
+    output['sim_kernel_file']=sim_kernel_file
     output['workdir']=workdir
     output['do_window_func']=do_window_func
     output['setdef']=setdef
@@ -86,6 +91,11 @@ def end_to_end(mapfiles,
     
     #plan to use wrapper to NaMaster, to be written
     info, kernel = utils.load_mll(kernel_file)
+    if sim_kernel_file is not None:
+        siminfo, simkernel = utils.load_mll(sim_kernel_file)
+    else:
+        simkernel=kernel
+        siminfo=info
     # dimensions --
     # kernel[ell_out, ell_in]
     #
@@ -213,10 +223,6 @@ def end_to_end(mapfiles,
     output['beams_interp']=beams_interp
     output['simbeams']=simbeams
     output['simbeams_interp']=simbeams_interp
-    add_pixel_to_beam_for_sims=False
-    if add_pixel_to_beam_for_sims:
-        #add pixel window function to beam
-        pdb.set_trace()
     
     #get theory
     assert(len(theoryfiles) == nsets)
@@ -246,6 +252,7 @@ def end_to_end(mapfiles,
     ; the single frequency spectra)
     '''
     
+    #haven't checked stability of this with different kernels for sim and data. could be underdamped in the iterative solver
     transfer_iter = np.zeros([ntfs,niter,nkern])
     ii=0
     for i in range(nsets):        
@@ -253,7 +260,7 @@ def end_to_end(mapfiles,
         ii += (nsets -i)
         transfer_iter[i,0,:] = utils.transfer_initial_estimate(dl_mc, theory_dls_interp[i,:], simbeams_interp[i,:], fskyw2)
         for j in range(1,niter):
-            transfer_iter[i,j,:] = utils.transfer_iteration( transfer_iter[i,j-1,:], dl_mc, theory_dls_interp[i,:], simbeams_interp[i,:], fskyw2, kernel)
+            transfer_iter[i,j,:] = utils.transfer_iteration( transfer_iter[i,j-1,:], dl_mc, theory_dls_interp[i,:], simbeams_interp[i,:], fskyw2, simkernel)
     
     transfer = np.zeros([nspectra,nkern])
     k=0
@@ -287,7 +294,7 @@ def end_to_end(mapfiles,
     for i in range(nspectra):
         print(i,kernel.shape)
         super_kernel[i,:,i,:]     = utils.rebin_coupling_matrix(kernel, ellkern, banddef, transferfunc=transfer[i,:], beamfunc = beams[i,:])
-        sim_super_kernel[i,:,i,:] = utils.rebin_coupling_matrix(kernel, ellkern, banddef, transferfunc=transfer[i,:], beamfunc = simbeams[i,:])
+        sim_super_kernel[i,:,i,:] = utils.rebin_coupling_matrix(simkernel, ellkern, banddef, transferfunc=transfer[i,:], beamfunc = simbeams[i,:])
         slice_kern = np.asarray([super_kernel[i,j,i,j] for j in range(nbands)])
         peak = np.max(slice_kern)
         ipeak = np.argmax(slice_kern)
@@ -324,8 +331,8 @@ def end_to_end(mapfiles,
     output['invkernmatt']=invkernmattr
     output['invsimkernmat']=invsimkernmat
     output['invsimkernmatt']=invsimkernmattr
-    output['iksips']=iskips
-    output['eksips']=eskips
+    output['iskips']=iskips
+    output['eskips']=eskips
 
     ##################
     # 6: Multiply data bandpowers by Inverse Kernel
@@ -392,6 +399,7 @@ def end_to_end(mapfiles,
 
 
         output['windowfunc']=windowfunc
-
+        output['win_minell']=win_minell
+        output['win_maxell']=win_maxell
     
     return output

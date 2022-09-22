@@ -374,8 +374,9 @@ if __name__ == "__main__" and PREP is True:
 
 
 if __name__ == "__main__" and END == True:
-    
-    banddef = np.arange(0,13000,50)
+    lmax = 13000
+    nside= 8192
+    banddef = np.arange(0,lmax,50)
     #banddef = np.asarray([0,1000,1500,2000,2200,2500,2800,3100,3400,3700,4000,4400,4800,5200,5700,6200,6800,7400,8000,9000,10000,11000,12000,13000])
 
     #change for testing
@@ -391,8 +392,16 @@ if __name__ == "__main__" and END == True:
     
     #note beam is 90, 150, 220, so everything else needs to be too (or change beam array ordering)
     beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
-    
+    sim_beam_arr= beam_arr.copy()
+    #real data also has PWF (sims created at 8192)
+    blmax=int(beam_arr[-1,0]+0.001)
+    pwf = hp.pixwin(nside,lmax = blmax)
+    beam_arr[:,1] *= pwf
+    beam_arr[:,2] *= pwf
+    beam_arr[:,3] *= pwf
+        
     kernel_file = '/sptlocal/user/creichardt/mll_dl_13000.npz'
+    sim_kernel_file = '/sptlocal/user/creichardt/mll_dl_13000.npz'
 
     #workdir = '/sptlocal/user/creichardt/xspec_2022/'
     workdir = '/big_scratch/cr/xspec_2022/'
@@ -423,24 +432,25 @@ if __name__ == "__main__" and END == True:
     #dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
     #mcmapfiles = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
     
-    
+    print('lmax of {}'.format(lmax))
     output = end_to_end.end_to_end( mapfiles,
                          mcmapfiles,
                          banddef,
                          beam_arr,
                          theoryfiles,
                          workdir,
-                         simbeam_arr=None,
+                         simbeam_arr=sim_beam_arr,
                          setdef=setdef,
                          setdef_mc1=setdef_mc1,
                          setdef_mc2=setdef_mc2,
-                         do_window_func=True, 
-                         lmax=13000,
+                         do_window_func=False, 
+                         lmax=lmax,
 #                         cl2dl=True,
-                         nside=8192,
+                         nside=nside,
                          kmask=None,
                          mask=mask,
                          kernel_file =kernel_file,
+                         #sim_kernel_file=sim_kernel_file,
                          resume=True, 
                          checkpoint=True
                        )

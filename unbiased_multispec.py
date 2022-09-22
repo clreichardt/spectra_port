@@ -1,7 +1,8 @@
-from genericpath import getsize
+#from genericpath import getsize
 #from statistics import covariance
 import sys
-from turtle import setundobuffer
+import os
+os.environ['OMP_NUM_THREADS'] = "6"
 import numpy as np
 #sys.path=["/home/creichardt/.local/lib/python3.7/site-packages/","/home/creichardt/spt3g_software/build","/home/creichardt/.local/lib/python3.7/site-packages/healpy-1.15.0-py3.7-linux-x86_64.egg"]+sys.path
 import healpy
@@ -18,6 +19,10 @@ AlmType = np.dtype(np.complex64)
 
 
 def name_tempdir(basedir):
+    '''
+    Create a temporary directory name (not currently existing)
+    return dir name
+    '''
     while True:
         rand = np.random.randint(0,999999)
         path = "{}/workdir_{:6d}".format(basedir, rand)
@@ -25,6 +30,9 @@ def name_tempdir(basedir):
             return path
 
 def printinplace(myString):
+    '''
+    Print in place -- ie overwriting the last one, not on a new line
+    '''
     digits = len(myString)
     delete = "\b" * (digits)
     print("{0}{1:{2}}".format(delete, myString, digits), end="")
@@ -32,6 +40,15 @@ def printinplace(myString):
 
 
 def load_spt3g_healpix_ring_map(file,require_order = 'Ring',require_nside=8192,map_key='T'):
+    '''
+    file: string - g3 file to load 
+    require_order: ring or nest
+    require_nside: nside
+    map_key: dict key for map to load
+    returns two arrays:
+        indices [int64]
+        map [float32]
+    '''
     # only taking 1st map 
     frames = core.G3File(file)
     for frame in frames:
@@ -60,7 +77,7 @@ def reformat_multifield_shts(shtfilelist, processedshtfilebase,
                            ram_limit = None,
                            fieldlist = ['ra0hdec-44.75', 'ra0hdec-52.25', 'ra0hdec-59.75', 'ra0hdec-67.25'], 
                            alm_key = '{}_alm',
-                          ) -> 'May be done in Fortran - output is a file':
+                          ):
     ''' 
     Like reformat_shts, except for a file format that was used for the subfield sim SHTs -- 4 SHTs per file
     Outputs to 4 Files
@@ -170,7 +187,7 @@ def reformat_shts(shtfilelist, processedshtfile,
                            ell_reordering=None,
                            no_reorder=False,
                            ram_limit = None,
-                          ) -> 'May be done in Fortran - output is a file':
+                          ):
     ''' 
     Output is expected to be CL (Dl if cmbweighting=Trure) * mask normalization factor * kweights
     Output ordering is expected to 
@@ -275,7 +292,7 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
                            pklmapformat=False,
                            apply_mask_norm=True,
                            map_key='T'
-                          ) -> 'May be done in Fortran - output is a file':
+                          ):
     ''' 
     Output is expected to be CL (Dl if cmbweighting=Trure) * mask normalization factor * kweights
     Output ordering is expected to 
@@ -411,7 +428,7 @@ def get_first_index_ell(l):
         return -1
 
 def generate_jackknife_shts( processed_shtfile, jackknife_shtfile,  lmax,
-                             setdef) -> 'Does differencing to make SHT equiv file for nulls, returns new setdef':
+                             setdef):
     buffer_size = healpy.sphtfunc.Alm.getsize(lmax)
     buffer_bytes= buffer_size * np.zeros(1,dtype=AlmType).nbytes
     buffera = np.zeros(buffer_size,dtype=AlmType)
@@ -442,8 +459,9 @@ def generate_jackknife_shts( processed_shtfile, jackknife_shtfile,  lmax,
     return(np.reshape(np.arange(setsize,dtype=np.int32),[setsize,1]))
 
 def generate_coadd_shts( processed_shtfile, coadd_shtfile,  lmax,
-                             setdef) -> 'Does differencing to make SHT equiv file for nulls, returns new setdef':
+                             setdef):
     '''
+    Does differencing to make SHT equiv file for nulls, returns new setdef
     Setdef in: Nbundles_out (dim0) x Nmaps_to_coadd (dim1)
     Setdef out: Nbundles_out (same as input dim0)
     '''
@@ -477,7 +495,7 @@ def load_cross_spectra_data_from_disk(shtfile, startsht,stopsht, npersht, start,
     nshts = stopsht - startsht + 1
     buffer_bytes = np.zeros(1,dtype=AlmType).nbytes
     data = np.zeros([nshts,nelems],dtype=AlmType)
-    print(nshts,nelems)
+    print(nshts,nelems,npersht)
     with open(shtfile,'r') as fp:
         for i in range(nshts):
             j = i + startsht
@@ -487,8 +505,9 @@ def load_cross_spectra_data_from_disk(shtfile, startsht,stopsht, npersht, start,
 
 
 def take_all_cross_spectra( processedshtfile, lmax,
-                            setdef, banddef, ram_limit=None, auto = False,nshts=None) -> 'Returns set of all x-spectra, binned':
+                            setdef, banddef, ram_limit=None, auto = False,nshts=None):
     '''
+    Returns set of all x-spectra, binned'
     ;; Step 1, copy all of the fft files and apply scalings masks etc
 
 
@@ -521,6 +540,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
         revsetdef=setdef
 
     npersht = healpy.sphtfunc.Alm.getsize(lmax)
+    print('check modes: {} {}'.format(lmax,npersht))
     #pdb.set_trace()
     allspectra_out = np.zeros([nbands,nspectra,nrealizations],dtype=np.float32)
     nmodes_out     = np.zeros(nbands, dtype = np.int32)
@@ -600,8 +620,9 @@ def take_all_cross_spectra( processedshtfile, lmax,
 
 
 def take_all_sim_cross_spectra( processedshtfile, lmax,
-                            setdef1,  banddef, setdef2=None, ram_limit=None, auto=False) -> 'Returns set of all x-spectra, binned':
+                            setdef1,  banddef, setdef2=None, ram_limit=None, auto=False):
     '''
+    'Returns set of all x-spectra, binned'
     ;; Step 1, copy all of the fft files and apply scalings masks etc
 
 
@@ -713,8 +734,10 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
 
 def process_all_cross_spectra(allspectra, nbands, nsets,setsize, 
                               auto=False,
-                              skipcov=False ) -> 'Returns mean and covarariance estimates':
-
+                              skipcov=False ):
+    """
+    Returns mean and covarariance estimates
+    """
     print("Correlating Cross Spectra")
     nspectra = int( (nsets * (nsets+1))/2 + 0.001)
 
@@ -727,6 +750,7 @@ def process_all_cross_spectra(allspectra, nbands, nsets,setsize,
         nrealizations=int( (setsize*(setsize-1))/2 + 0.001)
 
     allspectra = np.reshape(allspectra, [nbands*nspectra, nrealizations])
+    #ordering of first bin is 0th bin of all spectra, then 1st bin, etc.
     #cov  = np.zeros([nbands*nspectra, nbands*nspectra],dtype=np.float64)
 
     spectrum = np.sum(allspectra,-1,dtype=np.float64)/nrealizations
@@ -810,6 +834,7 @@ class unbiased_multispec:
         self.lmax = lmax
         if self.lmax is None: 
             self.lmax = 2*self.nside
+        print('init with lmax of {}'.format(lmax))
         self.cmbweighting = cmbweighting
         if kmask is not None:
             self.kmask = kmask.astype(np.float32)
