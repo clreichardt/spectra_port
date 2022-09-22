@@ -349,7 +349,7 @@ if __name__ == "__main__" and END == True:
     beam_arr[:,2] *= pwf
     beam_arr[:,3] *= pwf
 
-    kernel_file = '/sptlocal/user/creichardt/mll_dl_13000.npz'
+    kernel_file = '/sptlocal/user/pc/mll/mll_binned.npy.npz'
 
     #workdir = '/sptlocal/user/creichardt/xspec_2022/'
     workdir = '/big_scratch/pc/xspec_2022/v5'
