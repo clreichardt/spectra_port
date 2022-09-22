@@ -1,10 +1,11 @@
 import os
 os.environ['OMP_NUM_THREADS'] = "6"
 import numpy as np
-from spectra_port import utils
-from spectra_port import unbiased_multispec as spec
+import utils
+import unbiased_multispec as spec
 import time,os
 import pickle as pkl
+from pathlib import Path
 import pdb
     
 def trim_end_to_end_output(fullsize):
@@ -23,7 +24,8 @@ def trim_end_to_end_output(fullsize):
     fullsize['mask']=None
     fullsize['kmask']=None
     return fullsize
-    
+
+# @profile   
 def end_to_end(mapfiles,
                mcmapfiles,
                banddef,
@@ -116,12 +118,12 @@ def end_to_end(mapfiles,
     print('run sim unbiased: last step took {:.0f}'.format(newtime-lasttime))
     lasttime=newtime
         
-    mcdir = workdir + '/mc/'
+    mcdir = Path(workdir) / "mc"
 
     try:
         if not resume:
             raise Exception("Bounce out")
-        with open(mcdir+'mc_spectrum.pkl', 'rb') as f:
+        with open(mcdir / 'mc_spectrum.pkl', 'rb') as f:
             mc_spectrum = pkl.load(f)
     except:
     # will used alm's in mcdir+'shts_processed.bin'
@@ -135,7 +137,7 @@ def end_to_end(mapfiles,
                                                 jackknife=False, auto=False,
                                                 kmask=kmask,
                                                 cmbweighting=True)
-        with open(mcdir+'mc_spectrum.pkl', 'wb') as f:
+        with open(mcdir / 'mc_spectrum.pkl', 'wb') as f:
             pkl.dump(mc_spectrum,f)
             
     #return
@@ -143,7 +145,7 @@ def end_to_end(mapfiles,
     try:
         if not resume:
             raise Exception("Bounce out")
-        with open(mcdir+'mc_spectrum_fine.pkl', 'rb') as f:
+        with open(mcdir / 'mc_spectrum_fine.pkl', 'rb') as f:
             mc_spectrum_fine = pkl.load(f)
     except:    
         mc_spectrum_fine = spec.unbiased_multispec(mcmapfiles,mask,banddef_fine,nside,
@@ -157,7 +159,7 @@ def end_to_end(mapfiles,
                                                 kmask=kmask,
                                                 skipcov=True,
                                                 cmbweighting=True)
-        with open(mcdir+'mc_spectrum_fine.pkl', 'wb') as f:
+        with open(mcdir / 'mc_spectrum_fine.pkl', 'wb') as f:
             pkl.dump(mc_spectrum_fine,f)
 
     output['mc_spectrum']=mc_spectrum
@@ -170,11 +172,11 @@ def end_to_end(mapfiles,
     newtime=time.time()
     print('run data unbiased: last step took {:.0f}'.format(newtime-lasttime))
     lasttime=newtime
-    datadir = workdir + '/data/'
+    datadir = Path(workdir) / 'data/'
     try:
         if not resume:
             raise Exception("Bounce out")
-        with open(datadir+'data_spectrum.pkl', 'rb') as f:
+        with open(datadir / 'data_spectrum.pkl', 'rb') as f:
             data_spectrum = pkl.load(f)
     except:    
         data_spectrum    = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
@@ -187,7 +189,7 @@ def end_to_end(mapfiles,
                                                 kmask=kmask,
                                                 cmbweighting=True)
 
-        with open(datadir+'data_spectrum.pkl', 'wb') as f:
+        with open(datadir / 'data_spectrum.pkl', 'wb') as f:
             pkl.dump(data_spectrum,f)
     
     output['data_spectrum']=data_spectrum
@@ -291,7 +293,6 @@ def end_to_end(mapfiles,
     iskips = np.zeros(nspectra, dtype=np.int32)
     eskips = np.zeros(nspectra, dtype=np.int32)
     for i in range(nspectra):
-        print(i,kernel.shape)
         super_kernel[i,:,i,:]     = utils.rebin_coupling_matrix(kernel, ellkern, banddef, transferfunc=transfer[i,:], beamfunc = beams[i,:])
         sim_super_kernel[i,:,i,:] = utils.rebin_coupling_matrix(simkernel, ellkern, banddef, transferfunc=transfer[i,:], beamfunc = simbeams[i,:])
         slice_kern = np.asarray([super_kernel[i,j,i,j] for j in range(nbands)])

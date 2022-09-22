@@ -2,7 +2,7 @@
 import os
 os.environ['OMP_NUM_THREADS'] = "6"
 import numpy as np
-from spt3g import core
+# from spt3g import core
 import pdb
 import healpy as hp
 
@@ -119,7 +119,7 @@ def select_good_weight_region(weight,min_fraction):
     assumes untouched pixels are zero, not NAN!!!
     '''
     medwt = np.median(weight[weight > 0])
-    threshold = medwt * fraction
+    threshold = medwt * min_fraction
     mask = np.zeros(weight.shape,dtype=np.bool)
     mask[weight > threshold] = True
 

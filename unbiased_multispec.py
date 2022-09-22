@@ -8,8 +8,8 @@ import numpy as np
 import healpy
 
 import os
-from spt3g import core,maps, calibration
-from spectra_port import utils
+# from spt3g import core,maps, calibration
+import utils
 import pickle as pkl
 import pdb
 import time
@@ -61,8 +61,9 @@ def reformat_multifield_shts(shtfilelist, processedshtfilebase,
                            ram_limit = None,
                            fieldlist = ['ra0hdec-44.75', 'ra0hdec-52.25', 'ra0hdec-59.75', 'ra0hdec-67.25'], 
                            alm_key = '{}_alm',
-                          ) -> 'May be done in Fortran - output is a file':
+                          ):
     ''' 
+    May be done in Fortran - output is a file
     Like reformat_shts, except for a file format that was used for the subfield sim SHTs -- 4 SHTs per file
     Outputs to 4 Files
     Output is expected to be CL (Dl if cmbweighting=Trure) * mask normalization factor * kweights
@@ -73,7 +74,7 @@ def reformat_multifield_shts(shtfilelist, processedshtfilebase,
     assert nout == 4 # won't gaurantee checked for general case  
 
     if ram_limit is None:
-        ram_limit = 16 * 2**30 # 16 GB
+        ram_limit = 5 * 2**30 # 16 GB
 
     # number of bytes in a Dcomplex: 16
     # number of arrays we need to make to do this efficiently: 6 or less
@@ -487,7 +488,7 @@ def load_cross_spectra_data_from_disk(shtfile, startsht,stopsht, npersht, start,
             data[i,:] = np.fromfile(fp,count=nelems,dtype=AlmType)
     return data
 
-
+@profile
 def take_all_cross_spectra( processedshtfile, lmax,
                             setdef, banddef, ram_limit=None, auto = False,nshts=None):
     '''
@@ -498,7 +499,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
     ;; Step 2 (this function):  average all the bands to create binned x-spectra
     '''
     if ram_limit is None:
-        ram_limit = 32 * 2**30 # default limit is 64 GB
+        ram_limit = 5 * 2**30 # default limit is 64 GB
 
 
     # Simplifying assumption axb == (a^c b + b^c a)
@@ -599,6 +600,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
                     spectrum_idx+=1
                     #           pdb.set_trace()
         i=istop
+        del banddata_big
     return(allspectra_out, nmodes_out)
 
 
@@ -664,7 +666,7 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
         istop = np.where((band_start_idx - band_start_idx[i]) < max_nmodes)[0][-1] # get out of tuple, then take last elem of array
 
         if istop <= i:
-            print('ram hit:',max_modes, band_start_idx[i],band_start_idx[i+1])
+            print('ram hit:',max_nmodes, band_start_idx[i],band_start_idx[i+1])
             raise Exception("Insufficient ram for processing even a single bin")
 
         print('take_all_cross_spectra: loading bands {} {}'.format(i,istop-1))
@@ -861,9 +863,9 @@ class unbiased_multispec:
                 os.makedirs(self.persistdir)
 
         #maybe at some point, we'll use status. right now nothing is done. Resume will only affect the full step level - no partial steps yet.
-        status_file = self.persistdir + '/status.pkl'
+        status_file = self.persistdir / 'status.pkl'
         
-        processed_sht_file = self.persistdir + '/shts_processed.bin'
+        processed_sht_file = self.persistdir / 'shts_processed.bin'
         if not self.resume:
             try: 
                 os.remove(processed_sht_file)
