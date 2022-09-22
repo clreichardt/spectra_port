@@ -394,13 +394,14 @@ if __name__ == "__main__" and END == True:
     beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
     sim_beam_arr= beam_arr.copy()
     #real data also has PWF (sims created at 8192)
-    lmax=int(beam_arr[-1,0]+0.001)
-    pwf = hp.pixwin(nside,lmax = lmax)
+    blmax=int(beam_arr[-1,0]+0.001)
+    pwf = hp.pixwin(nside,lmax = blmax)
     beam_arr[:,1] *= pwf
     beam_arr[:,2] *= pwf
     beam_arr[:,3] *= pwf
         
     kernel_file = '/sptlocal/user/creichardt/mll_dl_13000.npz'
+    sim_kernel_file = '/sptlocal/user/creichardt/mll_dl_13000.npz'
 
     #workdir = '/sptlocal/user/creichardt/xspec_2022/'
     workdir = '/big_scratch/cr/xspec_2022/'
@@ -431,7 +432,7 @@ if __name__ == "__main__" and END == True:
     #dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
     #mcmapfiles = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
     
-    
+    print('lmax of {}'.format(lmax))
     output = end_to_end.end_to_end( mapfiles,
                          mcmapfiles,
                          banddef,
@@ -442,13 +443,14 @@ if __name__ == "__main__" and END == True:
                          setdef=setdef,
                          setdef_mc1=setdef_mc1,
                          setdef_mc2=setdef_mc2,
-                         do_window_func=True, 
+                         do_window_func=False, 
                          lmax=lmax,
 #                         cl2dl=True,
                          nside=nside,
                          kmask=None,
                          mask=mask,
                          kernel_file =kernel_file,
+                         #sim_kernel_file=sim_kernel_file,
                          resume=True, 
                          checkpoint=True
                        )

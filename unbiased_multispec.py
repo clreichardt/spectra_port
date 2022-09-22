@@ -19,6 +19,10 @@ AlmType = np.dtype(np.complex64)
 
 
 def name_tempdir(basedir):
+    '''
+    Create a temporary directory name (not currently existing)
+    return dir name
+    '''
     while True:
         rand = np.random.randint(0,999999)
         path = "{}/workdir_{:6d}".format(basedir, rand)
@@ -26,6 +30,9 @@ def name_tempdir(basedir):
             return path
 
 def printinplace(myString):
+    '''
+    Print in place -- ie overwriting the last one, not on a new line
+    '''
     digits = len(myString)
     delete = "\b" * (digits)
     print("{0}{1:{2}}".format(delete, myString, digits), end="")
@@ -33,6 +40,15 @@ def printinplace(myString):
 
 
 def load_spt3g_healpix_ring_map(file,require_order = 'Ring',require_nside=8192,map_key='T'):
+    '''
+    file: string - g3 file to load 
+    require_order: ring or nest
+    require_nside: nside
+    map_key: dict key for map to load
+    returns two arrays:
+        indices [int64]
+        map [float32]
+    '''
     # only taking 1st map 
     frames = core.G3File(file)
     for frame in frames:
@@ -480,7 +496,7 @@ def load_cross_spectra_data_from_disk(shtfile, startsht,stopsht, npersht, start,
     nshts = stopsht - startsht + 1
     buffer_bytes = np.zeros(1,dtype=AlmType).nbytes
     data = np.zeros([nshts,nelems],dtype=AlmType)
-    print(nshts,nelems)
+    print(nshts,nelems,npersht)
     with open(shtfile,'r') as fp:
         for i in range(nshts):
             j = i + startsht
@@ -525,6 +541,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
         revsetdef=setdef
 
     npersht = healpy.sphtfunc.Alm.getsize(lmax)
+    print('check modes: {} {}'.format(lmax,npersht))
     #pdb.set_trace()
     allspectra_out = np.zeros([nbands,nspectra,nrealizations],dtype=np.float32)
     nmodes_out     = np.zeros(nbands, dtype = np.int32)
@@ -819,6 +836,7 @@ class unbiased_multispec:
         self.lmax = lmax
         if self.lmax is None: 
             self.lmax = 2*self.nside
+        print('init with lmax of {}'.format(lmax))
         self.cmbweighting = cmbweighting
         if kmask is not None:
             self.kmask = kmask.astype(np.float32)
