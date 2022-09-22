@@ -25,7 +25,6 @@ def trim_end_to_end_output(fullsize):
     fullsize['kmask']=None
     return fullsize
 
-# @profile   
 def end_to_end(mapfiles,
                mcmapfiles,
                banddef,
