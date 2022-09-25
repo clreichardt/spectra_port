@@ -24,7 +24,7 @@ TEST= False
 NULLLR=False
 NULLLRSPLIT=False
 PK=False
-
+FULLCAL=False
 my_parser = argparse.ArgumentParser()
 my_parser.add_argument('-prep', action='store_true',dest='prep')
 my_parser.add_argument('-prepcal', action='store_true',dest='prepcal')
@@ -35,6 +35,7 @@ my_parser.add_argument('-nulllrsplit', action='store_true',dest='nulllrsplit')
 my_parser.add_argument('-coadd', action='store_true',dest='coadd')
 my_parser.add_argument('-sht', action='store_true',dest='sht')
 my_parser.add_argument('-cal', action='store_true',dest='cal')
+my_parser.add_argument('-fullcal', action='store_true',dest='fullcal')
 my_parser.add_argument('-test', action='store_true',dest='test')
 my_parser.add_argument('-pk', action='store_true',dest='pk')
 #my_parser.add_argument('-freq', default=None ,dest='freq')
@@ -46,6 +47,7 @@ END=args.end
 NULL=args.null
 COADD=args.coadd
 CAL = args.cal
+FULLCAL = args.fullcal
 SHT = args.sht
 TEST= args.test
 PK= args.pk
@@ -371,6 +373,103 @@ if __name__ == "__main__" and PREP is True:
                            no_reorder=False,
                            ram_limit = None,
                           ) 
+
+
+if __name__ == "__main__" and FULLCAL == True:
+    lmax = 13000
+    nside= 8192
+    banddef = np.arange(0,lmax,50)
+    #banddef = np.asarray([0,1000,1500,2000,2200,2500,2800,3100,3400,3700,4000,4400,4800,5200,5700,6200,6800,7400,8000,9000,10000,11000,12000,13000])
+    banddef = np.asarray([0,288,388,460,568,  #dump bins
+               604,  640,  676,  712,  748,  # 4x planck binning = 36
+               784,  820,  856,  892,  928,  964, 1000, 1036, 1072, 1108, 1144,
+               1180, 1216, 1252, 1288, 1324, 1360, 1396, 1432, 1468, 1504,
+               1538, 1572, 1606, 1640, 1674, 1708, 1742, 1776, 1810, 1844, #moved to 2x planck = 34
+               1878, 1912, 1946, 1980, 2014, 
+               2047, 2080, 2113, 2146, 2179, 2212, 2245, 2278, 2311, 2344, # moved to 1x planck = 33
+               2377, 2410, 2443, 2476, 2509, 
+               2600, 2700, 2800, 2900, 3000                      ]) #junk bins
+    #change for testing
+    #setdef_mc1, setdef_mc2 = create_sim_setdefs(100,3)
+    setdef_mc1, setdef_mc2 = create_sim_setdefs(100,3)
+
+    setdef = np.zeros([200,3],dtype=np.int32)
+    setdef[:,0]=np.arange(200,dtype=np.int32)
+    setdef[:,1]=np.arange(200,dtype=np.int32)+200
+    setdef[:,2]=np.arange(200,dtype=np.int32)+400
+    #nsets   = setdef.shape[1] #nfreq
+    #setsize = setdef.shape[0] #nbundles
+    
+    #note beam is 90, 150, 220, so everything else needs to be too (or change beam array ordering)
+    beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
+    sim_beam_arr= beam_arr.copy()
+    #real data also has PWF (sims created at 8192)
+    blmax=int(beam_arr[-1,0]+0.001)
+    pwf = hp.pixwin(nside,lmax = blmax)
+    beam_arr[:,1] *= pwf
+    beam_arr[:,2] *= pwf
+    beam_arr[:,3] *= pwf
+        
+    kernel_file = '/sptlocal/user/creichardt/mll_dl_0p4medwt_6mJy150ghzv2_13000.npz'
+#/sptlocal/user/creichardt/mll_dl_13000.npz'
+    #sim_kernel_file = '/sptlocal/user/creichardt/mll_dl_13000.npz'
+    sim_kernel_file=None
+
+    #workdir = '/sptlocal/user/creichardt/xspec_2022/'
+    workdir = '/big_scratch/cr/xspec_2022_cal/'
+    os.makedirs(workdir,exist_ok=True)
+    file_out = workdir + 'spectrum.pkl'
+    file_out_small = workdir + 'spectrum_small.pkl'
+    
+    #mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
+    #mask = np.load(mask_file)
+    mask_file = '/sptlocal/user/creichardt/hiell2022/mask_0p4medwt_6mJy150ghzv2.pkl'
+    with open(mask_file,'rb') as fp:
+        mask  = pkl.load(fp)
+
+    #may need to reformat theoryfiles
+    theoryfiles = ['/sptlocal/user/creichardt/hiell2022/sim_dls_90ghz.txt',
+                   '/sptlocal/user/creichardt/hiell2022/sim_dls_150ghz.txt',
+                   '/sptlocal/user/creichardt/hiell2022/sim_dls_220ghz.txt']
+
+    
+    dir='/sptgrid/analysis/highell_TT_19-20/v4/obs_shts/'
+    mapfiles = create_real_file_list(dir,stub='bundle_',sfreqs=['90','150','220'],estub='GHz.npz',nbundle=200)
+
+    #change for testing
+#    dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v2.0_testinputsv2/'
+    dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.0_gaussian_inputs/'
+    #mcmapfiles = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=10)
+    mcmapfiles = create_sim_file_list_v2(dir,bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.npz',nsim=100)
+    #dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
+    #mcmapfiles = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
+    
+
+    output = end_to_end.end_to_end( mapfiles,
+                         mcmapfiles,
+                         banddef,
+                         beam_arr,
+                         theoryfiles,
+                         workdir,
+                         simbeam_arr=sim_beam_arr,
+                         setdef=setdef,
+                         setdef_mc1=setdef_mc1,
+                         setdef_mc2=setdef_mc2,
+                         do_window_func=True, 
+                         lmax=lmax,
+#                         cl2dl=True,
+                         nside=nside,
+                         kmask=None,
+                         mask=mask,
+                         kernel_file =kernel_file,
+                         #sim_kernel_file=sim_kernel_file,
+                         resume=True, 
+                         checkpoint=True
+                       )
+    with open(file_out,'wb') as fp:
+        pkl.dump(output,fp)
+    with open(file_out_small,'wb') as fp:
+        pkl.dump(end_to_end.trim_end_to_end_output(output),fp)
 
 
 if __name__ == "__main__" and END == True:
