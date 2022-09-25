@@ -322,7 +322,7 @@ if __name__ == "__main__" and PREP is True:
     #workdir = '/big_scratch/pc/xspec_2022/data/mask_v5/'
     lmax = 13000
     #dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.0_gaussian_inputs/'
-    dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.1_mask5/'
+    dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.3_mask_0p4medwt_6mJy150ghzv2/'
     #kmask = utils.flatten_kmask( np.load('/home/pc/hiell/k_weighing/w2s_150.npy'), lmax)
 #/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
     # kmask = utils.flatten_kmask( np.load('/home/pc/hiell/k_weighing/w2s_150.npy'), lmax)
@@ -347,7 +347,7 @@ if __name__ == "__main__" and PREP is True:
                           )
         
     print("Now real")
-    if True:
+    if False:
     #    exit()
 
         if kmask is not None:
@@ -400,8 +400,10 @@ if __name__ == "__main__" and END == True:
     beam_arr[:,2] *= pwf
     beam_arr[:,3] *= pwf
         
-    kernel_file = '/sptlocal/user/creichardt/mll_dl_13000.npz'
-    sim_kernel_file = '/sptlocal/user/creichardt/mll_dl_13000.npz'
+    kernel_file = '/sptlocal/user/creichardt/mll_dl_0p4medwt_6mJy150ghzv2_13000.npz'
+#/sptlocal/user/creichardt/mll_dl_13000.npz'
+    #sim_kernel_file = '/sptlocal/user/creichardt/mll_dl_13000.npz'
+    sim_kernel_file=None
 
     #workdir = '/sptlocal/user/creichardt/xspec_2022/'
     workdir = '/big_scratch/cr/xspec_2022/'
