@@ -613,32 +613,36 @@ def rebin_spectrum(bands_in, bands_out, spec0, cov0=None, win0=None, weights = N
     nbands_in=bands_in.shape[0] - 1
     nbands_out=bands_out.shape[0] - 1
 
-    nsets=len(spec0)/nbands_in
+    if len(spec0.shape) == 1:
+        nsets = len(spec0) /nbands_in
+    if len(spec0.shape) == 2:
+        nsets = spec0.shape[0]
+
     if weights is not None:
         assert spec0.shape == weights.shape
+
     
-    if len(spec0) % nbands_in != 0:
-        raise Exception("number of spectra must be integer")
-    
-    transform=np.zeros([nbands_in, nbands_out])
+    transform=np.zeros([nbands_out,nbands_in])
 
     #assumes first element of bands is zero
     for i in range(nbands_out):
-        transform[np.logical_and(bands_in[1:] > bands_out[i], bands_in[1:] <= bands_out[i+1])     ,i] = 1
+        transform[i,np.logical_and(bands_in[1:] > bands_out[i], bands_in[1:] <= bands_out[i+1])    ] = 1
         #normalize
-        transform[:,i] /= np.sum(transform[:,i])
+        transform[i,:] /= np.sum(transform[i,:])
     
     spec_in=np.reshape(spec0, [nsets,nbands_in])
-    spec_out=fltarr(nbands_out, nsets)
+    spec_out=np.zeros([nsets,nbands_out])
     for i in range(nsets):
-        spec_out[:, i]=np.matmul(transform,spec_in[:,i])
+        #print(transform.shape)
+        #print(spec_in[i,:].shape)
+        spec_out[i,:]=np.matmul(transform,spec_in[i,:])
     
     if cov0 is not None:
         cov_in=np.reshape(cov0, [nsets,nbands_in, nsets, nbands_in])
-        cov_out=np.zeros([nsets,nbands_in, nsets, nbands_in])
+        cov_out=np.zeros([nsets,nbands_out, nsets, nbands_out])
         for i in range(nsets):
             for j in range(nsets):
-                cov_out[i,:,j,:,]=np.matmul(np.matmul(transform,cov[i,:,j,:]),transform.T)
+                cov_out[i,:,j,:,]=np.matmul(np.matmul(transform,cov_in[i,:,j,:]),transform.T)
     else:
         cov_out = None
 
