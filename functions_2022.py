@@ -505,6 +505,7 @@ if __name__ == "__main__" and END == True:
     sim_kernel_file=None
 
     #workdir = '/sptlocal/user/creichardt/xspec_2022/'
+
     workdir = '/big_scratch/cr/xspec_2022/'
     os.makedirs(workdir,exist_ok=True)
     file_out = workdir + 'spectrum.pkl'
@@ -544,7 +545,7 @@ if __name__ == "__main__" and END == True:
                          setdef=setdef,
                          setdef_mc1=setdef_mc1,
                          setdef_mc2=setdef_mc2,
-                         do_window_func=False, 
+                         do_window_func=True, 
                          lmax=lmax,
 #                         cl2dl=True,
                          nside=nside,

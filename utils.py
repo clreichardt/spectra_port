@@ -643,15 +643,21 @@ def rebin_spectrum(bands_in, bands_out, spec0, cov0=None, win0=None, weights = N
         for i in range(nsets):
             for j in range(nsets):
                 cov_out[i,:,j,:,]=np.matmul(np.matmul(transform,cov_in[i,:,j,:]),transform.T)
+        if len(cov_in.shape) ==2:
+            #reshape to 2d to match input
+            cov_out = np.reshape(cov_out,[nsets*nbands_out,nsets*nbands_out])
     else:
         cov_out = None
 
     if win0 is not None:
         nells=win0.shape[1]
         win_in=np.reshape(win0, [nsets,nbands_in,nells])
-        win_out=np.zeros([nsets,nbands_in,nells],dtype=np.float32)
+        win_out=np.zeros([nsets,nbands_out,nells],dtype=np.float32)
         for i in range(nsets):
             win_out[i,:,:]=np.matmul(transform,win_in[i,:,:])
+        if len(win0.shape) == 2:
+            #reform to 2d to match input
+            win_out=np.reshape(win_out,[nsets*nbands_out,nells])
     else: 
         win_out = None
     
