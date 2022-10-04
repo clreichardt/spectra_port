@@ -7,7 +7,7 @@ import healpy as hp
 import unbiased_multispec as spec
 import utils
 import end_to_end
-from spt3g import core,maps, calibration
+# from spt3g import core,maps, calibration
 import argparse
 import pickle as pkl
 import pdb
@@ -201,8 +201,6 @@ def create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',
     maxlen = 0
     for i in range(nsim):
         files = glob.glob(os.path.join(dir, dstub.format(i),bstub+'*_'+sfreqs[0]+estub))
-        print(i)
-#    pdb.set_trace()
         if len(files[0])+2 > maxlen:
             maxlen = len(files[0])+2
         if len(files[1])+2 > maxlen:
@@ -244,9 +242,7 @@ def create_sim_file_list_v2(dir,bstub='bundles/alm_bundle',sfreqs=['90','150','2
     maxlen = 0
     for i in range(nsim):
         files = glob.glob(os.path.join(dirlist[i], bstub+'*_'+sfreqs[0]+estub))
-        print(i)
         
-        #pdb.set_trace()
         if len(files[0])+2 > maxlen:
             maxlen = len(files[0])+2
         if len(files[1])+2 > maxlen:
@@ -282,19 +278,19 @@ def create_sim_setdefs(nsim,nfreq):
 if __name__ == "__main__" and PREP is True:
     print("First sims")
     workdir = '/sptlocal/user/creichardt/xspec_2022/'
-    workdir = '/big_scratch/pc/xspec_2022/data/mask_v5/'
+    workdir = '/big_scratch/pc/xspec_2022/data/v5/'
     lmax = 13000
     dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.0_gaussian_inputs/'
     # kmask = utils.flatten_kmask( np.load('/home/pc/hiell/k_weighing/w2s_150.npy'), lmax)
     kmask=None
 
-    if False:
+    if True:
 #        mcshtfilelist = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.npz',nsim=200)
         mcshtfilelist = create_sim_file_list_v2(dir,bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.npz',nsim=100)
         print(mcshtfilelist)        
         
-        processedshtfile = workdir + '/mc/shts_processed.bin'
-        os.makedirs(workdir+'/mc/',exist_ok=True)
+        processedshtfile = workdir + 'mc/shts_processed.bin'
+        os.makedirs(workdir+'mc/',exist_ok=True)
         spec.reformat_shts(mcshtfilelist, processedshtfile,
                            lmax,
                            cmbweighting = True, 
@@ -305,11 +301,11 @@ if __name__ == "__main__" and PREP is True:
                            ram_limit = None,
                           )
         
-    print("Now real")
-    if True:
+    if False:
+        print("Now real")
     #    exit()
         # print("kmask mean {} std {}".format(np.mean(kmask),np.std(kmask)))
-        dir='/sptgrid/analysis/highell_TT_19-20/v4/obs_shts_v2/'
+        dir='/sptgrid/analysis/highell_TT_19-20/v5/obs_shts/'
         # datashtfilelist = create_real_file_list(dir,stub='bundle_',sfreqs=['90','150','220'],estub='GHz.npz',nbundle=200)
         # datashtfilelist = create_real_file_list(dir,stub='bundle_',sfreqs=['150'],estub='GHz.npz',nbundle=200)
         datashtfilelist = create_real_file_list_v5(dir, freqs=['90', '150', '220'], nbundle=200)
@@ -327,8 +323,9 @@ if __name__ == "__main__" and PREP is True:
 
 
 if __name__ == "__main__" and END == True:
-    
-    banddef = np.arange(0,13000,50)
+    lmax = 13000
+    nside= 8192
+    banddef = np.arange(0,lmax,50)
     #banddef = np.asarray([0,1000,1500,2000,2200,2500,2800,3100,3400,3700,4000,4400,4800,5200,5700,6200,6800,7400,8000,9000,10000,11000,12000,13000])
 
     #change for testing
@@ -344,16 +341,23 @@ if __name__ == "__main__" and END == True:
     
     #note beam is 90, 150, 220, so everything else needs to be too (or change beam array ordering)
     beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
-    
-    kernel_file = '/sptlocal/user/creichardt/mll_dl_13000.npz'
+    sim_beam_arr= beam_arr.copy()
+    #real data also has PWF (sims created at 8192)
+    # lmax=int(beam_arr[-1,0]+0.001)
+    pwf = hp.sphtfunc.pixwin(nside)[:len(beam_arr[:,1])]
+    beam_arr[:,1] *= pwf
+    beam_arr[:,2] *= pwf
+    beam_arr[:,3] *= pwf
+
+    kernel_file = '/sptlocal/user/pc/mll/mll_binned.npy.npz'
 
     #workdir = '/sptlocal/user/creichardt/xspec_2022/'
-    workdir = '/big_scratch/pc/xspec_2022/'
+    workdir = '/big_scratch/pc/xspec_2022/v5'
     os.makedirs(workdir,exist_ok=True)
     file_out = workdir + 'spectrum.pkl'
     file_out_small = workdir + 'spectrum_small.pkl'
     
-    mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask5.npy'
+    mask_file='/home/pc/hiell/mapcuts/apodization/mask_0p4medwt_6mJy150ghzv2.npy'
     mask = np.load(mask_file)
     
     #may need to reformat theoryfiles
@@ -362,7 +366,7 @@ if __name__ == "__main__" and END == True:
                    '/sptlocal/user/creichardt/hiell2022/sim_dls_220ghz.txt']
 
     
-    dir='/sptgrid/analysis/highell_TT_19-20/v4/obs_shts_v2/'
+    dir='/sptgrid/analysis/highell_TT_19-20/v5/obs_shts/'
     mapfiles = create_real_file_list(dir,stub='bundle_',sfreqs=['90','150','220'],estub='GHz.npz',nbundle=200)
 
     #change for testing
@@ -380,14 +384,14 @@ if __name__ == "__main__" and END == True:
                          beam_arr,
                          theoryfiles,
                          workdir,
-                         simbeam_arr=None,
+                         simbeam_arr=sim_beam_arr,
                          setdef=setdef,
                          setdef_mc1=setdef_mc1,
                          setdef_mc2=setdef_mc2,
                          do_window_func=True, 
-                         lmax=13000,
+                         lmax=lmax,
 #                         cl2dl=True,
-                         nside=8192,
+                         nside=nside,
                          kmask=None,
                          mask=mask,
                          kernel_file =kernel_file,
@@ -573,7 +577,7 @@ if __name__ == "__main__" and NULL == True:
 
     print('doing null')
 
-    mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask5.npy'
+    mask_file='/home/pc/hiell/mapcuts/apodization/mask_0p4medwt_6mJy150ghzv2.npy'
     mask = np.load(mask_file)
     lmax = 13000
     # kmask = utils.flatten_kmask( np.load('/home/pc/hiell/k_weighing/w2s_150.npy'), lmax)
@@ -581,10 +585,10 @@ if __name__ == "__main__" and NULL == True:
     nside=8192
     banddef = np.arange(0,13000,500)
 
-    workdir='/big_scratch/pc/xspec_2022/data/mask_v5/'
+    workdir='/big_scratch/pc/xspec_2022/data/v5/'
     setdef = np.zeros([200,1],dtype=np.int32)
     setdef[:,0]=np.arange(0,200,dtype=np.int32)
-    mapfiles = create_real_file_list('/sptgrid/analysis/highell_TT_19-20/v4/obs_shts_v2/',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
+    mapfiles = create_real_file_list('/sptgrid/analysis/highell_TT_19-20/v5/obs_shts/',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
     # mapfiles = create_real_file_list('/sptgrid/user/pc/obs_shts/',stub='GHz_bundle_',sfreqs=['150'],estub='.npz',nbundle=200)
 
     # if False:

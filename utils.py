@@ -2,7 +2,7 @@
 import os
 os.environ['OMP_NUM_THREADS'] = "6"
 import numpy as np
-from spt3g import core
+# from spt3g import core
 import pdb
 import healpy as hp
 
@@ -119,7 +119,7 @@ def select_good_weight_region(weight,min_fraction):
     assumes untouched pixels are zero, not NAN!!!
     '''
     medwt = np.median(weight[weight > 0])
-    threshold = medwt * fraction
+    threshold = medwt * min_fraction
     mask = np.zeros(weight.shape,dtype=np.bool)
     mask[weight > threshold] = True
 
@@ -605,3 +605,60 @@ def window_function_calc(banddef, transfer_dic, ellmin = 10, ellmax=13000,no_mod
 
     return win
 
+
+#changing binning of bandpowers, and optionally the cov/window functions
+#once this is debugged should add weights
+def rebin_spectrum(bands_in, bands_out, spec0, cov0=None, win0=None, weights = None): 
+
+    nbands_in=bands_in.shape[0] - 1
+    nbands_out=bands_out.shape[0] - 1
+
+    if len(spec0.shape) == 1:
+        nsets = len(spec0) /nbands_in
+    if len(spec0.shape) == 2:
+        nsets = spec0.shape[0]
+
+    if weights is not None:
+        assert spec0.shape == weights.shape
+
+    
+    transform=np.zeros([nbands_out,nbands_in])
+
+    #assumes first element of bands is zero
+    for i in range(nbands_out):
+        transform[i,np.logical_and(bands_in[1:] > bands_out[i], bands_in[1:] <= bands_out[i+1])    ] = 1
+        #normalize
+        transform[i,:] /= np.sum(transform[i,:])
+    
+    spec_in=np.reshape(spec0, [nsets,nbands_in])
+    spec_out=np.zeros([nsets,nbands_out])
+    for i in range(nsets):
+        #print(transform.shape)
+        #print(spec_in[i,:].shape)
+        spec_out[i,:]=np.matmul(transform,spec_in[i,:])
+    
+    if cov0 is not None:
+        cov_in=np.reshape(cov0, [nsets,nbands_in, nsets, nbands_in])
+        cov_out=np.zeros([nsets,nbands_out, nsets, nbands_out])
+        for i in range(nsets):
+            for j in range(nsets):
+                cov_out[i,:,j,:,]=np.matmul(np.matmul(transform,cov_in[i,:,j,:]),transform.T)
+        if len(cov_in.shape) ==2:
+            #reshape to 2d to match input
+            cov_out = np.reshape(cov_out,[nsets*nbands_out,nsets*nbands_out])
+    else:
+        cov_out = None
+
+    if win0 is not None:
+        nells=win0.shape[1]
+        win_in=np.reshape(win0, [nsets,nbands_in,nells])
+        win_out=np.zeros([nsets,nbands_out,nells],dtype=np.float32)
+        for i in range(nsets):
+            win_out[i,:,:]=np.matmul(transform,win_in[i,:,:])
+        if len(win0.shape) == 2:
+            #reform to 2d to match input
+            win_out=np.reshape(win_out,[nsets*nbands_out,nells])
+    else: 
+        win_out = None
+    
+    return spec_out,cov_out,win_out,transform

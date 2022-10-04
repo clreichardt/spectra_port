@@ -354,7 +354,7 @@ def end_to_end(mapfiles,
     print('unbias cov')
     scov = np.reshape(np.transpose(np.reshape(mc_spectrum.cov,[nbands,nspectra,nbands,nspectra]),[1,0,3,2]),[nbands*nspectra,nbands*nspectra])
     sample_cov = np.reshape(np.matmul(np.matmul(invsimkernmat , scov) , invsimkernmattr),[nspectra,nbands,nspectra, nbands])
-    dcov = np.reshape(np.transpose(np.reshape(mc_spectrum.cov,[nbands,nspectra,nbands,nspectra]),[1,0,3,2]),[nbands*nspectra,nbands*nspectra])
+    dcov = np.reshape(np.transpose(np.reshape(data_spectrum.cov,[nbands,nspectra,nbands,nspectra]),[1,0,3,2]),[nbands*nspectra,nbands*nspectra])
     meas_cov = np.reshape(np.matmul(np.matmul(invkernmat , dcov), invkernmattr),[nspectra,nbands,nspectra, nbands])
 
     output['sample_cov']=sample_cov
