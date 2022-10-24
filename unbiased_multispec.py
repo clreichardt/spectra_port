@@ -583,6 +583,10 @@ def take_all_cross_spectra( processedshtfile, lmax,
                                                        npersht,   
                                                        band_start_idx[i],
                                                        band_start_idx[istop]-1 )
+        
+        if kmask_on_the_fly_ranges is not None:
+            for k in range(kmask_on_the_fly_ranges.shape[0]):
+                banddata_big[kmask_on_the_fly_ranges[k,0]:kmask_on_the_fly_ranges[k,1],:] *= kmask_on_the_fly[k,band_start_idx[i]:band_start_idx[istop]]
         #process this data
         for iprime in range(i, istop):
             printinplace('processing band {}    '.format(iprime))
@@ -592,13 +596,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
             aidx=band_start_idx[iprime]-band_start_idx[i]
             banddata=banddata_big[:,aidx:(aidx+nmodes)] # first index SHT; second index alm
 
-            if kmask_on_the_fly_ranges is not None:
-                nkks = kmask_on_the_fly_ranges.shape
-                nkkks= kmask_on_the_fly.shape
-                assert nkkks[0] == nkks[0]
-                assert nkks[1] == 2
-                for k in range(nkks[0]):
-                    banddata[kmask_on_the_fly_ranges[i,0]:kmask_on_the_fly_ranges[i,1],:] *= kmask_on_the_fly[i,band_start_idx[iprime]:band_start_idx[iprime]+nmodes]
+
 
 
             spectrum_idx=0
@@ -702,6 +700,9 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
                                                        npersht,   
                                                        band_start_idx[i],
                                                        band_start_idx[istop]-1 )
+        if kmask_on_the_fly_ranges is not None:
+            for k in range(kmask_on_the_fly_ranges.shape[0]):
+                banddata_big[kmask_on_the_fly_ranges[k,0]:kmask_on_the_fly_ranges[k,1],:] *= kmask_on_the_fly[k,band_start_idx[i]:band_start_idx[istop]]
         #process this data
         for iprime in range(i, istop):
             printinplace('processing band {}    '.format(iprime))
@@ -710,15 +711,6 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
             nmodes_out[iprime]=nmodes
             aidx=band_start_idx[iprime]-band_start_idx[i]
             banddata=banddata_big[:,aidx:(aidx+nmodes)] # first index SHT; second index alm
-
-            if kmask_on_the_fly_ranges is not None:
-                nkks = kmask_on_the_fly_ranges.shape
-                nkkks= kmask_on_the_fly.shape
-                assert nkkks[0] == nkks[0]
-                assert nkks[1] == 2
-                for k in range(nkks[0]):
-                    banddata[kmask_on_the_fly_ranges[i,0]:kmask_on_the_fly_ranges[i,1],:] *= kmask_on_the_fly[i,band_start_idx[iprime]:band_start_idx[iprime]+nmodes]
-
 
             spectrum_idx=0
             for j in range(nsets):
@@ -860,7 +852,15 @@ class unbiased_multispec:
             self.kmask=None
         if kmask_on_the_fly is not None:
             self.kmask_kmask_on_the_fly = kmask_on_the_fly.astype(np.float32)
+            assert kmask_on_the_fly_ranges is not None
+            nkks = kmask_on_the_fly_ranges.shape
+            nkkks= kmask_on_the_fly.shape
+            assert nkkks[0] == nkks[0]
+            assert nkks[1] == 2
+            assert nkkks[1] == hp.sphtfunc.Alm.getsize(lmax)
         self.kmask_on_the_fly_ranges = kmask_on_the_fly_ranges
+        if kmask_on_the_fly_ranges is not None:
+            assert (kmask_on_the_fly is not None)
         self.setdef = setdef
         self.jackknife = jackknife
         self.auto = auto
