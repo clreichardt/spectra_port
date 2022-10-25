@@ -40,6 +40,8 @@ def end_to_end(mapfiles,
                lmax=13000,
                nside=8192,
                kmask=None,
+               kmask_on_the_fly_ranges = None, 
+               kmask_on_the_fly = None,
                mask=None,
                kernel_file=None,
                sim_kernel_file=None,
@@ -135,6 +137,8 @@ def end_to_end(mapfiles,
                                                 setdef2=setdef_mc2,
                                                 jackknife=False, auto=False,
                                                 kmask=kmask,
+                                                kmask_on_the_fly_ranges = kmask_on_the_fly_ranges, 
+                                                kmask_on_the_fly = kmask_on_the_fly,
                                                 cmbweighting=True)
         with open(mcdir+'mc_spectrum.pkl', 'wb') as f:
             pkl.dump(mc_spectrum,f)
@@ -156,6 +160,8 @@ def end_to_end(mapfiles,
                                                 setdef2=setdef_mc2,
                                                 jackknife=False, auto=False,
                                                 kmask=kmask,
+                                                kmask_on_the_fly_ranges = kmask_on_the_fly_ranges, 
+                                                kmask_on_the_fly = kmask_on_the_fly,
                                                 skipcov=True,
                                                 cmbweighting=True)
         with open(mcdir+'mc_spectrum_fine.pkl', 'wb') as f:
@@ -186,6 +192,8 @@ def end_to_end(mapfiles,
                                                 setdef=setdef,
                                                 jackknife=False, auto=False,
                                                 kmask=kmask,
+                                                kmask_on_the_fly_ranges = kmask_on_the_fly_ranges, 
+                                                kmask_on_the_fly = kmask_on_the_fly,
                                                 cmbweighting=True)
 
         with open(datadir+'data_spectrum.pkl', 'wb') as f:

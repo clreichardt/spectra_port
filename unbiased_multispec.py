@@ -505,7 +505,7 @@ def load_cross_spectra_data_from_disk(shtfile, startsht,stopsht, npersht, start,
 
 
 def take_all_cross_spectra( processedshtfile, lmax,
-                            setdef, banddef, ram_limit=None, auto = False,nshts=None):
+                            setdef, banddef, ram_limit=None, auto = False,nshts=None,kmask_on_the_fly=None, kmask_on_the_fly_ranges=None):
     '''
     Returns set of all x-spectra, binned'
     ;; Step 1, copy all of the fft files and apply scalings masks etc
@@ -583,6 +583,10 @@ def take_all_cross_spectra( processedshtfile, lmax,
                                                        npersht,   
                                                        band_start_idx[i],
                                                        band_start_idx[istop]-1 )
+        
+        if kmask_on_the_fly_ranges is not None:
+            for k in range(kmask_on_the_fly_ranges.shape[0]):
+                banddata_big[kmask_on_the_fly_ranges[k,0]:kmask_on_the_fly_ranges[k,1],:] *= kmask_on_the_fly[k,band_start_idx[i]:band_start_idx[istop]]
         #process this data
         for iprime in range(i, istop):
             printinplace('processing band {}    '.format(iprime))
@@ -590,7 +594,9 @@ def take_all_cross_spectra( processedshtfile, lmax,
             nmodes=(band_start_idx[iprime+1]-band_start_idx[iprime])
             nmodes_out[iprime]=nmodes
             aidx=band_start_idx[iprime]-band_start_idx[i]
-            banddata=banddata_big[:,aidx:(aidx+nmodes-1)] # first index SHT; second index alm
+            banddata=banddata_big[:,aidx:(aidx+nmodes)] # first index SHT; second index alm
+
+
 
 
             spectrum_idx=0
@@ -620,7 +626,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
 
 
 def take_all_sim_cross_spectra( processedshtfile, lmax,
-                            setdef1,  banddef, setdef2=None, ram_limit=None, auto=False):
+                            setdef1,  banddef, setdef2=None, ram_limit=None, auto=False,kmask_on_the_fly=None, kmask_on_the_fly_ranges=None):
     '''
     'Returns set of all x-spectra, binned'
     ;; Step 1, copy all of the fft files and apply scalings masks etc
@@ -694,6 +700,9 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
                                                        npersht,   
                                                        band_start_idx[i],
                                                        band_start_idx[istop]-1 )
+        if kmask_on_the_fly_ranges is not None:
+            for k in range(kmask_on_the_fly_ranges.shape[0]):
+                banddata_big[kmask_on_the_fly_ranges[k,0]:kmask_on_the_fly_ranges[k,1],:] *= kmask_on_the_fly[k,band_start_idx[i]:band_start_idx[istop]]
         #process this data
         for iprime in range(i, istop):
             printinplace('processing band {}    '.format(iprime))
@@ -701,8 +710,7 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
             nmodes=(band_start_idx[iprime+1]-band_start_idx[iprime])
             nmodes_out[iprime]=nmodes
             aidx=band_start_idx[iprime]-band_start_idx[i]
-            banddata=banddata_big[:,aidx:(aidx+nmodes-1)] # first index SHT; second index alm
-
+            banddata=banddata_big[:,aidx:(aidx+nmodes)] # first index SHT; second index alm
 
             spectrum_idx=0
             for j in range(nsets):
@@ -802,6 +810,8 @@ class unbiased_multispec:
                  lmax=None, #optional, but should be set. Defaults to 2*nside      
                  cmbweighting=True, # True ==> return Dl. False ==> Return Cl
                  kmask = None, #If not none, must be the right size for the Alms. A numpy array/vector
+                 kmask_on_the_fly_ranges = None, #If not None, must be a Nx2 array defining sets to apply kmask
+                 kmask_on_the_fly = None, #if not none, must be N x n_alm array. will be multiplied by alms in the take_all cross_spectra steps
                  setdef=None, # optional -- will take from mapfile array dimensions if not provided
                  setdef2 = None, #optional -- if provided will assume doing sim cross-spectra
                  jackknife = False, #If true, will difference SHTs to do null spectrum
@@ -840,6 +850,17 @@ class unbiased_multispec:
             self.kmask = kmask.astype(np.float32)
         else:
             self.kmask=None
+        if kmask_on_the_fly is not None:
+            self.kmask_kmask_on_the_fly = kmask_on_the_fly.astype(np.float32)
+            assert kmask_on_the_fly_ranges is not None
+            nkks = kmask_on_the_fly_ranges.shape
+            nkkks= kmask_on_the_fly.shape
+            assert nkkks[0] == nkks[0]
+            assert nkks[1] == 2
+            assert nkkks[1] == hp.sphtfunc.Alm.getsize(lmax)
+        self.kmask_on_the_fly_ranges = kmask_on_the_fly_ranges
+        if kmask_on_the_fly_ranges is not None:
+            assert (kmask_on_the_fly is not None)
         self.setdef = setdef
         self.jackknife = jackknife
         self.auto = auto
