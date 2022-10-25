@@ -377,7 +377,16 @@ if __name__ == "__main__" and END == True:
     #dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
     #mcmapfiles = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
     
-    
+     kmask = np.asarray([np.load(f'/home/pc/hiell/k_weighing/w2s_90_{rundir}.npy'),                            
+                         np.load(f'/home/pc/hiell/k_weighing/w2s_150.npy'),                                    
+                         np.load(f'/home/pc/hiell/k_weighing/w2s_220.npy') ])                                  
+     # kmask = None                                                                                                
+     kmask_on_the_fly = kmask                                                                                      
+     kmask_on_the_fly_ranges = np.zeros((3,2))                                                                     
+     kmask_on_the_fly_ranges[0] = 0, 200                                                                           
+     kmask_on_the_fly_ranges[1] = 200, 400                                                                         
+     kmask_on_the_fly_ranges[2] = 400, 600
+ 
     output = end_to_end.end_to_end( mapfiles,
                          mcmapfiles,
                          banddef,

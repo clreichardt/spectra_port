@@ -191,7 +191,7 @@ def end_to_end(mapfiles,
                                                 persistdir=datadir,
                                                 setdef=setdef,
                                                 jackknife=False, auto=False,
-                                                kmask=kmask,
+                                                # kmask=kmask,
                                                 kmask_on_the_fly_ranges = kmask_on_the_fly_ranges, 
                                                 kmask_on_the_fly = kmask_on_the_fly,
                                                 cmbweighting=True)
