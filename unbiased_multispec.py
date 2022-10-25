@@ -739,7 +739,24 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
     return(allspectra_out, nmodes_out)
 
 
-
+def correct_by_kmask_factor(allspectra_in, kmask_sq, banddef, eps = 1e-12):
+    #default behavior is for cross-spectra to return the average of alms**2 * kmask**2
+    #this swaps that to be the weighted average of alms**2, for weight array of kmask**2
+    #all_spectra -- l-bin, freq-combo, Nsims
+    #or 2d - lbin, Nsims
+    # if have different kmasks, need to handle that outside this function and call this on a subset of allspectra
+    band_start_idx = get_first_index_ell(banddef+1)
+    nbands = banddef.shape[0]-1
+    factors = np.zeros(nbands)
+    for i in range(nbands):
+        factors[i]= np.mean(kmask_sq[band_start_idx[i]:band_start_idx[i+1]])
+    factors[factors < eps] = 1 #if kmask is 0, want 0 not NaN
+    newd = np.asarray(allspectra_in.shape)
+    newd[:] = 1
+    newd[0] = nbands
+    factors = np.reshape(factors,newd)        
+    return allspectra_in/factors
+    
 def process_all_cross_spectra(allspectra, nbands, nsets,setsize, 
                               auto=False,
                               skipcov=False ):
@@ -812,6 +829,7 @@ class unbiased_multispec:
                  kmask = None, #If not none, must be the right size for the Alms. A numpy array/vector
                  kmask_on_the_fly_ranges = None, #If not None, must be a Nx2 array defining sets to apply kmask
                  kmask_on_the_fly = None, #if not none, must be N x n_alm array. will be multiplied by alms in the take_all cross_spectra steps
+                 weighted_average_for_kmask = False, #treat kmask as weights for weighted average
                  setdef=None, # optional -- will take from mapfile array dimensions if not provided
                  setdef2 = None, #optional -- if provided will assume doing sim cross-spectra
                  jackknife = False, #If true, will difference SHTs to do null spectrum
@@ -850,17 +868,7 @@ class unbiased_multispec:
             self.kmask = kmask.astype(np.float32)
         else:
             self.kmask=None
-        if kmask_on_the_fly is not None:
-            self.kmask_kmask_on_the_fly = kmask_on_the_fly.astype(np.float32)
-            assert kmask_on_the_fly_ranges is not None
-            nkks = kmask_on_the_fly_ranges.shape
-            nkkks= kmask_on_the_fly.shape
-            assert nkkks[0] == nkks[0]
-            assert nkks[1] == 2
-            assert nkkks[1] == hp.sphtfunc.Alm.getsize(lmax)
-        self.kmask_on_the_fly_ranges = kmask_on_the_fly_ranges
-        if kmask_on_the_fly_ranges is not None:
-            assert (kmask_on_the_fly is not None)
+
         self.setdef = setdef
         self.jackknife = jackknife
         self.auto = auto
@@ -879,6 +887,7 @@ class unbiased_multispec:
         self.nmodes = None
         self.windowfactor = 1.0
         self.skipcov=skipcov
+        self.weighted_average_for_kmask = weighted_average_for_kmask
                 
                 
         #################
@@ -920,6 +929,18 @@ class unbiased_multispec:
             self.setdef = self.mapfile.shape
             print('Warning - check set def: inferred {}'.format(self.setdef))
         
+        if kmask_on_the_fly is not None:
+            self.kmask_kmask_on_the_fly = kmask_on_the_fly.astype(np.float32)
+            assert kmask_on_the_fly_ranges is not None
+            nkks = kmask_on_the_fly_ranges.shape
+            nkkks= kmask_on_the_fly.shape
+            assert nkkks[0] == nkks[0] == setdef.shape[0]
+            assert nkks[1] == 2
+            assert nkkks[1] == hp.sphtfunc.Alm.getsize(lmax)
+        self.kmask_on_the_fly_ranges = kmask_on_the_fly_ranges
+        if kmask_on_the_fly_ranges is not None:
+            assert (kmask_on_the_fly is not None)
+        
         #get SHTs done
         sht_size = os.path.getsize(processed_sht_file)
         desired_size = healpy.sphtfunc.Alm.getsize(lmax) * np.zeros(1,dtype=AlmType).nbytes
@@ -957,7 +978,26 @@ class unbiased_multispec:
                                                         self.use_setdef,self.banddef, setdef2=setdef2, ram_limit=self.ramlimit, auto = self.auto
                                                         kmask_on_the_fly_ranges = kmask_on_the_fly_ranges, 
                                                         kmask_on_the_fly = kmask_on_the_fly) #-> 'Returns set of all x-spectra, binned':
-                        
+            
+            
+        if weighted_average_for_kmask and (kmask is not None or kmask_on_the_fly is not None):
+            if kmask_on_the_fly is None:
+                allspectra = correct_by_kmask_factor(allspectra, kmask*kmask, self.banddef)
+            elif kmask is None:
+                i=0
+                for k in range(setdef.shape[0]):
+                    for j in range(k,setdef.shape[0]):
+                         allspectra[:,i,:] = correct_by_kmask_factor(allspectra[:,i,:], kmask_on_the_fly[k,:]*kmask_on_the_fly[j,:], self.banddef)
+                        i+=1
+            else: #both exist
+                i=0
+                for k in range(setdef.shape[0]):
+                    for j in range(k,setdef.shape[0]):
+                         allspectra[:,i,:] = correct_by_kmask_factor(allspectra[:,i,:], kmask_on_the_fly[k,:]*kmask_on_the_fly[j,:]*kmask*kmask, self.banddef)
+                        i+=1
+        elif weighted_average_for_kmask:
+            print('Warning - asked to used weighted average for kmask, but no kmasks provided  -- doing nothing')
+
         self.allspectra = allspectra
         self.nmodes = nmodes
         
