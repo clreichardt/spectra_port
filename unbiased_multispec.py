@@ -987,13 +987,13 @@ class unbiased_multispec:
                 i=0
                 for k in range(setdef.shape[0]):
                     for j in range(k,setdef.shape[0]):
-                         allspectra[:,i,:] = correct_by_kmask_factor(allspectra[:,i,:], kmask_on_the_fly[k,:]*kmask_on_the_fly[j,:], self.banddef)
+                        allspectra[:,i,:] = correct_by_kmask_factor(allspectra[:,i,:], kmask_on_the_fly[k,:]*kmask_on_the_fly[j,:], self.banddef)
                         i+=1
             else: #both exist
                 i=0
                 for k in range(setdef.shape[0]):
                     for j in range(k,setdef.shape[0]):
-                         allspectra[:,i,:] = correct_by_kmask_factor(allspectra[:,i,:], kmask_on_the_fly[k,:]*kmask_on_the_fly[j,:]*kmask*kmask, self.banddef)
+                        allspectra[:,i,:] = correct_by_kmask_factor(allspectra[:,i,:], kmask_on_the_fly[k,:]*kmask_on_the_fly[j,:]*kmask*kmask, self.banddef)
                         i+=1
         elif weighted_average_for_kmask:
             print('Warning - asked to used weighted average for kmask, but no kmasks provided  -- doing nothing')
