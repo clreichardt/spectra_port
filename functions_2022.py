@@ -511,8 +511,8 @@ if __name__ == "__main__" and KTEST == True:
 
     #workdir = '/sptlocal/user/creichardt/xspec_2022/'
 
-    workdir = '/big_scratch/cr/xspec_2022/'
-    os.makedirs(workdir,exist_ok=True)
+    workdir0 = '/big_scratch/cr/xspec_2022/'
+    os.makedirs(workdir0,exist_ok=True)
     file_out = workdir + 'spectrum.pkl'
     file_out_small = workdir + 'spectrum_small.pkl'
     
@@ -539,6 +539,18 @@ if __name__ == "__main__" and KTEST == True:
     #dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
     #mcmapfiles = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
     
+    with np.load('/sptlocal/user/creichardt/kmask_m150.npz') as dat:
+        kmask_on_the_fly = data['kmask']
+    kmask_on_the_fly.reshape([1,healpy.sphtfunc.Alm.getsize(lmax)])
+    kmask_on_the_fly_ranges = np.asarray([1,2])
+    kmask_on_the_fly_ranges[0,0]=0
+    kmask_on_the_fly_ranges[0,1]=600
+    workdir = workdir0 + 'mcut150/'
+    os.makedirs(workdir+'data/',exist_ok=True)
+    file_out = workdir + 'spectrum.pkl'
+    file_out_small = workdir + 'spectrum_small.pkl'
+    
+    
     print('lmax of {}'.format(lmax))
     output = end_to_end.end_to_end( mapfiles,
                          mcmapfiles,
@@ -555,6 +567,8 @@ if __name__ == "__main__" and KTEST == True:
 #                         cl2dl=True,
                          nside=nside,
                          kmask=None,
+                         kmask_on_the_fly_ranges=kmask_on_the_fly_ranges,
+                         kmask_on_the_fly=kmask_on_the_fly,
                          mask=mask,
                          kernel_file =kernel_file,
                          #sim_kernel_file=sim_kernel_file,
@@ -565,6 +579,83 @@ if __name__ == "__main__" and KTEST == True:
         pkl.dump(output,fp)
     with open(file_out_small,'wb') as fp:
         pkl.dump(end_to_end.trim_end_to_end_output(output),fp)
+        
+    with np.load('/sptlocal/user/creichardt/kmask_m200.npz') as dat:
+        kmask_on_the_fly = data['kmask']
+    kmask_on_the_fly.reshape([1,healpy.sphtfunc.Alm.getsize(lmax)])
+    workdir = workdir0 + 'mcut200/'
+    os.makedirs(workdir+'data/',exist_ok=True)
+    file_out = workdir + 'spectrum.pkl'
+    file_out_small = workdir + 'spectrum_small.pkl'
+    
+    
+    print('lmax of {}'.format(lmax))
+    output = end_to_end.end_to_end( mapfiles,
+                         mcmapfiles,
+                         banddef,
+                         beam_arr,
+                         theoryfiles,
+                         workdir,
+                         simbeam_arr=sim_beam_arr,
+                         setdef=setdef,
+                         setdef_mc1=setdef_mc1,
+                         setdef_mc2=setdef_mc2,
+                         do_window_func=True, 
+                         lmax=lmax,
+#                         cl2dl=True,
+                         nside=nside,
+                         kmask=None,
+                         kmask_on_the_fly_ranges=kmask_on_the_fly_ranges,
+                         kmask_on_the_fly=kmask_on_the_fly,
+                         mask=mask,
+                         kernel_file =kernel_file,
+                         #sim_kernel_file=sim_kernel_file,
+                         resume=True, 
+                         checkpoint=True
+                       )
+    with open(file_out,'wb') as fp:
+        pkl.dump(output,fp)
+    with open(file_out_small,'wb') as fp:
+        pkl.dump(end_to_end.trim_end_to_end_output(output),fp)
+        
+    with np.load('/sptlocal/user/creichardt/kmask_m250.npz') as dat:
+        kmask_on_the_fly = data['kmask']
+    kmask_on_the_fly.reshape([1,healpy.sphtfunc.Alm.getsize(lmax)])
+    workdir = workdir0 + 'mcut250/'
+    os.makedirs(workdir+'data/',exist_ok=True)
+    file_out = workdir + 'spectrum.pkl'
+    file_out_small = workdir + 'spectrum_small.pkl'
+    
+    
+    print('lmax of {}'.format(lmax))
+    output = end_to_end.end_to_end( mapfiles,
+                         mcmapfiles,
+                         banddef,
+                         beam_arr,
+                         theoryfiles,
+                         workdir,
+                         simbeam_arr=sim_beam_arr,
+                         setdef=setdef,
+                         setdef_mc1=setdef_mc1,
+                         setdef_mc2=setdef_mc2,
+                         do_window_func=True, 
+                         lmax=lmax,
+#                         cl2dl=True,
+                         nside=nside,
+                         kmask=None,
+                         kmask_on_the_fly_ranges=kmask_on_the_fly_ranges,
+                         kmask_on_the_fly=kmask_on_the_fly,
+                         mask=mask,
+                         kernel_file =kernel_file,
+                         #sim_kernel_file=sim_kernel_file,
+                         resume=True, 
+                         checkpoint=True
+                       )
+    with open(file_out,'wb') as fp:
+        pkl.dump(output,fp)
+    with open(file_out_small,'wb') as fp:
+        pkl.dump(end_to_end.trim_end_to_end_output(output),fp)
+        
 
 
 if __name__ == "__main__" and END == True:
