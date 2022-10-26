@@ -936,7 +936,7 @@ class unbiased_multispec:
             nkkks= kmask_on_the_fly.shape
             assert nkkks[0] == nkks[0] == setdef.shape[0]
             assert nkks[1] == 2
-            assert nkkks[1] == hp.sphtfunc.Alm.getsize(lmax)
+            assert nkkks[1] == healpy.sphtfunc.Alm.getsize(lmax)
         self.kmask_on_the_fly_ranges = kmask_on_the_fly_ranges
         if kmask_on_the_fly_ranges is not None:
             assert (kmask_on_the_fly is not None)
