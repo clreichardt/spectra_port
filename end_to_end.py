@@ -42,6 +42,7 @@ def end_to_end(mapfiles,
                kmask=None,
                kmask_on_the_fly_ranges = None, 
                kmask_on_the_fly = None,
+               weighted_average_for_kmask= False, 
                mask=None,
                kernel_file=None,
                sim_kernel_file=None,
@@ -139,6 +140,7 @@ def end_to_end(mapfiles,
                                                 kmask=kmask,
                                                 kmask_on_the_fly_ranges = kmask_on_the_fly_ranges, 
                                                 kmask_on_the_fly = kmask_on_the_fly,
+                                                weighted_average_for_kmask=weighted_average_for_kmask,
                                                 cmbweighting=True)
         with open(mcdir+'mc_spectrum.pkl', 'wb') as f:
             pkl.dump(mc_spectrum,f)
@@ -162,6 +164,7 @@ def end_to_end(mapfiles,
                                                 kmask=kmask,
                                                 kmask_on_the_fly_ranges = kmask_on_the_fly_ranges, 
                                                 kmask_on_the_fly = kmask_on_the_fly,
+                                                weighted_average_for_kmask=weighted_average_for_kmask,
                                                 skipcov=True,
                                                 cmbweighting=True)
         with open(mcdir+'mc_spectrum_fine.pkl', 'wb') as f:
@@ -194,6 +197,7 @@ def end_to_end(mapfiles,
                                                 # kmask=kmask,
                                                 kmask_on_the_fly_ranges = kmask_on_the_fly_ranges, 
                                                 kmask_on_the_fly = kmask_on_the_fly,
+                                                weighted_average_for_kmask=weighted_average_for_kmask,
                                                 cmbweighting=True)
 
         with open(datadir+'data_spectrum.pkl', 'wb') as f:

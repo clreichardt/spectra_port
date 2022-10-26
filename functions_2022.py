@@ -618,6 +618,39 @@ if __name__ == "__main__" and KTEST == True:
     with open(file_out_small,'wb') as fp:
         pkl.dump(end_to_end.trim_end_to_end_output(output),fp)
         
+    workdir = workdir0 + 'mcut200avg/'
+    file_out = workdir + 'spectrum.pkl'
+    file_out_small = workdir + 'spectrum_small.pkl'
+    print('lmax of {}'.format(lmax))
+    output = end_to_end.end_to_end( mapfiles,
+                         mcmapfiles,
+                         banddef,
+                         beam_arr,
+                         theoryfiles,
+                         workdir,
+                         simbeam_arr=sim_beam_arr,
+                         setdef=setdef,
+                         setdef_mc1=setdef_mc1,
+                         setdef_mc2=setdef_mc2,
+                         do_window_func=True, 
+                         lmax=lmax,
+#                         cl2dl=True,
+                         nside=nside,
+                         kmask=None,
+                         kmask_on_the_fly_ranges=kmask_on_the_fly_ranges,
+                         kmask_on_the_fly=kmask_on_the_fly,
+                         weighted_average_for_kmask=True,
+                         mask=mask,
+                         kernel_file =kernel_file,
+                         #sim_kernel_file=sim_kernel_file,
+                         resume=True, 
+                         checkpoint=True
+                       )
+    with open(file_out,'wb') as fp:
+        pkl.dump(output,fp)
+    with open(file_out_small,'wb') as fp:
+        pkl.dump(end_to_end.trim_end_to_end_output(output),fp)
+        
     with np.load('/sptlocal/user/creichardt/kmask_m250.npz') as dat:
         kmask_on_the_fly = data['kmask']
     kmask_on_the_fly.reshape([1,healpy.sphtfunc.Alm.getsize(lmax)])
