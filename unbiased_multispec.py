@@ -929,12 +929,14 @@ class unbiased_multispec:
             self.setdef = self.mapfile.shape
             print('Warning - check set def: inferred {}'.format(self.setdef))
         
+        self.kmask_on_the_fly = kmask_on_the_fly
         if kmask_on_the_fly is not None:
             self.kmask_kmask_on_the_fly = kmask_on_the_fly.astype(np.float32)
             assert kmask_on_the_fly_ranges is not None
             nkks = kmask_on_the_fly_ranges.shape
             nkkks= kmask_on_the_fly.shape
-            assert nkkks[0] == nkks[0] == setdef.shape[0]
+            print(nkkks[0], nkks[0], setdef.shape[1])
+            assert nkkks[0] == nkks[0] == setdef.shape[1]
             assert nkks[1] == 2
             assert nkkks[1] == healpy.sphtfunc.Alm.getsize(lmax)
         self.kmask_on_the_fly_ranges = kmask_on_the_fly_ranges
@@ -985,14 +987,14 @@ class unbiased_multispec:
                 allspectra = correct_by_kmask_factor(allspectra, kmask*kmask, self.banddef)
             elif kmask is None:
                 i=0
-                for k in range(setdef.shape[0]):
-                    for j in range(k,setdef.shape[0]):
+                for k in range(setdef.shape[1]):
+                    for j in range(k,setdef.shape[1]):
                         allspectra[:,i,:] = correct_by_kmask_factor(allspectra[:,i,:], kmask_on_the_fly[k,:]*kmask_on_the_fly[j,:], self.banddef)
                         i+=1
             else: #both exist
                 i=0
-                for k in range(setdef.shape[0]):
-                    for j in range(k,setdef.shape[0]):
+                for k in range(setdef.shape[1]):
+                    for j in range(k,setdef.shape[1]):
                         allspectra[:,i,:] = correct_by_kmask_factor(allspectra[:,i,:], kmask_on_the_fly[k,:]*kmask_on_the_fly[j,:]*kmask*kmask, self.banddef)
                         i+=1
         elif weighted_average_for_kmask:
@@ -1020,3 +1022,4 @@ class unbiased_multispec:
         if dont_store_large_inputs:
             self.mask = None
             self.kmask = None
+            self.kmask_on_the_fly = None
