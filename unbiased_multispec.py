@@ -514,7 +514,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
     ;; Step 2 (this function):  average all the bands to create binned x-spectra
     '''
     if ram_limit is None:
-        ram_limit = 32 * 2**30 # default limit is 64 GB
+        ram_limit = 16 * 2**30 # default limit is 64 GB
 
 
     # Simplifying assumption axb == (a^c b + b^c a)
@@ -636,7 +636,7 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
     ;; this assumes sims are created with two bundles
     '''
     if ram_limit is None:
-        ram_limit = 32 * 2**30 # default limit is 32 GB
+        ram_limit = 16 * 2**30 # default limit is 32 GB
 
 
     # Simplifying assumption axb == (a^c b + b^c a)

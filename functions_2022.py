@@ -2,12 +2,14 @@ import os
 os.environ['OMP_NUM_THREADS'] = "6"
 import numpy as np
 import glob
+import sys
+sys.path.append('/home/creichardt/spt3g_software/build')
 import healpy as hp
 
 import unbiased_multispec as spec
 import utils
 import end_to_end
-from spt3g import core,maps, calibration
+#from spt3g import core,maps, calibration
 import argparse
 import pickle as pkl
 import pdb
@@ -25,6 +27,7 @@ NULLLR=False
 NULLLRSPLIT=False
 PK=False
 FULLCAL=False
+KTEST=False
 my_parser = argparse.ArgumentParser()
 my_parser.add_argument('-prep', action='store_true',dest='prep')
 my_parser.add_argument('-prepcal', action='store_true',dest='prepcal')
@@ -478,6 +481,7 @@ if __name__ == "__main__" and FULLCAL == True:
 
 
 if __name__ == "__main__" and KTEST == True:
+    print('running different kmask tests')
     lmax = 13000
     nside= 8192
     banddef = np.arange(0,lmax,50)
@@ -513,8 +517,7 @@ if __name__ == "__main__" and KTEST == True:
 
     workdir0 = '/big_scratch/cr/xspec_2022/'
     os.makedirs(workdir0,exist_ok=True)
-    file_out = workdir + 'spectrum.pkl'
-    file_out_small = workdir + 'spectrum_small.pkl'
+
     
     #mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
     #mask = np.load(mask_file)
@@ -538,13 +541,19 @@ if __name__ == "__main__" and KTEST == True:
     mcmapfiles = create_sim_file_list_v2(dir,bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.npz',nsim=100)
     #dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
     #mcmapfiles = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
-    
+    print('about to load first kmask')
     with np.load('/sptlocal/user/creichardt/kmask_m150.npz') as dat:
-        kmask_on_the_fly = data['kmask']
-    kmask_on_the_fly.reshape([1,healpy.sphtfunc.Alm.getsize(lmax)])
-    kmask_on_the_fly_ranges = np.asarray([1,2])
+        tmp = dat['kmask']
+    kmask_on_the_fly=np.tile(tmp,[3,1])#hp.sphtfunc.Alm.getsize(lmax)])
+    print(kmask_on_the_fly.shape)
+    kmask_on_the_fly_ranges = np.zeros([3,2],dtype=int)
     kmask_on_the_fly_ranges[0,0]=0
-    kmask_on_the_fly_ranges[0,1]=600
+    kmask_on_the_fly_ranges[0,1]=200
+    kmask_on_the_fly_ranges[1,0]=200
+    kmask_on_the_fly_ranges[1,1]=400
+    kmask_on_the_fly_ranges[2,0]=400
+    kmask_on_the_fly_ranges[2,1]=600
+
     workdir = workdir0 + 'mcut150/'
     os.makedirs(workdir+'data/',exist_ok=True)
     file_out = workdir + 'spectrum.pkl'
@@ -552,7 +561,8 @@ if __name__ == "__main__" and KTEST == True:
     
     
     print('lmax of {}'.format(lmax))
-    output = end_to_end.end_to_end( mapfiles,
+    if False:
+        output = end_to_end.end_to_end( mapfiles,
                          mcmapfiles,
                          banddef,
                          beam_arr,
@@ -575,14 +585,15 @@ if __name__ == "__main__" and KTEST == True:
                          resume=True, 
                          checkpoint=True
                        )
-    with open(file_out,'wb') as fp:
-        pkl.dump(output,fp)
-    with open(file_out_small,'wb') as fp:
-        pkl.dump(end_to_end.trim_end_to_end_output(output),fp)
+        with open(file_out,'wb') as fp:
+            pkl.dump(output,fp)
+        with open(file_out_small,'wb') as fp:
+            pkl.dump(end_to_end.trim_end_to_end_output(output),fp)
         
     with np.load('/sptlocal/user/creichardt/kmask_m200.npz') as dat:
-        kmask_on_the_fly = data['kmask']
-    kmask_on_the_fly.reshape([1,healpy.sphtfunc.Alm.getsize(lmax)])
+        tmp = dat['kmask']
+    kmask_on_the_fly=np.tile(tmp,[3,1])#hp.sphtfunc.Alm.getsize(lmax)])
+    print(kmask_on_the_fly.shape)
     workdir = workdir0 + 'mcut200/'
     os.makedirs(workdir+'data/',exist_ok=True)
     file_out = workdir + 'spectrum.pkl'
@@ -590,7 +601,8 @@ if __name__ == "__main__" and KTEST == True:
     
     
     print('lmax of {}'.format(lmax))
-    output = end_to_end.end_to_end( mapfiles,
+    if False:
+        output = end_to_end.end_to_end( mapfiles,
                          mcmapfiles,
                          banddef,
                          beam_arr,
@@ -613,10 +625,10 @@ if __name__ == "__main__" and KTEST == True:
                          resume=True, 
                          checkpoint=True
                        )
-    with open(file_out,'wb') as fp:
-        pkl.dump(output,fp)
-    with open(file_out_small,'wb') as fp:
-        pkl.dump(end_to_end.trim_end_to_end_output(output),fp)
+        with open(file_out,'wb') as fp:
+            pkl.dump(output,fp)
+        with open(file_out_small,'wb') as fp:
+            pkl.dump(end_to_end.trim_end_to_end_output(output),fp)
         
     workdir = workdir0 + 'mcut200avg/'
     file_out = workdir + 'spectrum.pkl'
@@ -652,8 +664,9 @@ if __name__ == "__main__" and KTEST == True:
         pkl.dump(end_to_end.trim_end_to_end_output(output),fp)
         
     with np.load('/sptlocal/user/creichardt/kmask_m250.npz') as dat:
-        kmask_on_the_fly = data['kmask']
-    kmask_on_the_fly.reshape([1,healpy.sphtfunc.Alm.getsize(lmax)])
+        tmp = dat['kmask']
+    kmask_on_the_fly=np.tile(tmp,[3,1])#hp.sphtfunc.Alm.getsize(lmax)])
+    print(kmask_on_the_fly.shape)
     workdir = workdir0 + 'mcut250/'
     os.makedirs(workdir+'data/',exist_ok=True)
     file_out = workdir + 'spectrum.pkl'
