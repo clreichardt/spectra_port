@@ -503,6 +503,19 @@ def load_cross_spectra_data_from_disk(shtfile, startsht,stopsht, npersht, start,
             data[i,:] = np.fromfile(fp,count=nelems,dtype=AlmType)
     return data
 
+def load_cross_spectra_data_from_disk_in_place(shtfile,data, startsht,stopsht, npersht, start, stop):
+    nelems = stop - start + 1
+    nshts = stopsht - startsht + 1
+    buffer_bytes = np.zeros(1,dtype=AlmType).nbytes
+    #data = np.zeros([nshts,nelems],dtype=AlmType)
+    assert data.shape[0] >= nshts and data.shape[1] >= nelems
+    print(nshts,nelems,npersht)
+    with open(shtfile,'r') as fp:
+        for i in range(nshts):
+            j = i + startsht
+            fp.seek((j*npersht+start) * buffer_bytes)
+            data[i,:nelems] = np.fromfile(fp,count=nelems,dtype=AlmType)
+    return data
 
 def take_all_cross_spectra( processedshtfile, lmax,
                             setdef, banddef, ram_limit=None, auto = False,nshts=None,kmask_on_the_fly=None, kmask_on_the_fly_ranges=None):
@@ -561,7 +574,17 @@ def take_all_cross_spectra( processedshtfile, lmax,
     band_start_idx = get_first_index_ell(banddef+1)
 
     #code=reverse_linefeed_code()
-
+    mmax = -1
+    i=0 # i is the last bin to have finished. initially 0
+    while (i < nbands):
+        istop = np.where((band_start_idx - band_start_idx[i]) < max_nmodes)[0][-1]
+        nn = band_start_idx[istop]-band_start_idx[i]
+        if nn > mmax:
+            mmax = nn
+    print("Memory limit on nmodes of {}, actual limit is {}".format(max_nmodes,mmax))
+    nsht = stopsht - startsht + 1
+    banddata_big = np.zeros([nshts, mmax],dtype=AlmType)
+    
     i=0 # i is the last bin to have finished. initially 0
     while (i < nbands):
         istop = np.where((band_start_idx - band_start_idx[i]) < max_nmodes)[0][-1] # get out of tuple, then take last elem of array
@@ -571,6 +594,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
             raise Exception("Insufficient ram for processing even a single bin")
 
         print('take_all_cross_spectra: loading bands {} {} of {}'.format(i,istop-1,nbands))
+        '''
         # technical: delete the last iteration of banddata_big first
         try:
             del banddata_big
@@ -578,7 +602,13 @@ def take_all_cross_spectra( processedshtfile, lmax,
             pass
         # get data for as many bins as will fit in our ramlimit
 
-        banddata_big=load_cross_spectra_data_from_disk(processedshtfile, 
+       banddata_big=load_cross_spectra_data_from_disk(processedshtfile, 
+                                                       startsht, stopsht, 
+                                                       npersht,   
+                                                       band_start_idx[i],
+                                                       band_start_idx[istop]-1 )
+                                                       '''
+        load_cross_spectra_data_from_disk_in_place(processedshtfile, banddata_big,
                                                        startsht, stopsht, 
                                                        npersht,   
                                                        band_start_idx[i],
@@ -622,6 +652,8 @@ def take_all_cross_spectra( processedshtfile, lmax,
                     spectrum_idx+=1
                     #           pdb.set_trace()
         i=istop
+        del banddata_big
+        gc.collect()
     return(allspectra_out, nmodes_out)
 
 
