@@ -577,10 +577,15 @@ def take_all_cross_spectra( processedshtfile, lmax,
     mmax = -1
     i=0 # i is the last bin to have finished. initially 0
     while (i < nbands):
+        #print(i,nbands)
         istop = np.where((band_start_idx - band_start_idx[i]) < max_nmodes)[0][-1]
+        if istop <= i:
+            pdb.set_trace()
+            raise Exception("Insufficient ram for processing even a single bin")
         nn = band_start_idx[istop]-band_start_idx[i]
         if nn > mmax:
             mmax = nn
+        i=istop
     print("Memory limit on nmodes of {}, actual limit is {}".format(max_nmodes,mmax))
     nsht = stopsht - startsht + 1
     banddata_big = np.zeros([nshts, mmax],dtype=AlmType)
@@ -589,9 +594,9 @@ def take_all_cross_spectra( processedshtfile, lmax,
     while (i < nbands):
         istop = np.where((band_start_idx - band_start_idx[i]) < max_nmodes)[0][-1] # get out of tuple, then take last elem of array
 
-        if istop <= i:
-            pdb.set_trace()
-            raise Exception("Insufficient ram for processing even a single bin")
+        #if istop <= i:
+        #    pdb.set_trace()
+        #    raise Exception("Insufficient ram for processing even a single bin")
 
         print('take_all_cross_spectra: loading bands {} {} of {}'.format(i,istop-1,nbands))
         '''
@@ -613,10 +618,11 @@ def take_all_cross_spectra( processedshtfile, lmax,
                                                        npersht,   
                                                        band_start_idx[i],
                                                        band_start_idx[istop]-1 )
-        
+
         if kmask_on_the_fly_ranges is not None:
+            nn = band_start_idx[istop] - band_start_idx[i]
             for k in range(kmask_on_the_fly_ranges.shape[0]):
-                banddata_big[kmask_on_the_fly_ranges[k,0]:kmask_on_the_fly_ranges[k,1],:] *= kmask_on_the_fly[k,band_start_idx[i]:band_start_idx[istop]]
+                banddata_big[kmask_on_the_fly_ranges[k,0]:kmask_on_the_fly_ranges[k,1],:nn] *= kmask_on_the_fly[k,band_start_idx[i]:band_start_idx[istop]]
         #process this data
         for iprime in range(i, istop):
             printinplace('processing band {}    '.format(iprime))
@@ -652,8 +658,8 @@ def take_all_cross_spectra( processedshtfile, lmax,
                     spectrum_idx+=1
                     #           pdb.set_trace()
         i=istop
-        del banddata_big
-        gc.collect()
+    del banddata_big
+    gc.collect()
     return(allspectra_out, nmodes_out)
 
 
