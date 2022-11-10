@@ -14,6 +14,7 @@ import pickle as pkl
 import pdb
 import time
 from contextlib import ExitStack
+import gc
 
 AlmType = np.dtype(np.complex64)
 
@@ -804,6 +805,8 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
                     spectrum_idx+=1
                     #           pdb.set_trace()
         i=istop
+    del banddata_big
+    gc.collect()
     return(allspectra_out, nmodes_out)
 
 
