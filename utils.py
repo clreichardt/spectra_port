@@ -608,7 +608,7 @@ def window_function_calc(banddef, transfer_dic, ellmin = 10, ellmax=13000,no_mod
 
 #changing binning of bandpowers, and optionally the cov/window functions
 #once this is debugged should add weights
-def rebin_spectrum(bands_in, bands_out, spec0, cov0=None, win0=None, weights = None): 
+def rebin_spectrum(bands_in, bands_out, spec0, cov0=None, win0=None): 
 
     nbands_in=bands_in.shape[0] - 1
     nbands_out=bands_out.shape[0] - 1
@@ -618,10 +618,6 @@ def rebin_spectrum(bands_in, bands_out, spec0, cov0=None, win0=None, weights = N
     if len(spec0.shape) == 2:
         nsets = spec0.shape[0]
 
-    if weights is not None:
-        assert spec0.shape == weights.shape
-
-    
     transform=np.zeros([nbands_out,nbands_in])
 
     #assumes first element of bands is zero
@@ -655,6 +651,72 @@ def rebin_spectrum(bands_in, bands_out, spec0, cov0=None, win0=None, weights = N
         win_out=np.zeros([nsets,nbands_out,nells],dtype=np.float32)
         for i in range(nsets):
             win_out[i,:,:]=np.matmul(transform,win_in[i,:,:])
+        if len(win0.shape) == 2:
+            #reform to 2d to match input
+            win_out=np.reshape(win_out,[nsets*nbands_out,nells])
+    else: 
+        win_out = None
+    
+    return spec_out,cov_out,win_out,transform
+
+#changing binning of bandpowers, and optionally the cov/window functions
+#once this is debugged should add weights
+def weighted_rebin_spectrum(bands_in, bands_out, spec0, cov0=None, win0=None, weights = None): 
+
+    nbands_in=bands_in.shape[0] - 1
+    nbands_out=bands_out.shape[0] - 1
+    if len(spec0.shape) == 1:
+        nsets = len(spec0) /nbands_in
+    if len(spec0.shape) == 2:
+        nsets = spec0.shape[0]
+
+    if weights is not None:
+        assert spec0.shape == weights.shape
+        weights_in = np.reshape(weights, [nsets,nbands_in])
+    else:
+        print('Warning -- better to call the unweighted code for the no-weights case')
+        #weights was none, need to fill it.
+        weights_in = np.ones([nsets,nbands_in])
+
+    
+    transform=np.zeros([nsets,nbands_out,nbands_in])
+
+    #assumes first element of bands is zero
+    
+    for i in range(nbands_out):
+        section = np.logical_and(bands_in[1:] > bands_out[i], bands_in[1:] <= bands_out[i+1]) 
+        for j in range(nsets):
+            transform[j,i,section] = weights_in[j,section]
+            #normalize
+            transform[j,i,:] /= np.sum(transform[j,i,:])
+    
+    spec_in=np.reshape(spec0, [nsets,nbands_in])
+    spec_out=np.zeros([nsets,nbands_out])
+    for i in range(nsets):
+        #print(transform.shape)
+        #print(spec_in[i,:].shape)
+        spec_out[i,:]=np.matmul(transform[i,:,:],spec_in[i,:])
+    
+    if cov0 is not None:
+        cov_in=np.reshape(cov0, [nsets,nbands_in, nsets, nbands_in])
+        cov_out=np.zeros([nsets,nbands_out, nsets, nbands_out])
+        for i in range(nsets):
+            cov_out[i,:,i,:]=np.matmul(np.matmul(transform[i,:,:],cov_in[i,:,i,:]),transform[i,:,:].T)
+            for j in range(i+1,nsets):
+                cov_out[i,:,j,:]=np.matmul(np.matmul(transform[i,:,:],cov_in[i,:,j,:]),transform[j,:,:].T)
+                cov_out[j,:,i,:] = cov_out[i,:,j,:].T
+        if len(cov_in.shape) ==2:
+            #reshape to 2d to match input
+            cov_out = np.reshape(cov_out,[nsets*nbands_out,nsets*nbands_out])
+    else:
+        cov_out = None
+
+    if win0 is not None:
+        nells=win0.shape[1]
+        win_in=np.reshape(win0, [nsets,nbands_in,nells])
+        win_out=np.zeros([nsets,nbands_out,nells],dtype=np.float32)
+        for i in range(nsets):
+            win_out[i,:,:]=np.matmul(transform[i,:,:],win_in[i,:,:])
         if len(win0.shape) == 2:
             #reform to 2d to match input
             win_out=np.reshape(win_out,[nsets*nbands_out,nells])
