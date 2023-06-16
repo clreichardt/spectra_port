@@ -78,9 +78,31 @@ def corr_matrix(cov):
 
 def single_block_offdiagonal(cov):
     
-def fit_mll_offdiagonal(sample_cov,meas_cov):
+def fit_mll_offdiagonal(sample_cov,meas_cov, max_offset = 1, use_noise = [4,5,6], use_sample = [5,6],bininds=[50,160]):
+    summed = 0
+    n = 0
+    for i in use_noise:
+        corr = corr_matrix(meas_cov[i,:,i,:])
+        summed += corr[bininds[0]:bininds[1],bininds[0]:bininds[1]]
+        n+=1
+    for i in use_sample:
+        corr = corr_matrix(sample_cov[i,:,i,:])
+        summed += corr[bininds[0]:bininds[1],bininds[0]:bininds[1]]
+        n+=1
+    summed /= n
+    values = np.zeros(max_offset)
+    for i in range(max_offset):
+        dd = np.diag(summed,i+1)
+        values[i] = np.mean(dd)
     
-    
+    nb = corr.shape[0]
+    block = np.identity(nb)
+    for i in range(max_offset):
+        for j in range(nb-i+1):
+            block[j,j+i+1] = values[i]
+            block[j+i+1,j] = values[i]
+
+    return block
     
 
 def bin_spectra(dl,banddef):
