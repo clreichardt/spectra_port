@@ -9,6 +9,7 @@ import healpy as hp
 import unbiased_multispec as spec
 import utils
 import end_to_end
+from spt3g import core
 #from spt3g import core,maps, calibration
 import argparse
 import pickle as pkl
@@ -19,7 +20,7 @@ if __name__ == "__main__":
     dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.3_mask_0p4medwt_6mJy150ghzv2/'
     files = glob.glob(dir+'inputsky*')
     nf = len(files)
-    usedinds = np.zeros(nf,dtype=np.int)
+    usedinds = np.zeros(nf,dtype=np.int32)
     for i in range(nf):
         usedinds[i] = int(files[i].split('inputsky')[1])
 

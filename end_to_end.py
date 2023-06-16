@@ -30,6 +30,8 @@ def end_to_end(mapfiles,
                beam_arr,
                theoryfiles,
                workdir,
+               mcstub='/mc/',
+               datastub='/data/',
                setdef=None,
                setdef_mc1=None,
                setdef_mc2=None,
@@ -120,7 +122,7 @@ def end_to_end(mapfiles,
     print('run sim unbiased: last step took {:.0f}'.format(newtime-lasttime))
     lasttime=newtime
         
-    mcdir = workdir + '/mc/'
+    mcdir = workdir + mcstub
 
     try:
         if not resume:
@@ -180,7 +182,7 @@ def end_to_end(mapfiles,
     newtime=time.time()
     print('run data unbiased: last step took {:.0f}'.format(newtime-lasttime))
     lasttime=newtime
-    datadir = workdir + '/data/'
+    datadir = workdir + datastub
     try:
         if not resume:
             raise Exception("Bounce out")

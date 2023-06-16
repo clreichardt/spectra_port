@@ -567,8 +567,8 @@ def take_all_cross_spectra( processedshtfile, lmax,
     #ram_required=16*6*lmax**2
     max_nmodes=ram_limit/nshts/12 #64 b complex - uses 8 bytes, and gave it an extra x1.5 for other arrays 
 
-
-    assert(banddef[0] == 0 and banddef[-1] < lmax)
+    print('take_all bandefs',banddef[0],banddef[-1],lmax)
+    assert(banddef[0] == 0 and banddef[-1] <= lmax)
     #assumes banddef[0]=0
     #so first bin goes 1 - banddef[1]
     # second bin goes banddef[1]+1 - banddef[2], etc
