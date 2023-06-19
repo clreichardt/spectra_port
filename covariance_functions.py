@@ -25,6 +25,8 @@ import matplotlib.pyplot as plt
 import time
 import scipy
 
+global_index_array = None
+
 def fit_poisson(cov, factors=[1.],imin_fit = 110, imax_fit = 160, imin_out = 15,dl=50):
     '''
     cv is assumed to be nc x bc cov matrix for the first frequency (90)
@@ -69,6 +71,92 @@ def fit_poisson(cov, factors=[1.],imin_fit = 110, imax_fit = 160, imin_out = 15,
                 poisson[j,:,i,:] = poisson[i,:,j,:]
     return poisson
 
+
+def get_2d_indices(i,n):
+    '''Returns two indices corresponding to position
+    ie 0 (90x90) -> 0,0
+    '''
+    if global_index_array is None or global_index_array.shape[0] != (n*(n+1))/2:
+        # create array
+        global_index_array = np.zeros([(n*(n+1))/2,2,dtype=np.int32])
+        k=0
+        for i in range(n):
+            for j in range(i,n):
+                global_index_array[k,0] = i
+                global_index_array[k,1] = j
+                k+=1 
+    return global_index_array[i,0],global_index_array[i,1]
+    
+    
+def get_1d_index(i,j,n):
+    '''Returns the 1d index corresponding to block, ix j
+    eg 0x0 -> 0
+    0 x 3 -> 3
+    Assumes 0 <= i <= j < n;  There is no error checking, except that i/j will be swapped if i > j
+    '''
+    if i <= j:
+        return i*n - ((i-1)*i)/2 + j
+    return j*n - ((j-1)*j)/2 + i
+
+
+def get_theory_cov(dls,i,j):
+    nspec = dls.shape[0] #check if this is right dim
+    assert nspec == 6
+    
+    a,b = get_2d_indices(i,nspec)
+    c,d = get_2d_indices(j,nspec)
+    
+    m = get_1d_index(a,c,nspec)
+    n = get_1d_index(b,d,nspec)
+    o = get_1d_index(a,d,nspec)
+    p = get_1d_index(c,c,nspec)
+    out = dls[m,:] * dls[n,:] + dls[o,:] * dls[p,:]
+    
+    return out
+    
+    
+    
+
+def signal_func(ells,const,amp):
+    return const + amp * (ells)**(-1.3)
+
+def fit_single_block_signal(cov,i_block,j_block, theory_dls,fit_range = [30,190], use_range = [40,250] ):
+    theory = get_theory_cov(theory_dls,i_block,j_block)
+    # theory is eg (150x150)(90x90)+ (90x150)**2
+    
+    observed = np.diag(cov[i_block,:,j_block,:])
+
+    obs_prefactor = observed / theory
+    inds = np.arange(0,observed.shape[0])+0.5
+    
+    fit_vals = obs_prefactor[fit_range[0]:fit_range[1]]
+    fit_inds = inds[fit_range[0]:fit_range[1]]
+    const_guess = fit_vals[-1]
+    amp_guess = (fit_vals[0] - const_guess) * fit_inds[0]**1.3
+    p0=[const_guess,amp_guess]
+    sigma = 0.1 * (signal_func(fit_inds,const_guess,amp_guess))
+    params = scipy.optimize.curve_fit(signal_func,fit_inds,fit_values,p0=p0,sigma=sigma)
+    
+    prefactor = obs_prefactor
+    prefactor[use_range[0]:use_range[1]] = signal_func(inds[use_range[0]:use_range[1]],params[0],params[1])
+
+    return prefactor    
+
+
+
+def fit_signal_diagonals(sample_cov,theory_dls,fit_range = [30,190], use_range = [40,250] ):
+    
+    nspec = sample_cov.shape[0]
+    nb = sample_cov.shape[1]
+    ncross = nspec * (nspec+1)/2
+    diagonals = np.zeros([ncross,nb])
+    for i in range(nspec):
+        for j in range(nspec):
+            k = get_1d_index(i,j,nspec)
+            diagonals[k,:] = fit_single_block_signal(sample_cov,i,j,theory_dls,fit_range=fit_range,use_range=use_range)
+    return diagonals
+
+
 def corr_matrix(cov):
     c = np.diag(cov)**0.5
     c[c < 1e-12*np.max(c)] = 1.0 # avoid divide by zero
@@ -76,8 +164,11 @@ def corr_matrix(cov):
     corr = cov/cc
     return corr
 
+
+
 def single_block_offdiagonal(cov):
-    
+    pass
+
 def fit_mll_offdiagonal(sample_cov,meas_cov, max_offset = 1, use_noise = [4,5,6], use_sample = [5,6],bininds=[50,160]):
     summed = 0
     n = 0
