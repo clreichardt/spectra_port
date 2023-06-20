@@ -31,7 +31,7 @@ class covariance:
     nf = 0
     nspec = 0
     nb = 0 
-    def __init__(self,spec,theorydls,factors=[2.86,1.06,0.61]):
+    def __init__(self,spec,theorydls,calibration_factors,signal_factor=1e-12,factors=[2.86,1.06,0.61]):
         self.nf = factors.shape[0]
         self.nspec = (self.nf * (self.nf+1))/2
         self.nb = spec['sample_cov'].shape[1]
@@ -42,6 +42,10 @@ class covariance:
                 global_index_array[k,0] = i
                 global_index_array[k,1] = j
                 k+=1 
+        
+        #correct for SV units
+        spec['sample_cov'] *= signal_factor
+
         #We need offidagonal structure for Poisson
         poisson_offdiagonals = self.fit_poisson(spec['sample_cov'][0,:,0,:],factors=factors)
 
@@ -55,8 +59,11 @@ class covariance:
         #THis is supposed to be 4SN + 2N**2
         diagonals_noise = self.fit_noise_diagonals(spec['meas_cov'],diagonals_signal)
 
+        #apply calibration factors
+        cal_diag_noise = self.apply_calibration(diagonals_noise,calibration_factors)
+
         #blow this back up to a 4Dim Array
-        simple_cov = self.construct_cov(diagonals_signal,diagonals_noise,offdiagonal_single_block)
+        simple_cov = self.construct_cov(diagonals_signal,cal_diag_noise,offdiagonal_single_block)
         #and combine with poisson terms
         self.cov = simple_cov + poisson_offdiagonals
         #Cov should be my final cov estimate. 
@@ -72,8 +79,39 @@ class covariance:
         return cov
     
     def fit_noise_diagonals(self,cov,signal_diags):
+        ncross = (self.nspec * (self.nspec+1))/2
+        odiag = np.zeros([ncross,self.nb])
+        for i in range(ncross):
+            j,k = self.get_2d_indices(i)
+            diag = np.diag(cov[i,:,j,:])
+
+# NEED TO FIX THIS
+        for i in range(self.nspec):
+            a,b = self.get_2d_indices(i)
+            for j in range(i,self.nspec):
+                d
+                c,d = self.get_2d_indices(j)
+                ncommon  = 1* (c == a .or. c == b)  + 1* (d == a .or. d == b)
+                if ncommon == 0:
+                    odiag[self.fit_no_map_in_common(diag)
+
         
         pass
+
+    def fit_no_map_in_common(self,diag,ibin = 20):
+        #see low-l correlated power so can't just zero outs cross that don't have maps in common. 
+        #This is high-S/N below ell ~ 1500 (bin30)
+        #looks consistent with zero above ell ~2500-3000 (depending on cross-spectra)
+        #The level is small compared to SV though.
+        #While noisy inclined to just take values  up to first bin above 1000 that is zero. 
+        #zero out all above that bin
+
+        ind = np.min(np.where(diag[ibin:] < 0))
+        ind = ind + ibin
+        outdiag = diag *0
+        outdiag[:ind] = diag[:ind]
+        return outdiag
+
 
     def fit_poisson(self,cov, factors=[1.],imin_fit = 110, imax_fit = 160, imin_out = 15,dl=50):
         '''
@@ -283,7 +321,7 @@ if __name__ == '__main__':
     theory_dls = np.zeros([6,nlc])
     for i in range(6):
         theory_dls[i,:] = bin_spectra(cmb_dls + fgtheory_dls[i,:],spec['banddef'])
-    
-    cov_obj = covariance(spec,theory_dls)        
+    calibration_factors = [1.,1.,1.]
+    cov_obj = covariance(spec,theory_dls, calibration_factors,signal_factor=1e-12)        
   
 
