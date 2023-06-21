@@ -36,12 +36,19 @@ class covariance:
         self.nspec = (self.nf * (self.nf+1))/2
         self.nb = spec['sample_cov'].shape[1]
         self.global_index_array = np.zeros([(self.nspec*(self.nspec+1))/2,2,dtype=np.int32])
+        self.global_freq_index_array = np.zeros([(self.nspec,2,dtype=np.int32])
         k=0
         for i in range(self.nspec):
             for j in range(i,self.nspec):
-                global_index_array[k,0] = i
-                global_index_array[k,1] = j
+                self.global_index_array[k,0] = i
+                self.global_index_array[k,1] = j
                 k+=1 
+        k=0
+        for i in range(self.nf):
+            for j in range(i,self.nf):
+                self.global_freq_index_array[k,0] = i
+                self.global_freq_index_array[k,1] = j
+                k+=1      
         
         #correct for SV units
         spec['sample_cov'] *= signal_factor
@@ -81,22 +88,66 @@ class covariance:
     def fit_noise_diagonals(self,cov,signal_diags):
         ncross = (self.nspec * (self.nspec+1))/2
         odiag = np.zeros([ncross,self.nb])
-        for i in range(ncross):
-            j,k = self.get_2d_indices(i)
+        for k in range(ncross):
+            i,j = self.get_2d_indices(k)
             diag = np.diag(cov[i,:,j,:])
 
-# NEED TO FIX THIS
-        for i in range(self.nspec):
-            a,b = self.get_2d_indices(i)
-            for j in range(i,self.nspec):
-                d
-                c,d = self.get_2d_indices(j)
-                ncommon  = 1* (c == a .or. c == b)  + 1* (d == a .or. d == b)
-                if ncommon == 0:
-                    odiag[self.fit_no_map_in_common(diag)
-
+            a,b = self.get_2d_freq_indices(i)
+            c,d = self.get_2d_freq_indices(j)
+            ncommon  = 1* (c == a .or. c == b)  + 1* (d == a .or. d == b)
+            match ncommon:
+                case 0:
+                    odiag[k,:] = self.fit_no_map_in_common(diag)
+                case 1:
+                    odiag[k,:] = self.fit_one_map_in_common(diag)
+                case 2:
+                    odiag[k,:] = self.fit_two_map_in_common(diag)
+                case _:
+                    raise Exception("Wrong number of maps in common")
         
         pass
+    
+    def fit_one_map_in_common(self,diag):
+        '''these are off-diagonals, ala 90x150x90x220, and so on. (ab ac)
+        Expectation is aa bc + ac ab
+        In the absence of correlated noise, this looks like (after subtracted S*S terms)
+        (Naa Sbc) 
+        
+        Examining these -- they are not high S/N.
+        Est1_cov is higher S/N and might work with the smoothing treatment done for fit_two_map_in_common below.
+        Have to get calibration right so that I know right ells to transition... TBD
+        '''
+        
+        
+        
+        return diag    
+    
+    def fit_two_map_in_common(self,diag,imin=60, nsmooth = 5):
+        '''these are diagonals, ala 90x150x90x150, and so on. (ab ab)
+        Expectation is aa bb + (ab)**2
+        In the absence of correlated noise, this looks like (after subtracted S*S terms)
+        Saa Nbb + Sbb Naa + Naa Nbb
+        
+        Visual inspection -- all look high S/N
+        only doing slightly smoothing, in log space to reduce slopes across widths
+        padding each edge to reduce edge effects (though not expecting either edge to survive into final bandpowers)
+        
+        Used imin = 60 as baseline -- this is about l=3000. used to define what points are 0/Inf
+        '''
+        y=np.log(diag)
+        good = y > 0.1 * y[imin]
+        ll = np.sum(good)
+        nk = nsmooth
+        i0 = nk + nk//2  # so 7 for fiducial choice of 5-width kernel
+        tmp = np.zeros(ll+2*nk)
+        keep = y[good]
+        tmp[:nk]=keep[0]
+        tmp[-nk:]=keep[-1]
+        tmp[nk:ll+nk]=keep
+        smtmp = np.convolve(tmp,np.ones(nk)/nk,mode='full') 
+        smyy = np.zeros(y.shape[0])
+        smyy[good] = smtmp[i0:ll+i0]
+        return smyy
 
     def fit_no_map_in_common(self,diag,ibin = 20):
         #see low-l correlated power so can't just zero outs cross that don't have maps in common. 
@@ -158,11 +209,19 @@ class covariance:
         return poisson
 
 
-    def get_2d_indices(self,i,n):
+    def get_2d_indices(self,i):
+        '''Returns two indices corresponding to position of spectra
+        ie 0 (90x90)x(90x90) -> 0,0
+        '''
+        return self.global_index_array[i,0],self,global_index_array[i,1]
+        
+        
+    
+    def get_2d_freq_indices(self,i):
         '''Returns two indices corresponding to position
         ie 0 (90x90) -> 0,0
         '''
-        return self.global_index_array[i,0],self,global_index_array[i,1]
+        return self.global_freq_index_array[i,0],self,global_freq_index_array[i,1]
         
     def get_1d_index(self,i,j):
         '''Returns the 1d index corresponding to block, ix j
