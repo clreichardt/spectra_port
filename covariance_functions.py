@@ -189,7 +189,7 @@ class covariance:
                 others = [c,b]
         else:
             common = b
-            if a <= c
+            if a <= c:
                 others = [a,c]
             else:
                 others = [c,a]
