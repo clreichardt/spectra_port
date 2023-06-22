@@ -81,7 +81,7 @@ class covariance:
                 #meas_cov2[:,:,i,:] *= factor
 
         #We need offidagonal structure for Poisson
-        self.poisson_offdiagonals = self.fit_poisson(sample_cov[0,:,0,:],factors=factors)
+        self.poisson_offdiagonals = self.fit_poisson(sample_cov[0,:,0,:].squeeze(),factors=factors)
 
         #We also want off-diagonal structure due to Mll
         offdiagonal_single_block = self.fit_mll_offdiagonal(sample_cov,meas_cov)
