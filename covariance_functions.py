@@ -426,13 +426,13 @@ class covariance:
         return block
         
 
-    def bin_spectra(self,dl,banddef):
-        #assume dl starts at 0 and has every ell:
-        nb = banddef.shape[0]-1
-        odl = np.zeros(nb)
-        for i in range(nb):
-            odl[i] = np.mean(dl[banddef[i]:banddef[i+1]])
-        return odl
+def bin_spectra(dl,banddef):
+    #assume dl starts at 0 and has every ell:
+    nb = banddef.shape[0]-1
+    odl = np.zeros(nb)
+    for i in range(nb):
+        odl[i] = np.mean(dl[banddef[i]:banddef[i+1]])
+    return odl
         
 
 
