@@ -442,10 +442,7 @@ if __name__ == '__main__':
         spec  = pkl.load(fp)
         
     ellcov = utils.band_centers(spec['banddef'])
-    
-    beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
-    beams_interp = utils.fill_in_beams(beam_arr,ellcovn)
-    beams = utils.explode_beams(beams_interp)
+
 
     cmbfile = '/home/creichardt/cmb_models/plik_plus_r0p01_highell_lensedtotCls_l25000.txt'
     dls = np.loadtxt(cmbfile)
