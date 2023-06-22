@@ -33,9 +33,9 @@ class covariance:
     nb = 0 
     def __init__(self,spec,theorydls,calibration_factors,factors=np.asarray([2.86,1.06,0.61])):
         self.nf = factors.shape[0]
-        self.nspec = (self.nf * (self.nf+1))/2
+        self.nspec = (self.nf * (self.nf+1))//2
         self.nb = spec['sample_cov'].shape[1]
-        self.global_index_array = np.zeros([(self.nspec*(self.nspec+1))/2,2],dtype=np.int32)
+        self.global_index_array = np.zeros([(self.nspec*(self.nspec+1))//2,2],dtype=np.int32)
         self.global_freq_index_array = np.zeros([self.nspec,2],dtype=np.int32)
         k=0
         for i in range(self.nspec):
@@ -114,14 +114,14 @@ class covariance:
         return cov
     
     def get_diags(self,cov):
-        ncross = (self.nspec * (self.nspec+1))/2
+        ncross = (self.nspec * (self.nspec+1))//2
         odiag = np.zeros([ncross,self.nb])
         for k in range(ncross):
             i,j = self.get_2d_indices(k)
             odiag[k,:] = np.diag(cov[i,:,j,:])
     
     def fit_noise_diagonals(self,cov,signal_diags,raw_diags,raw_diags_est1):
-        ncross = (self.nspec * (self.nspec+1))/2
+        ncross = (self.nspec * (self.nspec+1))//2
         odiag = np.zeros([ncross,self.nb])
         for k in range(ncross):
             i,j = self.get_2d_indices(k)
@@ -326,9 +326,9 @@ class covariance:
         if n is None:
             n = self.nspec
         if i <= j:
-            return i*n - ((i-1)*i)/2 + j
+            return i*n - ((i-1)*i)//2 + j
 
-        return j*n - ((j-1)*j)/2 + i
+        return j*n - ((j-1)*j)//2 + i
     
     def get_theory_cov(self,dls,i,j):
         nspec = self.spec #check if this is right dim
@@ -378,7 +378,7 @@ class covariance:
         
         nspec = sample_cov.shape[0]
         nb = sample_cov.shape[1]
-        ncross = nspec * (nspec+1)/2
+        ncross = nspec * (nspec+1)//2
         diagonals = np.zeros([ncross,nb])
         for i in range(nspec):
             for j in range(nspec):
@@ -448,7 +448,7 @@ if __name__ == '__main__':
     dls = np.loadtxt(cmbfile)
     ells = dls[:,0]
     cmb_dls = dls[:,1]
-    print('first 4 ells:',ells[:5])
+    #print('first 4 ells:',ells[:5])
     #   cmb_dls_interp = utils.fill_in_theory(cmbfile,ellkern)
     norgfgtheoryfiles = ['/home/creichardt/lensing/data_lenspix/3gmodels/dl_fg_90x90.txt',
                '/home/creichardt/lensing/data_lenspix/3gmodels/dl_fg_90x150.txt',
