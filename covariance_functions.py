@@ -274,7 +274,7 @@ class covariance:
         n=0
         for i in range(imin_fit,imax_fit):
             for j in range(i+1,imax_fit):
-                avg += cov[i,j]/xx[i]/xx[j]
+                avg += cov[i,j]/xx[0,i]/xx[0,j]
                 n   += 1 
         avg /= n
         template=np.matmul(xxout.T,xxout)
@@ -284,9 +284,9 @@ class covariance:
         
 
         nf = factors.shape[0]
-        ncombo = nf * (nf+1)/2  
+        ncombo = (nf * (nf+1))//2  
         #how to scale template to each band (ie 90x150)
-        scaling = np.zeros(ncomb)
+        scaling = np.zeros(ncombo)
         k=0
         for i in range(nf):
             for j in range(i,nf):
@@ -294,10 +294,10 @@ class covariance:
                 k+= 1
         
         poisson = np.zeros([ncombo,nb,ncombo,nb])
-        for i in range(combo):
-            for j in range(i,combo):
+        for i in range(ncombo):
+            for j in range(i,ncombo):
                 poisson[i,:,j,:] = template * scaling[i] * scaling[j]
-                (factors[i]/factors[0]) * (factors[j]/factors[0])
+
                 if i != j:
                     poisson[j,:,i,:] = poisson[i,:,j,:]
         return poisson
@@ -325,21 +325,24 @@ class covariance:
         '''
         if n is None:
             n = self.nspec
-        if i <= j:
-            return i*n - ((i-1)*i)//2 + j
 
-        return j*n - ((j-1)*j)//2 + i
+        if i <= j:
+            return i*n - ((i+1)*i)//2 + j
+
+        return j*n - ((j+1)*j)//2 + i
     
     def get_theory_cov(self,dls,i,j):
-        nspec = self.spec #check if this is right dim
+        #nspec = self.nspec #check if this is right dim
 
-        a,b = self.get_2d_indices(i)
-        c,d = self.get_2d_indices(j)
-        
-        m = self.get_1d_index(a,c)
-        n = self.get_1d_index(b,d)
-        o = self.get_1d_index(a,d)
-        p = self.get_1d_index(c,c)
+        #print(i,j)
+        a,b = self.get_2d_freq_indices(i)
+        c,d = self.get_2d_freq_indices(j)
+        #print(a,b,c,d)
+        m = self.get_1d_index(a,c,n=self.nf)
+        n = self.get_1d_index(b,d,n=self.nf)
+        o = self.get_1d_index(a,d,n=self.nf)
+        p = self.get_1d_index(b,c,n=self.nf)
+        #print(m,n,o,p)
         out = dls[m,:] * dls[n,:] + dls[o,:] * dls[p,:]
         
         return out
@@ -347,10 +350,13 @@ class covariance:
         
         
 
-    def signal_func(ells,const,amp):
-        return const + amp * (ells)**(-1.3)
-
     def fit_single_block_signal(self,cov,i_block,j_block, theory_dls,fit_range = [30,190], use_range = [40,250] ):
+
+        def signal_func(ells,const,amp):
+            #print(ells.shape,const.shape,amp.shape)
+            return const + amp * (ells)**(-1.3)
+
+
         theory = self.get_theory_cov(theory_dls,i_block,j_block)
         # theory is eg (150x150)(90x90)+ (90x150)**2
         
@@ -365,10 +371,10 @@ class covariance:
         amp_guess = (fit_vals[0] - const_guess) * fit_inds[0]**1.3
         p0=[const_guess,amp_guess]
         sigma = 0.1 * (signal_func(fit_inds,const_guess,amp_guess))
-        params = scipy.optimize.curve_fit(signal_func,fit_inds,fit_values,p0=p0,sigma=sigma)
+        params = scipy.optimize.curve_fit(signal_func,fit_inds,fit_vals,p0=p0,sigma=sigma)
         
         prefactor = obs_prefactor
-        prefactor[use_range[0]:use_range[1]] = signal_func(inds[use_range[0]:use_range[1]],params[0],params[1])
+        prefactor[use_range[0]:use_range[1]] = signal_func(inds[use_range[0]:use_range[1]],params[0][0],params[0][1])
 
         return prefactor    
 
@@ -399,7 +405,7 @@ class covariance:
     def single_block_offdiagonal(self,cov):
         pass
 
-    def fit_mll_offdiagonal(self,sample_cov,meas_cov, max_offset = 1, use_noise = [4,5,6], use_sample = [5,6],bininds=[50,160]):
+    def fit_mll_offdiagonal(self,sample_cov,meas_cov, max_offset = 1, use_noise = [3,4,5], use_sample = [4,5],bininds=[50,160]):
         summed = 0
         n = 0
         for i in use_noise:
@@ -419,7 +425,7 @@ class covariance:
         nb = corr.shape[0]
         block = np.identity(nb)
         for i in range(max_offset):
-            for j in range(nb-i+1):
+            for j in range(nb-i-1):
                 block[j,j+i+1] = values[i]
                 block[j+i+1,j] = values[i]
 
