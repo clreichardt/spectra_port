@@ -31,12 +31,12 @@ class covariance:
     nf = 0
     nspec = 0
     nb = 0 
-    def __init__(self,spec,theorydls,calibration_factors,signal_factor=1e-12,factors=[2.86,1.06,0.61]):
+    def __init__(self,spec,theorydls,calibration_factors,factors=[2.86,1.06,0.61]):
         self.nf = factors.shape[0]
         self.nspec = (self.nf * (self.nf+1))/2
         self.nb = spec['sample_cov'].shape[1]
-        self.global_index_array = np.zeros([(self.nspec*(self.nspec+1))/2,2,dtype=np.int32])
-        self.global_freq_index_array = np.zeros([(self.nspec,2,dtype=np.int32])
+        self.global_index_array = np.zeros([(self.nspec*(self.nspec+1))/2,2],dtype=np.int32)
+        self.global_freq_index_array = np.zeros([self.nspec,2],dtype=np.int32)
         k=0
         for i in range(self.nspec):
             for j in range(i,self.nspec):
@@ -49,30 +49,58 @@ class covariance:
                 self.global_freq_index_array[k,0] = i
                 self.global_freq_index_array[k,1] = j
                 k+=1      
+        nbands = self.nb
+        nspectra = self.nspec
+        sample_cov = spec['sample_cov']
+        meas_cov = spec['meas_cov']
+        invkernmat=spec['invkernmat']
+        invkernmattr=spec['invkernmatt']
+        dcov = np.reshape(np.transpose(np.reshape(spec['data_spectrum'].est1_cov,[nbands,nspectra,nbands,nspectra]),[1,0,3,2]),[nbands*nspectra,nbands*nspectra])
+        meas_cov1 = np.reshape(np.matmul(np.matmul(invkernmat , dcov), invkernmattr),[nspectra,nbands,nspectra, nbands])
+        #dcov = np.reshape(np.transpose(np.reshape(spec['data_spectrum'].est2_cov,[nbands,nspectra,nbands,nspectra]),[1,0,3,2]),[nbands*nspectra,nbands*nspectra])
+        #meas_cov2 = np.reshape(np.matmul(np.matmul(invkernmat , dcov), invkernmattr),[nspectra,nbands,nspectra, nbands])
+        #These are estimators 1 and 2 respectively.
+        self.meas_cov = meas_cov
+        self.meas_cov1 = meas_cov1
+        self.sample_cov = sample_cov
+
         
-        #correct for SV units
-        spec['sample_cov'] *= signal_factor
+        #correct for units and calbration
+        #Nothing to do for sample_cov
+        
+        #lots to do for meas_cov in each of three variations.
+        #apply calibration
+        for i in range(self.nspec):
+                a,b = self.get_2d_freq_indices(i)
+                factor = calibration_factors[a]*calibration_factors[b]
+                meas_cov[i,:,:,:]  *= factor
+                meas_cov[:,:,i,:]  *= factor
+                meas_cov1[i,:,:,:] *= factor
+                meas_cov1[:,:,i,:] *= factor
+                #meas_cov2[i,:,:,:] *= factor
+                #meas_cov2[:,:,i,:] *= factor
 
         #We need offidagonal structure for Poisson
-        poisson_offdiagonals = self.fit_poisson(spec['sample_cov'][0,:,0,:],factors=factors)
+        self.poisson_offdiagonals = self.fit_poisson(sample_cov[0,:,0,:],factors=factors)
 
         #We also want off-diagonal structure due to Mll
-        offdiagonal_single_block = self.fit_mll_offdiagonal(spec['sample_cov'],spec['meas_cov'])
+        offdiagonal_single_block = self.fit_mll_offdiagonal(sample_cov,meas_cov)
 
         #We need diagonals, there will be 21 of these for 3 freqs
         #this is supposed to be 2S**2
-        diagonals_signal = self.fit_signal_diagonals(spec['sample_cov'],theory_dls)
+        diagonals_signal = self.fit_signal_diagonals(sample_cov,theory_dls)
 
+        raw_diags = self.get_diags(meas_cov)
+        raw_diags1 = self.get_diags(meas_cov1)
+        #raw_diags2 = self.get_diags(meas_cov2)
+        
         #THis is supposed to be 4SN + 2N**2
-        diagonals_noise = self.fit_noise_diagonals(spec['meas_cov'],diagonals_signal)
-
-        #apply calibration factors
-        cal_diag_noise = self.apply_calibration(diagonals_noise,calibration_factors)
+        diagonals_noise = self.fit_noise_diagonals(meas_cov,diagonals_signal,raw_diags,raw_diags1)
 
         #blow this back up to a 4Dim Array
-        simple_cov = self.construct_cov(diagonals_signal,cal_diag_noise,offdiagonal_single_block)
+        self.simple_cov = self.construct_cov(diagonals_signal,diagonals_noise,offdiagonal_single_block)
         #and combine with poisson terms
-        self.cov = simple_cov + poisson_offdiagonals
+        self.cov = self.simple_cov + self.poisson_offdiagonals
         #Cov should be my final cov estimate. 
         
     def construct_cov(self,diagonals_signal,diagonals_noise,offdiagonal_single_block):
@@ -85,29 +113,37 @@ class covariance:
                     cov[j,:,i,:] = cov[i,:,j,:].T
         return cov
     
-    def fit_noise_diagonals(self,cov,signal_diags):
+    def get_diags(self,cov):
         ncross = (self.nspec * (self.nspec+1))/2
         odiag = np.zeros([ncross,self.nb])
         for k in range(ncross):
             i,j = self.get_2d_indices(k)
-            diag = np.diag(cov[i,:,j,:])
+            odiag[k,:] = np.diag(cov[i,:,j,:])
+    
+    def fit_noise_diagonals(self,cov,signal_diags,raw_diags,raw_diags_est1):
+        ncross = (self.nspec * (self.nspec+1))/2
+        odiag = np.zeros([ncross,self.nb])
+        for k in range(ncross):
+            i,j = self.get_2d_indices(k)
+            diag = raw_diags[k,:]
 
             a,b = self.get_2d_freq_indices(i)
             c,d = self.get_2d_freq_indices(j)
-            ncommon  = 1* (c == a .or. c == b)  + 1* (d == a .or. d == b)
+            ncommon  = 1* (c == a .or. c == b)  + 1* (d == a .or. d == b) - 1 * (c == d .and. a != b) 
             match ncommon:
                 case 0:
                     odiag[k,:] = self.fit_no_map_in_common(diag)
                 case 1:
-                    odiag[k,:] = self.fit_one_map_in_common(diag)
+                    odiag[k,:] = self.fit_one_map_in_common(k,diag,signal_diags,raw_diags_est1)
                 case 2:
                     odiag[k,:] = self.fit_two_map_in_common(diag)
                 case _:
                     raise Exception("Wrong number of maps in common")
-        
-        pass
+                
+        return odiag
+
     
-    def fit_one_map_in_common(self,diag):
+    def fit_one_map_in_common(self,k,diag,signal_diags,raw_diags_est1,imin=60,nsmooth=5,bin_transition=120):
         '''these are off-diagonals, ala 90x150x90x220, and so on. (ab ac)
         Expectation is aa bc + ac ab
         In the absence of correlated noise, this looks like (after subtracted S*S terms)
@@ -116,11 +152,69 @@ class covariance:
         Examining these -- they are not high S/N.
         Est1_cov is higher S/N and might work with the smoothing treatment done for fit_two_map_in_common below.
         Have to get calibration right so that I know right ells to transition... TBD
+        
+        Assume that have all signal_diags entered
+        Have some noise diags entered (not ones with 1 map in common)
         '''
+        i,j = self.get_2d_indices(k)
+        a,b = self.get_2d_freq_indices(i)
+        c,d = self.get_2d_freq_indices(j)
+        odiag = diag *0.0
+        
+        #first get smoothed version at low-l
+        smdiag = (self.fit_two_map_in_common(diag[:bin_transition+nsmooth],imin=imin,nsmooth=nsmooth))[:bin_transition]
+        odiag[:bin_transition] = smdiag
+        
+        #now the annoying bits at higher ell...
+        # this is a cross of the form (ab)(ac); b != c, but a possibly equal to b or c. 
+        #No hi-l correlated noise, so just Sbc N_aa term.
+        #first let's reorder my a,b,c,d such that we know which is in common and which is not.
+        if c == a:
+            commmon = a
+            if b <= d:
+                others = [b,d]
+            else:
+                others = [d,b]
+        elif c == b:
+            common = b
+            if a <= d:
+                others = [a,d]
+            else:
+                others = [d,a]
+        elif d == a:
+            commmon = a
+            if b <= c:
+                others = [b,c]
+            else:
+                others = [c,b]
+        else:
+            common = b
+            if a <= c
+                others = [a,c]
+            else:
+                others = [c,a]
+        #Noise auto term:
+        i_auto = self.get_1d_index(self,common,common,n=self.nf)
+        k00 = self.get_1d_index(i_auto,i_auto)
+        two_n_squared = self.fit_two_map_in_common(raw_diags_est1[k00,:])
+        n_auto = np.sqrt(two_n_squared/2.0)
+        
+        #signal cross term:
+        i_auto_11 = self.get_1d_index(self,others[0],others[0],n=self.nf)
+        i_auto_22 = self.get_1d_index(self,others[1],others[1],n=self.nf)
+        k12 = self.get_1d_index(i_auto_11,i_auto_22)
+        two_s_squared = signal_diags[k12,:]
+        s_cross = np.sqrt(two_s_squared/2.0)
+        
+        prefactor = 1.0 + 1.0 *(a == b .or. c == d)
+        #for something like 90x150x150x220, expect S*N
+        # for somethnig like 90x150x150x150, expect 2 S*N
+        hi_diag = prefactor * n_auto * s_cross
+        #may want to do somethnig else to join them....
+        odiag[bin_transition:] = hi_diag[bin_transition:]
         
         
-        
-        return diag    
+        return odiag    
     
     def fit_two_map_in_common(self,diag,imin=60, nsmooth = 5):
         '''these are diagonals, ala 90x150x90x150, and so on. (ab ab)
@@ -174,8 +268,8 @@ class covariance:
         xx = (x*x).reshape((1,nb))
         xxout = xx
         xxout[0,:imin_out]=0
-        cutxx = xx[imin_fit:imax_fit]
-        cut_cov = cov[imin_fit:imax_fit,imin_fit:imax_fit]
+        #cutxx = xx[imin_fit:imax_fit]
+        #cut_cov = cov[imin_fit:imax_fit,imin_fit:imax_fit]
         avg=0.0
         n=0
         for i in range(imin_fit,imax_fit):
@@ -223,13 +317,14 @@ class covariance:
         '''
         return self.global_freq_index_array[i,0],self,global_freq_index_array[i,1]
         
-    def get_1d_index(self,i,j):
+    def get_1d_index(self,i,j,n=None):
         '''Returns the 1d index corresponding to block, ix j
         eg 0x0 -> 0
         0 x 3 -> 3
         Assumes 0 <= i <= j < n;  There is no error checking, except that i/j will be swapped if i > j
         '''
-        n = self.nspec
+        if n is None:
+            n = self.nspec
         if i <= j:
             return i*n - ((i-1)*i)/2 + j
 
@@ -380,7 +475,9 @@ if __name__ == '__main__':
     theory_dls = np.zeros([6,nlc])
     for i in range(6):
         theory_dls[i,:] = bin_spectra(cmb_dls + fgtheory_dls[i,:],spec['banddef'])
-    calibration_factors = [1.,1.,1.]
-    cov_obj = covariance(spec,theory_dls, calibration_factors,signal_factor=1e-12)        
-  
-
+    calibration_factors = np.asarray([ (0.9087)**-0.5, (0.9909)**-0.5, (0.9744)**-0.5 ])
+    calibration_factors *= 1e-3  #correction for units between sims and real data. The transfer function brings it over.  This ends up being brought to the 4 power so 1e-12 effectively.
+    cov_obj = covariance(spec,theory_dls, calibration_factors)        
+    covfile = '/big_scratch/cr/xspec_2022/covariance.pkl'
+    with open(covfile,'wb') as fp:
+        pkl.dump(cov_obj, fp)
