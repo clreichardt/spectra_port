@@ -129,7 +129,7 @@ class covariance:
 
             a,b = self.get_2d_freq_indices(i)
             c,d = self.get_2d_freq_indices(j)
-            ncommon  = 1* (c == a .or. c == b)  + 1* (d == a .or. d == b) - 1 * (c == d .and. a != b) 
+            ncommon  = 1* (c == a or c == b)  + 1* (d == a or d == b) - 1 * (c == d and a != b) 
             match ncommon:
                 case 0:
                     odiag[k,:] = self.fit_no_map_in_common(diag)
@@ -206,7 +206,7 @@ class covariance:
         two_s_squared = signal_diags[k12,:]
         s_cross = np.sqrt(two_s_squared/2.0)
         
-        prefactor = 1.0 + 1.0 *(a == b .or. c == d)
+        prefactor = 1.0 + 1.0 *(a == b or c == d)
         #for something like 90x150x150x220, expect S*N
         # for somethnig like 90x150x150x150, expect 2 S*N
         hi_diag = prefactor * n_auto * s_cross
