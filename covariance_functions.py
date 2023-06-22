@@ -307,7 +307,7 @@ class covariance:
         '''Returns two indices corresponding to position of spectra
         ie 0 (90x90)x(90x90) -> 0,0
         '''
-        return self.global_index_array[i,0],self,global_index_array[i,1]
+        return self.global_index_array[i,0],self.global_index_array[i,1]
         
         
     
@@ -315,7 +315,7 @@ class covariance:
         '''Returns two indices corresponding to position
         ie 0 (90x90) -> 0,0
         '''
-        return self.global_freq_index_array[i,0],self,global_freq_index_array[i,1]
+        return self.global_freq_index_array[i,0],self.global_freq_index_array[i,1]
         
     def get_1d_index(self,i,j,n=None):
         '''Returns the 1d index corresponding to block, ix j
