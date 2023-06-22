@@ -274,8 +274,8 @@ class covariance:
         n=0
         for i in range(imin_fit,imax_fit):
             for j in range(i+1,imax_fit):
-            avg += cov[i,j]/xx[i]/xx[j]
-            n   += 1 
+                avg += cov[i,j]/xx[i]/xx[j]
+                n   += 1 
         avg /= n
         template=np.matmul(xxout.T,xxout)
         for i in range(nb):
