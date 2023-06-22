@@ -31,7 +31,7 @@ class covariance:
     nf = 0
     nspec = 0
     nb = 0 
-    def __init__(self,spec,theorydls,calibration_factors,factors=[2.86,1.06,0.61]):
+    def __init__(self,spec,theorydls,calibration_factors,factors=np.asarray([2.86,1.06,0.61])):
         self.nf = factors.shape[0]
         self.nspec = (self.nf * (self.nf+1))/2
         self.nb = spec['sample_cov'].shape[1]
@@ -448,7 +448,7 @@ if __name__ == '__main__':
     dls = np.loadtxt(cmbfile)
     ells = dls[0,:]
     cmb_dls = dls[1,:]
-    print(ells[:5])
+    print('first 4 ells:',ells[:5])
     #   cmb_dls_interp = utils.fill_in_theory(cmbfile,ellkern)
     norgfgtheoryfiles = ['/home/creichardt/lensing/data_lenspix/3gmodels/dl_fg_90x90.txt',
                '/home/creichardt/lensing/data_lenspix/3gmodels/dl_fg_90x150.txt',
