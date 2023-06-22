@@ -446,8 +446,8 @@ if __name__ == '__main__':
 
     cmbfile = '/home/creichardt/cmb_models/plik_plus_r0p01_highell_lensedtotCls_l25000.txt'
     dls = np.loadtxt(cmbfile)
-    ells = dls[0,:]
-    cmb_dls = dls[1,:]
+    ells = dls[:,0]
+    cmb_dls = dls[:,1]
     print('first 4 ells:',ells[:5])
     #   cmb_dls_interp = utils.fill_in_theory(cmbfile,ellkern)
     norgfgtheoryfiles = ['/home/creichardt/lensing/data_lenspix/3gmodels/dl_fg_90x90.txt',
