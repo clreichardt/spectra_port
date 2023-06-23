@@ -6,7 +6,7 @@ import sys
 
 #sys.path.insert(1,'/home/creichardt/.local/lib/python3.7')
 import numpy as np
-import healpy as hp
+#import healpy as hp
 
 #from spt3g import core,maps, calibration
 
@@ -17,13 +17,8 @@ import time
 import scipy
 from spectra_port import unbiased_multispec, utils
 
-from spt3g import core,maps, calibration
+#from spt3g import core,maps, calibration
 
-import pickle as pkl
-
-import matplotlib.pyplot as plt
-import time
-import scipy
 
 
 class covariance:
@@ -31,7 +26,7 @@ class covariance:
     nf = 0
     nspec = 0
     nb = 0 
-    def __init__(self,spec,theorydls,calibration_factors,factors=np.asarray([2.86,1.06,0.61])):
+    def __init__(self,spec,theory_dls,calibration_factors,factors=np.asarray([2.86,1.06,0.61])):
         self.nf = factors.shape[0]
         self.nspec = (self.nf * (self.nf+1))//2
         self.nb = spec['sample_cov'].shape[1]
@@ -80,29 +75,35 @@ class covariance:
                 #meas_cov2[i,:,:,:] *= factor
                 #meas_cov2[:,:,i,:] *= factor
 
+        print("Finished setup")
         #We need offidagonal structure for Poisson
         self.poisson_offdiagonals = self.fit_poisson(sample_cov[0,:,0,:].squeeze(),factors=factors)
-
+        print("Fiished poisso")
         #We also want off-diagonal structure due to Mll
         offdiagonal_single_block = self.fit_mll_offdiagonal(sample_cov,meas_cov)
-
+        print("Finished corr matrix")
         #We need diagonals, there will be 21 of these for 3 freqs
         #this is supposed to be 2S**2
         diagonals_signal = self.fit_signal_diagonals(sample_cov,theory_dls)
-
+        print("Finished signal diag")
         raw_diags = self.get_diags(meas_cov)
         raw_diags1 = self.get_diags(meas_cov1)
         #raw_diags2 = self.get_diags(meas_cov2)
         
         #THis is supposed to be 4SN + 2N**2
         diagonals_noise = self.fit_noise_diagonals(meas_cov,diagonals_signal,raw_diags,raw_diags1)
-
+        print("Finished noise diag")
         #blow this back up to a 4Dim Array
         self.simple_cov = self.construct_cov(diagonals_signal,diagonals_noise,offdiagonal_single_block)
         #and combine with poisson terms
         self.cov = self.simple_cov + self.poisson_offdiagonals
+        self.diagonals_signal = diagonals_signal
+        self.diagonals_noise = diagonals_noise
+        self.raw_noise_diags = raw_diags
+        self.raw_noise_diags_est1 = raw_diags1
         #Cov should be my final cov estimate. 
-        
+        print("Finished cov codition")
+
     def construct_cov(self,diagonals_signal,diagonals_noise,offdiagonal_single_block):
         cov = np.zeros([self.nspec,self.nb,self.nspec,self.nb])
         for i in range(self.nspec):
@@ -119,7 +120,8 @@ class covariance:
         for k in range(ncross):
             i,j = self.get_2d_indices(k)
             odiag[k,:] = np.diag(cov[i,:,j,:])
-    
+        return odiag
+
     def fit_noise_diagonals(self,cov,signal_diags,raw_diags,raw_diags_est1):
         ncross = (self.nspec * (self.nspec+1))//2
         odiag = np.zeros([ncross,self.nb])
@@ -129,7 +131,10 @@ class covariance:
 
             a,b = self.get_2d_freq_indices(i)
             c,d = self.get_2d_freq_indices(j)
-            ncommon  = 1* (c == a or c == b)  + 1* (d == a or d == b) - 1 * (c == d and a != b) 
+            ncommon  = 1* (c == a or c == b)  + 1* (d == a or d == b) 
+            if ncommon == 2 and c == d and a != b:
+                ncommon -= 1
+            print(';number matches:',ncommon,a,b,c,d)
             match ncommon:
                 case 0:
                     odiag[k,:] = self.fit_no_map_in_common(diag)
@@ -169,8 +174,9 @@ class covariance:
         # this is a cross of the form (ab)(ac); b != c, but a possibly equal to b or c. 
         #No hi-l correlated noise, so just Sbc N_aa term.
         #first let's reorder my a,b,c,d such that we know which is in common and which is not.
+        #print('1mapcommon:',a,b,c,d)
         if c == a:
-            commmon = a
+            common = a
             if b <= d:
                 others = [b,d]
             else:
@@ -182,7 +188,7 @@ class covariance:
             else:
                 others = [d,a]
         elif d == a:
-            commmon = a
+            common = a
             if b <= c:
                 others = [b,c]
             else:
@@ -194,14 +200,14 @@ class covariance:
             else:
                 others = [c,a]
         #Noise auto term:
-        i_auto = self.get_1d_index(self,common,common,n=self.nf)
+        i_auto = self.get_1d_index(common,common,n=self.nf)
         k00 = self.get_1d_index(i_auto,i_auto)
         two_n_squared = self.fit_two_map_in_common(raw_diags_est1[k00,:])
         n_auto = np.sqrt(two_n_squared/2.0)
         
         #signal cross term:
-        i_auto_11 = self.get_1d_index(self,others[0],others[0],n=self.nf)
-        i_auto_22 = self.get_1d_index(self,others[1],others[1],n=self.nf)
+        i_auto_11 = self.get_1d_index(others[0],others[0],n=self.nf)
+        i_auto_22 = self.get_1d_index(others[1],others[1],n=self.nf)
         k12 = self.get_1d_index(i_auto_11,i_auto_22)
         two_s_squared = signal_diags[k12,:]
         s_cross = np.sqrt(two_s_squared/2.0)
@@ -376,7 +382,8 @@ class covariance:
         prefactor = obs_prefactor
         prefactor[use_range[0]:use_range[1]] = signal_func(inds[use_range[0]:use_range[1]],params[0][0],params[0][1])
 
-        return prefactor    
+        out = prefactor * theory
+        return out
 
 
 
@@ -443,6 +450,8 @@ def bin_spectra(dl,banddef):
 
 
 if __name__ == '__main__':
+
+    print("initiating files")
     dlfile='/big_scratch/cr/xspec_2022/spectrum_small.pkl'
     with open(dlfile,'rb') as fp:
         spec  = pkl.load(fp)
@@ -482,6 +491,9 @@ if __name__ == '__main__':
         theory_dls[i,:] = bin_spectra(cmb_dls + fgtheory_dls[i,:],spec['banddef'])
     calibration_factors = np.asarray([ (0.9087)**-0.5, (0.9909)**-0.5, (0.9744)**-0.5 ])
     calibration_factors *= 1e-3  #correction for units between sims and real data. The transfer function brings it over.  This ends up being brought to the 4 power so 1e-12 effectively.
+    
+    print("initiating cov")
+
     cov_obj = covariance(spec,theory_dls, calibration_factors)        
     covfile = '/big_scratch/cr/xspec_2022/covariance.pkl'
     with open(covfile,'wb') as fp:
