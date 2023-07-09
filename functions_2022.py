@@ -791,9 +791,13 @@ if __name__ == "__main__" and END == True:
         mask  = pkl.load(fp)
 
     #may need to reformat theoryfiles
-    theoryfiles = ['/sptlocal/user/creichardt/hiell2022/sim_dls_90ghz.txt',
-                   '/sptlocal/user/creichardt/hiell2022/sim_dls_150ghz.txt',
-                   '/sptlocal/user/creichardt/hiell2022/sim_dls_220ghz.txt']
+    #theoryfiles = ['/sptlocal/user/creichardt/hiell2022/sim_dls_90ghz.txt',
+    #               '/sptlocal/user/creichardt/hiell2022/sim_dls_150ghz.txt',
+    #               '/sptlocal/user/creichardt/hiell2022/sim_dls_220ghz.txt']
+    #see redo_theory for the creation of this file - intended to handle difference in Poisson term across full sky vs 3g patch
+    theoryfiles = ['/sptlocal/user/creichardt/hiell2022/sim_field_dls_90ghz.txt',
+                   '/sptlocal/user/creichardt/hiell2022/sim_field_dls_150ghz.txt',
+                   '/sptlocal/user/creichardt/hiell2022/sim_field_dls_220ghz.txt']
 
     
     dir='/sptgrid/analysis/highell_TT_19-20/v4/obs_shts/'
