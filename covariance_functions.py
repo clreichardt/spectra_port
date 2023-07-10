@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import time
 import scipy
 from spectra_port import unbiased_multispec, utils
-
+import pdb
 #from spt3g import core,maps, calibration
 
 
@@ -80,7 +80,7 @@ class covariance:
         self.poisson_offdiagonals = self.fit_poisson(sample_cov[0,:,0,:].squeeze(),factors=factors)
         print("Fiished poisso")
         #We also want off-diagonal structure due to Mll
-        offdiagonal_single_block = self.fit_mll_offdiagonal(sample_cov,meas_cov)
+        self.offdiagonal_single_block = self.fit_mll_offdiagonal(sample_cov,meas_cov)
         print("Finished corr matrix")
         #We need diagonals, there will be 21 of these for 3 freqs
         #this is supposed to be 2S**2
@@ -94,7 +94,7 @@ class covariance:
         diagonals_noise = self.fit_noise_diagonals(meas_cov,diagonals_signal,raw_diags,raw_diags1)
         print("Finished noise diag")
         #blow this back up to a 4Dim Array
-        self.simple_cov = self.construct_cov(diagonals_signal,diagonals_noise,offdiagonal_single_block)
+        self.simple_cov = self.construct_cov(diagonals_signal,diagonals_noise,self.offdiagonal_single_block)
         #and combine with poisson terms
         self.cov = self.simple_cov + self.poisson_offdiagonals
         self.diagonals_signal = diagonals_signal
@@ -108,8 +108,11 @@ class covariance:
         cov = np.zeros([self.nspec,self.nb,self.nspec,self.nb])
         for i in range(self.nspec):
             for j in range(i,self.nspec):
-                diag = diagonals_noise[self.get_1d_index(i,j),:] + diagonals_signal[self.get_1d_index(i,j),:]
-                cov[i,:,j,:] = np.matmul(diag.T, np.matmul(offdiagonal_single_block,diag))
+                sqrtdiag = np.sqrt(diagonals_noise[self.get_1d_index(i,j),:] + diagonals_signal[self.get_1d_index(i,j),:])
+                sqrtdiag2d = np.tile(sqrtdiag,[self.nb,1])
+                cc = sqrtdiag2d* sqrtdiag2d.T * offdiagonal_single_block
+                cov[i,:,j,:] = cc#np.matmul(diag.T, np.matmul(offdiagonal_single_block,diag))
+                #pdb.set_trace()
                 if i != j:
                     cov[j,:,i,:] = cov[i,:,j,:].T
         return cov
