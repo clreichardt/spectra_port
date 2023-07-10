@@ -666,7 +666,7 @@ def weighted_rebin_spectrum(bands_in, bands_out, spec0, cov0=None, win0=None, we
     nbands_in=bands_in.shape[0] - 1
     nbands_out=bands_out.shape[0] - 1
     if len(spec0.shape) == 1:
-        nsets = len(spec0) /nbands_in
+        nsets = len(spec0) // nbands_in
     if len(spec0.shape) == 2:
         nsets = spec0.shape[0]
 
