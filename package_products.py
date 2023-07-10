@@ -11,7 +11,7 @@ def print_bps(bpfile, leffs, bps,keep,sigmas):
     ns = bps.shape[0]
     print('bps exists: ',bps.shape,np.sum(keep))
     with open(bpfile,'w') as fp:
-        print("{:d} {:d}".format(ns, nkeep), file=fp)
+        #print("{:d} {:d}".format(ns, nkeep), file=fp)
         kk=0
         for i in range(ns):
             k=0
@@ -95,8 +95,8 @@ if __name__ == '__main__':
 
     i0 = np.ones(nfcombo,dtype=np.int32)*6
     i1 = np.ones(nfcombo,dtype=np.int32)*30 #11000
-    i1[0] = 28 #9000 for 90x90
-    i1[1:3] = 29 #10000 for 90x150,90x220 
+    #i1[0] = 28 #9000 for 90x90
+    #i1[1:3] = 29 #10000 for 90x150,90x220 
     spec_out,cov_out,win_out,transform = utils.weighted_rebin_spectrum(orig_bands,final_bands,spectrum,cov0=cov, win0=win,weights = wts)
     #pdb.set_trace()
     spec_out = np.reshape(spec_out,[nfcombo,nfb])
