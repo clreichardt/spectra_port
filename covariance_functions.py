@@ -250,7 +250,7 @@ class covariance:
         smtmp = np.convolve(tmp,np.ones(nk)/nk,mode='full') 
         smyy = np.zeros(y.shape[0])
         smyy[good] = smtmp[i0:ll+i0]
-        return smyy
+        return np.exp(smyy)
 
     def fit_no_map_in_common(self,diag,ibin = 20):
         #see low-l correlated power so can't just zero outs cross that don't have maps in common. 
