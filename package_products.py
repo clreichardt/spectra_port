@@ -36,12 +36,33 @@ if __name__ == '__main__':
         spec  = pkl.load(fp)
 
 
+    spectrum = spec['spectrum']
+    win = spec['windowfunc']
+
+
     print("Do Calibration first!!!")
-    pdb.set_trace()
+
+    calibration_factors = np.asarray([ (0.9087)**-0.5, (0.9909)**-0.5, (0.9744)**-0.5 ])
+    calibration_factors *= 1e-3  #correction for units between sims and real data. The transfer function brings it over.  This ends up being brought to the 2 power so 1e-6 effectively.
+    global_freq_index_array = np.zeros([6,2],dtype=np.int32)
+    cals = np.ones(6)
+
+
+    k=0
+    for i in range(3):
+        for j in range(i,3):
+            cals[k] = calibration_factors[i] * calibration_factors[j]
+            spectrum[k,:] *= cals[k]
+            k+=1
+
 
     covfile='/big_scratch/cr/xspec_2022/covariance.pkl'
     with open(covfile,'rb') as fp:
         cov  = pkl.load(fp)
+
+    #taking weights as inverse diagonal of cov:
+    wts = 1./np.diag(cov)
+    
 
     print("Warning! need to input true cal uncertainty")
     t_cal_unc = no.ones(3)* 0.01  
@@ -59,7 +80,7 @@ if __name__ == '__main__':
     i1 = np.ones(6)*30 #11000
     i1[0] = 28 #9000 for 90x90
     i1[1:3] = 29 #10000 for 90x150,90x220 
-    spec_out,cov_out,win_out,transform = utils.weighted_rebin_spectrum(orig_bands,final_bands,spec,cov0=cov, win0=win,weights = wts)
+    spec_out,cov_out,win_out,transform = utils.weighted_rebin_spectrum(orig_bands,final_bands,spectrum,cov0=cov, win0=win,weights = wts)
 
     keep = np.zeros(spec_out.shape,dtype=bool)
     for i in range(6):
