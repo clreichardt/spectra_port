@@ -6,18 +6,22 @@ import pickle as pkl
 import numpy as np
 import pdb
 
-def print_bps(bpfile, bps,keep):
+def print_bps(bpfile, leffs, bps,keep,sigmas):
     nkeep = np.sum(keep)
     ns = bps.shape[0]
     print('bps exists: ',bps.shape,np.sum(keep))
     with open(bpfile,'w') as fp:
         print("{:d} {:d}".format(ns, nkeep), file=fp)
+        kk=0
         for i in range(ns):
             k=0
             loc = bps[i,keep[i,:]]
+
             for val in loc:
-                print("{:d} {:e}".format(k,val),file=fp)
+
+                print("{:d} {:f} {:.3e} {:.3e}".format(k,leffs[kk],val,sigmas[kk]),file=fp)
                 k+=1
+                kk+=1
             
 
 def print_cov(covfile,cov):
@@ -94,7 +98,7 @@ if __name__ == '__main__':
     i1[0] = 28 #9000 for 90x90
     i1[1:3] = 29 #10000 for 90x150,90x220 
     spec_out,cov_out,win_out,transform = utils.weighted_rebin_spectrum(orig_bands,final_bands,spectrum,cov0=cov, win0=win,weights = wts)
-
+    #pdb.set_trace()
     spec_out = np.reshape(spec_out,[nfcombo,nfb])
 
     keep = np.zeros(spec_out.shape,dtype=bool)
@@ -103,8 +107,7 @@ if __name__ == '__main__':
     keep1d = keep.flatten()
     #pdb.set_trace()
     #ospec = (spec_out.flatten())[keep1d]
-    bpfile='dls.txt'
-    print_bps(bpfile,spec_out,keep)
+
 
 
     cov_out = np.reshape(cov_out,[nfcombo*nfb,nfcombo*nfb])
@@ -114,10 +117,18 @@ if __name__ == '__main__':
     print(cc.shape)
     ocov = cc[:,keep1d]
     print(ocov.shape)
-    covfile='cov.bin'
+    covfile='/home/creichardt/highell_dls/cov.bin'
     print_cov(covfile,ocov)
 
     owin = win_out[keep1d,:]
-    winfile = 'windowfunc.bin'
+    winfile = '/home/creichardt/highell_dls/windowfunc.bin'
     print_win(winfile, owin,    spec['win_minell'], spec['win_maxell'])
+    l = np.arange(spec['win_minell'], spec['win_maxell']+1)
+    nkept = np.sum(keep1d)
+    leffs = np.zeros(nkept)
+    for i in range(nkept):
+        leffs[i] = np.sum(l * owin[i,:])
+    sigmas = np.sqrt(np.diag(ocov))
 
+    bpfile='/home/creichardt/highell_dls/dls.txt'
+    print_bps(bpfile,leffs, spec_out,keep,sigmas)
