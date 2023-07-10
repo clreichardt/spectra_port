@@ -37,7 +37,7 @@ if __name__ == '__main__':
 
 
     print("Do Calibration first!!!")
-
+    pdb.set_trace()
 
     covfile='/big_scratch/cr/xspec_2022/covariance.pkl'
     with open(covfile,'rb') as fp:
