@@ -26,7 +26,7 @@ def print_cov(covfile,cov):
 
 def print_win(wfile,win,minl,maxl):
     with open(wfile,'wb') as fp:
-        print(file=fp,"{} {}".format(minl,maxl))
+        print("{} {}".format(minl,maxl),file=fp)
         win.astype('float32').tofile(fp)
     
 
