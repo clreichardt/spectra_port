@@ -238,7 +238,7 @@ class covariance:
         Used imin = 60 as baseline -- this is about l=3000. used to define what points are 0/Inf
         '''
         y=np.log(diag)
-        good = y > 0.1 * y[imin]
+        good = y >  y[imin] +np.log(0.1)
         ll = np.sum(good)
         nk = nsmooth
         i0 = nk + nk//2  # so 7 for fiducial choice of 5-width kernel
@@ -250,6 +250,7 @@ class covariance:
         smtmp = np.convolve(tmp,np.ones(nk)/nk,mode='full') 
         smyy = np.zeros(y.shape[0])
         smyy[good] = smtmp[i0:ll+i0]
+
         return np.exp(smyy)
 
     def fit_no_map_in_common(self,diag,ibin = 20):
