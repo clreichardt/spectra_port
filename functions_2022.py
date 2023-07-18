@@ -28,6 +28,7 @@ SHTLR = False
 CAL = False
 TEST= False
 NULLLR=False
+NULLLROLD=False
 NULLLRSPLIT=False
 PK=False
 FULLCAL=False
@@ -1657,7 +1658,7 @@ if __name__ == "__main__" and SHTLR == True:
     print(workdir)
     dir='/sptgrid/analysis/highell_TT_19-20/v5/coadds/'
     
-    rlist = create_real_file_list_v5(dir, freqs=['90','150','220'], nbundle=200):
+    rlist = create_real_file_list_v5(dir, freqs=['90','150','220'], nbundle=200)
 
     lmax = 11500
     nside= 8192
