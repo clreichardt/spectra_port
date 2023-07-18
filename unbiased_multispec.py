@@ -350,6 +350,9 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
     else:
         local_kmask = np.ones(size,dtype=np.float32)
 
+    #combine these two so I only do one multiply later
+    local_kmask *= inv_mask_factor
+
         
     if cmbweighting:
         dummy_vec = np.arange(lmax+1,dtype=np.float32)
@@ -424,11 +427,11 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
             #possibly downsample alms to save later CPU cycles
             # TBD if worthwhile
 
-            #apply weighting (ie cl-dl) and kmask 
+            #apply weighting (ie cl-dl) and kmask . This also adjusts for mask normalization factor if any
             alms *= local_kmask
 
             #TBD, possibly adjust for mask factor here
-            alms *= inv_mask_factor
+            #alms *= inv_mask_factor -- this has now multiplied local_kmask already
 
             # Get reindexing
 

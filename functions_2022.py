@@ -1675,8 +1675,7 @@ if __name__ == "__main__" and SHTLR == True:
                             no_reorder=False,
                             ram_limit = None,
                             npmapformat=False,
-                            pklmapformat=True,
-                            map_key='T',
+                            pklmapformat=False,
                             apply_mask_norm=False,
                             lr=True
                             ) 
