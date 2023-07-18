@@ -56,7 +56,8 @@ def load_spt3g_healpix_ring_map_as_lr(file):
     ind,wt = tmp[0]['Wunpol'].TT.nonzero_pixels()
     #pdb.set_trace()
     locmap/=wt
-    return( np.asarray(ind).astype(np.int64,casting='same_kind'), np.asarray(map).astype(np.float32,casting='same_kind') )
+    
+    return( np.asarray(ind).astype(np.int64,casting='same_kind'), np.asarray(locmap).astype(np.float32,casting='same_kind') )
 
 
 def load_spt3g_healpix_ring_map(file,require_order = 'Ring',require_nside=8192,map_key='T'):
