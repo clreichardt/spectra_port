@@ -20,6 +20,7 @@ PREP= False
 END = False
 ENDTEST = False
 NULL= False
+NULLOLD= False
 COADD= False
 SHT = False
 CAL = False
