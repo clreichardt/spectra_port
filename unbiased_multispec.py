@@ -40,6 +40,26 @@ def printinplace(myString):
     sys.stdout.flush()
 
 
+def load_spt3g_healpix_ring_map_as_lr(file):
+    '''
+    file: string - g3 file to load 
+    require_order: ring or nest
+    require_nside: nside
+    map_key: dict key for map to load
+    returns two arrays:
+        indices [int64]
+        map [float32]
+    '''
+    # only taking 1st map 
+    tmp = list(core.G3File(file))
+    locmap  = (tmp[0]['left'] - tmp[0]['right']).nonzero_pixels()[1]
+    ind,wt = tmp[0]['Wunpol'].TT.nonzero_pixels()
+    #pdb.set_trace()
+    locmap/=wt
+    
+    return( np.asarray(ind).astype(np.int64,casting='same_kind'), np.asarray(locmap).astype(np.float32,casting='same_kind') )
+
+
 def load_spt3g_healpix_ring_map(file,require_order = 'Ring',require_nside=8192,map_key='T'):
     '''
     file: string - g3 file to load 
@@ -292,7 +312,8 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
                            npmapformat=False,
                            pklmapformat=False,
                            apply_mask_norm=True,
-                           map_key='T'
+                           map_key='T',
+                           lr = False
                           ):
     ''' 
     Output is expected to be CL (Dl if cmbweighting=Trure) * mask normalization factor * kweights
@@ -329,6 +350,9 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
         local_kmask = kmask.astype(np.float32)
     else:
         local_kmask = np.ones(size,dtype=np.float32)
+
+    #combine these two so I only do one multiply later
+    local_kmask *= inv_mask_factor
 
         
     if cmbweighting:
@@ -381,15 +405,20 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
                 map_scratch[map_inds]=map_tmp * cut_mask
 
             else:
-                ring_indices, map_tmp = load_spt3g_healpix_ring_map(file,map_key=map_key)
+                if lr:
+                    ring_indices, map_tmp =load_spt3g_healpix_ring_map_as_lr(file)
+                else:
+                    ring_indices, map_tmp = load_spt3g_healpix_ring_map(file,map_key=map_key)
 
-                map_scratch[:]=0 #reset
-                map_scratch[ring_indices]=map_tmp #fill in the temperature map
+                #map_scratch[:]=0 #reset
+                 #fill in the temperature map
 
                 # if not already masked, apply mask
                 #may need to change the next line based on formatting
                 if mask is not None:
-                    map_scratch  = mask*map_scratch
+                    map_scratch[ring_indices]  *= mask[ring_indices]*map_tmp
+                else:
+                    map_scratch[ring_indices]=map_tmp
 
 
                     
@@ -399,11 +428,11 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
             #possibly downsample alms to save later CPU cycles
             # TBD if worthwhile
 
-            #apply weighting (ie cl-dl) and kmask 
+            #apply weighting (ie cl-dl) and kmask . This also adjusts for mask normalization factor if any
             alms *= local_kmask
 
             #TBD, possibly adjust for mask factor here
-            alms *= inv_mask_factor
+            #alms *= inv_mask_factor -- this has now multiplied local_kmask already
 
             # Get reindexing
 

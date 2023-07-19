@@ -17,20 +17,25 @@ import time
 
 PREPCAL= False
 PREP= False
+PREPLR= False
 END = False
 ENDTEST = False
 NULL= False
+NULLOLD= False
 COADD= False
 SHT = False
+SHTLR = False
 CAL = False
 TEST= False
 NULLLR=False
+NULLLROLD=False
 NULLLRSPLIT=False
 PK=False
 FULLCAL=False
 KTEST=False
 my_parser = argparse.ArgumentParser()
 my_parser.add_argument('-prep', action='store_true',dest='prep')
+my_parser.add_argument('-preplr', action='store_true',dest='preplr')
 my_parser.add_argument('-prepcal', action='store_true',dest='prepcal')
 my_parser.add_argument('-end', action='store_true',dest='end')
 my_parser.add_argument('-endtest', action='store_true',dest='endtest')
@@ -39,6 +44,7 @@ my_parser.add_argument('-nulllr', action='store_true',dest='nulllr')
 my_parser.add_argument('-nulllrsplit', action='store_true',dest='nulllrsplit')
 my_parser.add_argument('-coadd', action='store_true',dest='coadd')
 my_parser.add_argument('-sht', action='store_true',dest='sht')
+my_parser.add_argument('-shtlr', action='store_true',dest='shtlr')
 my_parser.add_argument('-cal', action='store_true',dest='cal')
 my_parser.add_argument('-fullcal', action='store_true',dest='fullcal')
 my_parser.add_argument('-test', action='store_true',dest='test')
@@ -56,6 +62,7 @@ COADD=args.coadd
 CAL = args.cal
 FULLCAL = args.fullcal
 SHT = args.sht
+SHTLR = args.shtlr
 TEST= args.test
 KTEST= args.ktest
 PK= args.pk
@@ -1073,7 +1080,7 @@ if __name__ == "__main__" and NULLLRSPLIT == True:
         pkl.dump(spectrum,fp)
         del spectrum
 
-if __name__ == "__main__" and NULLLR == True:
+if __name__ == "__main__" and NULLLROLD == True:
 
     print('doing null lr')
 
@@ -1131,7 +1138,72 @@ if __name__ == "__main__" and NULLLR == True:
     with open(file_out,'wb') as fp:
         pkl.dump(spectrum,fp)
         del spectrum
-    s
+    
+if __name__ == "__main__" and NULLLR == True:
+
+    print('doing null lr')
+
+    mask_file = '/sptlocal/user/creichardt/hiell2022/mask_0p4medwt_6mJy150ghzv2.pkl'
+    with open(mask_file,'rb') as fp:
+        mask  = pkl.load(fp)
+    nside=8192
+    lmax = 11500
+
+    kmask = None
+    nside=8192
+    banddef = np.arange(0,lmax+1,500)
+
+
+    workdir = '/big_scratch/cr/xspec_2022/data_v5_lr/'
+    setdef = np.zeros([200,1],dtype=np.int32)
+    setdef[:,0]=np.arange(0,200,dtype=np.int32)
+    
+    #note these are only used for indexing. actual L-R is done
+    mapfiles = create_real_file_list('/sptgrid/analysis/highell_TT_19-20/v5/obs_shts/bundle_',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
+    
+    spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+                                            lmax=13000,
+                                            resume=True,
+                                            basedir=workdir,
+                                            persistdir=workdir,
+                                            setdef=setdef,
+                                            jackknife=False, auto=False,
+                                            kmask=None,
+                                            cmbweighting=True)
+    file_out = workdir + 'spectrum90_lrnull.pkl'
+    with open(file_out,'wb') as fp:
+        pkl.dump(spectrum,fp)
+        del spectrum
+    os.system('rm '+workdir+'shts_processed.bin')
+    os.system('ln -s /big_scratch/pc/lr_null/sht_lr_150.bin /big_scratch/cr/xspec_2022/datalr/shts_processed.bin')
+    spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+                                            lmax=13000,
+                                            resume=True,
+                                            basedir=workdir,
+                                            persistdir=workdir,
+                                            setdef=setdef,
+                                            jackknife=False, auto=False,
+                                            kmask=None,
+                                            cmbweighting=True)
+    file_out = workdir + 'spectrum150_lrnull.pkl'
+    with open(file_out,'wb') as fp:
+        pkl.dump(spectrum,fp)
+        del spectrum
+    os.system('rm /big_scratch/cr/xspec_2022/datalr/shts_processed.bin')
+    os.system('ln -s /big_scratch/pc/lr_null/sht_lr_220.bin /big_scratch/cr/xspec_2022/datalr/shts_processed.bin')
+    spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
+                                            lmax=13000,
+                                            resume=True,
+                                            basedir=workdir,
+                                            persistdir=workdir,
+                                            setdef=setdef,
+                                            jackknife=False, auto=False,
+                                            kmask=None,
+                                            cmbweighting=True)
+    file_out = workdir + 'spectrum220_lrnull.pkl'
+    with open(file_out,'wb') as fp:
+        pkl.dump(spectrum,fp)
+        del spectrum
     
 if __name__ == "__main__" and NULL == True:
     # UPdated to current masks and stuff
@@ -1577,6 +1649,37 @@ if __name__ == "__main__" and COADD == True:
     #create_bundle_maps_and_coadds(150,nbundles=200)
     #create_bundle_maps_and_coadds(220,nbundles=200)
 
+
+
+if __name__ == "__main__" and SHTLR == True:
+
+    workdir = '/big_scratch/cr/xspec_2022/data_v5_lr/'
+    os.makedirs(workdir,exist_ok=True)
+    print(workdir)
+    dir='/sptgrid/analysis/highell_TT_19-20/v5/coadds/'
+    
+    rlist = create_real_file_list_v5(dir, freqs=['90','150','220'], nbundle=200)
+
+    lmax = 11500
+    nside= 8192
+    mask_file = '/sptlocal/user/creichardt/hiell2022/mask_0p4medwt_6mJy150ghzv2.pkl'
+    with open(mask_file,'rb') as fp:
+        mask  = pkl.load(fp)
+    #mask = None
+    processedshtfile = workdir + 'shts_processed.bin'
+    spec.take_and_reformat_shts(rlist, processedshtfile,
+                            nside,lmax,
+                            cmbweighting = True, 
+                            mask  = mask,
+                            kmask = None,
+                            ell_reordering=None,
+                            no_reorder=False,
+                            ram_limit = None,
+                            npmapformat=False,
+                            pklmapformat=False,
+                            apply_mask_norm=False,
+                            lr=True
+                            ) 
 
 
 if __name__ == "__main__" and SHT == True:
