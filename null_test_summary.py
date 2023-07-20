@@ -18,7 +18,32 @@ import scipy
 from spectra_port import unbiased_multispec, utils, covariance_functions
 import pdb
 
-
+def rebin_err(vector, mult):
+    '''Rebin vector group (mult) values together 
+    ie a 500-vector and mult=10 -> outputs a 50-length vector
+    
+    vector is assumed to be power spectrum errors
+    Assume starting at 0-dl; dl-2dl, ...
+    Assumes DOF proportional to ell.
+    
+    These are sample variance errors
+    '''
+    nl = vector.shape[0]
+    lvec =np.arange(0,nl)+0.5
+    
+    cov1 = vector**2 * lvec
+    sum_cov1 = lvec * cov1
+    
+    nout = nl // mult
+    ndof = 0.
+    out  = 0.
+    for i in range(mult):
+        out += sum_cov1[i::mult]
+        ndof += nl[i::mult]
+    
+    out /= (ndof**2)
+    return np.sqrt(out)
+    
 
 
 if __name__ == '__main__':
@@ -110,6 +135,37 @@ if __name__ == '__main__':
     sv90_dl500  = allowed_SV*rebin_err(sv90_dl50,dlnull//dlspec)
     sv150_dl500 = allowed_SV*rebin_err(sv150_dl50,dlnull//dlspec)
     sv220_dl500 = allowed_SV*rebin_err(sv220_dl50,dlnull//dlspec)
+    
+    with open(nulls[0],'rb') as fp:
+        n90 = pkl.load(fp)
+    null90 = n90.spectrum[imin_dl500:imax_dl500]
+    err90 = np.sqrt(np.diag(n90.est1_cov))
+    
+    with open(nulls[1],'rb') as fp:
+        n150 = pkl.load(fp)
+    null150 = n150.spectrum[imin_dl500:imax_dl500]
+    err150 = np.sqrt(np.diag(n150.est1_cov))
+    
+    with open(nulls[2],'rb') as fp:
+        n220 = pkl.load(fp)
+    null220 = n220.spectrum[imin_dl500:imax_dl500]
+    err220 = np.sqrt(np.diag(n220.est1_cov))
 
+
+
+    comb_err90  = np.sqrt(err90**2  + sv90_dl500**2 )[imin_dl500:imax_dl500]
+    comb_err150 = np.sqrt(err150**2 + sv150_dl500**2)[imin_dl500:imax_dl500]
+    comb_err220 = np.sqrt(err220**2 + sv220_dl500**2)[imin_dl500:imax_dl500]
+    
+    print('90s:',null90/comb_err90)
+    print('Chisq 90:',np.sum((null90/comb_err90)**2), ' dof: ', imax_dl500-imin_dl500)
+    
+    print('150s:',null150/comb_err150)
+    print('Chisq 150:',np.sum((null150/comb_err150)**2), ' dof: ', imax_dl500-imin_dl500)
+    
+    print('220s:',null220/comb_err220)
+    print('Chisq 220:',np.sum((null220/comb_err220)**2), ' dof: ', imax_dl500-imin_dl500)
+    
+    
 
     
