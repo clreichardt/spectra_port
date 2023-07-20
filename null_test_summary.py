@@ -43,6 +43,33 @@ def rebin_err(vector, mult):
     
     out /= (ndof**2)
     return np.sqrt(out)
+
+
+def rebin_spec(vector, mult):
+    '''Rebin vector group (mult) values together 
+    ie a 500-vector and mult=10 -> outputs a 50-length vector
+    
+    vector is assumed to be power spectrum errors
+    Assume starting at 0-dl; dl-2dl, ...
+    Assumes DOF proportional to ell.
+    
+    These are spectra
+    '''
+    nl = vector.shape[0]
+    lvec =np.arange(0,nl)+0.5
+    
+    modes_times_spectra = vector * lvec
+    
+    
+    nout = nl // mult
+    ndof = 0.
+    out  = 0.
+    for i in range(mult):
+        out += modes_times_spectra[i:250:mult]
+        ndof += lvec[i:250:mult]
+    
+    out /= (ndof)
+    return out
     
 
 
@@ -124,6 +151,12 @@ if __name__ == '__main__':
     theory90_dl50  = theory_dls[0,:]
     theory150_dl50 = theory_dls[3,:]
     theory220_dl50 = theory_dls[5,:]
+    
+    theory90_dl500  = rebin_spec(theory90_dl50,  dlnull//dlspec)[imin_dl500:imax_dl500] 
+    theory150_dl500 = rebin_spec(theory150_dl50, dlnull//dlspec)[imin_dl500:imax_dl500] 
+    theory220_dl500 = rebin_spec(theory220_dl50, dlnull//dlspec)[imin_dl500:imax_dl500] 
+
+    
     print('expect 2d: ',covcov.sample_cov.shape)
     covcov.sample_cov=np.reshape(covcov.sample_cov,[6*259,6*259])
     sv = np.diag(covcov.sample_cov)
@@ -131,11 +164,11 @@ if __name__ == '__main__':
     sv150_dl50 = np.sqrt(sv[3*nlc:4*nlc])
     sv220_dl50 = np.sqrt(sv[5*nlc:6*nlc])
 
-    allowed_SV = 0.05
+    allowed_SV = 0.03
     
-    sv90_dl500  = allowed_SV*rebin_err(sv90_dl50,dlnull//dlspec)
-    sv150_dl500 = allowed_SV*rebin_err(sv150_dl50,dlnull//dlspec)
-    sv220_dl500 = allowed_SV*rebin_err(sv220_dl50,dlnull//dlspec)
+    sv90_dl500  = allowed_SV*rebin_err(sv90_dl50,dlnull//dlspec)[imin_dl500:imax_dl500]
+    sv150_dl500 = allowed_SV*rebin_err(sv150_dl50,dlnull//dlspec)[imin_dl500:imax_dl500]
+    sv220_dl500 = allowed_SV*rebin_err(sv220_dl50,dlnull//dlspec)[imin_dl500:imax_dl500]
     
     calibration_factors = np.asarray([ (0.9087)**-0.5, (0.9909)**-0.5, (0.9744)**-0.5 ])
     calibration_factors *= 1e3 
@@ -145,23 +178,44 @@ if __name__ == '__main__':
     with open(nulls[0],'rb') as fp:
         n90 = pkl.load(fp)
     null90 = n90.spectrum[imin_dl500:imax_dl500] * calibration_factors[0]**2
-    err90 = np.sqrt(np.diag(n90.est1_cov))* calibration_factors[0]**2
+    err90 = (np.sqrt(np.diag(n90.est1_cov))* calibration_factors[0]**2)[imin_dl500:imax_dl500]
     
     with open(nulls[1],'rb') as fp:
         n150 = pkl.load(fp)
     null150 = n150.spectrum[imin_dl500:imax_dl500]* calibration_factors[1]**2
-    err150 = np.sqrt(np.diag(n150.est1_cov))* calibration_factors[1]**2
+    err150 = (np.sqrt(np.diag(n150.est1_cov))* calibration_factors[1]**2)[imin_dl500:imax_dl500]
     
     with open(nulls[2],'rb') as fp:
         n220 = pkl.load(fp)
     null220 = n220.spectrum[imin_dl500:imax_dl500]* calibration_factors[2]**2
-    err220 = np.sqrt(np.diag(n220.est1_cov))* calibration_factors[2]**2
+    err220 = (np.sqrt(np.diag(n220.est1_cov))* calibration_factors[2]**2)[imin_dl500:imax_dl500]
 
 
+    with open(binned[0],'rb') as fp:
+        tmp = pkl.load(fp)
+    s90 = tmp.spectrum[imin_dl500:imax_dl500] * calibration_factors[0]**2
+    with open(binned[1],'rb') as fp:
+        tmp = pkl.load(fp)
+    s150 = tmp.spectrum[imin_dl500:imax_dl500] * calibration_factors[1]**2
+    with open(binned[2],'rb') as fp:
+        tmp = pkl.load(fp)
+    s220 = tmp.spectrum[imin_dl500:imax_dl500] * calibration_factors[2]**2
+    
+    tf_90 = theory90_dl500 / s90
+    tf_150 = theory150_dl500 / s150
+    tf_220 = theory220_dl500 / s220
+    
+    null90  *= tf_90
+    null150 *= tf_150
+    null220 *= tf_220
 
-    comb_err90  = np.sqrt(err90**2  + sv90_dl500**2 )[imin_dl500:imax_dl500]
-    comb_err150 = np.sqrt(err150**2 + sv150_dl500**2)[imin_dl500:imax_dl500]
-    comb_err220 = np.sqrt(err220**2 + sv220_dl500**2)[imin_dl500:imax_dl500]
+    err90  *= tf_90
+    err150 *= tf_150
+    err220 *= tf_220
+
+    comb_err90  = (err90  + sv90_dl500 )
+    comb_err150 = (err150 + sv150_dl500)
+    comb_err220 = (err220 + sv220_dl500)
     
     print('90s:',null90/comb_err90)
     print('Chisq 90:',np.sum((null90/comb_err90)**2), ' dof: ', imax_dl500-imin_dl500)
