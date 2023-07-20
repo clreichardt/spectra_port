@@ -202,6 +202,17 @@ def create_real_file_list_v5(dirname, freqs, nbundle=200):
             file_list.append(fn)
     return np.asarray(file_list)
 
+def create_real_coadd_list_v5(dirname, freqs, nbundle=200):
+    if dirname[-1] == '/':
+        dirname = dirname[:-1]
+
+    file_list = []
+    for freq in freqs:
+        for i in range(nbundle):
+            fn = f'{dirname}/bundle_{i}_{freq}GHz.g3'
+            file_list.append(fn)
+    return np.asarray(file_list)
+
 def create_sim_file_list_v3(dirname, freqs, nbundle=100):
     if dirname[-1] == '/':
         dirname = dirname[:-1]
@@ -1658,7 +1669,7 @@ if __name__ == "__main__" and SHTLR == True:
     print(workdir)
     dir='/sptgrid/analysis/highell_TT_19-20/v5/coadds/'
     
-    rlist = create_real_file_list_v5(dir, freqs=['90','150','220'], nbundle=200)
+    rlist = create_real_coadd_list_v5(dir, freqs=['90','150','220'], nbundle=200)
 
     lmax = 11500
     nside= 8192

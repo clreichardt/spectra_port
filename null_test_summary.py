@@ -38,8 +38,8 @@ def rebin_err(vector, mult):
     ndof = 0.
     out  = 0.
     for i in range(mult):
-        out += sum_cov1[i::mult]
-        ndof += nl[i::mult]
+        out += sum_cov1[i:250:mult]
+        ndof += lvec[i:250:mult]
     
     out /= (ndof**2)
     return np.sqrt(out)
@@ -118,38 +118,44 @@ if __name__ == '__main__':
     nlc = ellcov.shape[0]
     theory_dls = np.zeros([6,nlc])
     for i in range(6):
-        theory_dls[i,:] = covariance_functions.bin_spectra(cmb_dls + fgtheory_dls[i,:],spec['banddef'])
+        theory_dls[i,:] = covariance_functions.bin_spectra(cmb_dls + fgtheory_dls[i,:],endend['banddef'])
         
     
     theory90_dl50  = theory_dls[0,:]
     theory150_dl50 = theory_dls[3,:]
     theory220_dl50 = theory_dls[5,:]
-    print('expect 2d: ',covcov.sample_covariance.shape)
-    sv = np.diag(covcov.sample_covariance)
+    print('expect 2d: ',covcov.sample_cov.shape)
+    covcov.sample_cov=np.reshape(covcov.sample_cov,[6*259,6*259])
+    sv = np.diag(covcov.sample_cov)
     sv90_dl50  = np.sqrt(sv[:nlc])
     sv150_dl50 = np.sqrt(sv[3*nlc:4*nlc])
     sv220_dl50 = np.sqrt(sv[5*nlc:6*nlc])
 
-    allowed_SV = 0.01
+    allowed_SV = 0.05
     
     sv90_dl500  = allowed_SV*rebin_err(sv90_dl50,dlnull//dlspec)
     sv150_dl500 = allowed_SV*rebin_err(sv150_dl50,dlnull//dlspec)
     sv220_dl500 = allowed_SV*rebin_err(sv220_dl50,dlnull//dlspec)
     
+    calibration_factors = np.asarray([ (0.9087)**-0.5, (0.9909)**-0.5, (0.9744)**-0.5 ])
+    calibration_factors *= 1e3 
+
+    print('still need to iject Tf')
+
     with open(nulls[0],'rb') as fp:
         n90 = pkl.load(fp)
-    null90 = n90.spectrum[imin_dl500:imax_dl500]
-    err90 = np.sqrt(np.diag(n90.est1_cov))
+    null90 = n90.spectrum[imin_dl500:imax_dl500] * calibration_factors[0]**2
+    err90 = np.sqrt(np.diag(n90.est1_cov))* calibration_factors[0]**2
     
     with open(nulls[1],'rb') as fp:
         n150 = pkl.load(fp)
-    null150 = n150.spectrum[imin_dl500:imax_dl500]
-    err150 = np.sqrt(np.diag(n150.est1_cov))
+    null150 = n150.spectrum[imin_dl500:imax_dl500]* calibration_factors[1]**2
+    err150 = np.sqrt(np.diag(n150.est1_cov))* calibration_factors[1]**2
     
     with open(nulls[2],'rb') as fp:
         n220 = pkl.load(fp)
-    null220 = n220.spectrum[imin_dl500:imax_dl500]
-    err220 = np.sqrt(np.diag(n220.est1_cov))
+    null220 = n220.spectrum[imin_dl500:imax_dl500]* calibration_factors[2]**2
+    err220 = np.sqrt(np.diag(n220.est1_cov))* calibration_factors[2]**2
 
 
 
@@ -165,7 +171,7 @@ if __name__ == '__main__':
     
     print('220s:',null220/comb_err220)
     print('Chisq 220:',np.sum((null220/comb_err220)**2), ' dof: ', imax_dl500-imin_dl500)
-    
+    pdb.set_trace()
     
 
     
