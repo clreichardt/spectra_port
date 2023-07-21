@@ -19,6 +19,7 @@ PREPCAL= False
 PREP= False
 PREPLR= False
 END = False
+ENDBIG = False
 ENDTEST = False
 NULL= False
 NULLOLD= False
@@ -38,6 +39,7 @@ my_parser.add_argument('-prep', action='store_true',dest='prep')
 my_parser.add_argument('-preplr', action='store_true',dest='preplr')
 my_parser.add_argument('-prepcal', action='store_true',dest='prepcal')
 my_parser.add_argument('-end', action='store_true',dest='end')
+my_parser.add_argument('-endbig', action='store_true',dest='endbig')
 my_parser.add_argument('-endtest', action='store_true',dest='endtest')
 my_parser.add_argument('-null', action='store_true',dest='null')
 my_parser.add_argument('-nulllr', action='store_true',dest='nulllr')
@@ -56,6 +58,7 @@ args = my_parser.parse_args()
 PREP=args.prep
 PREPCAL=args.prepcal
 END=args.end
+ENDBIG=args.endbig
 ENDTEST=args.endtest
 NULL=args.null
 COADD=args.coadd
@@ -801,6 +804,102 @@ if __name__ == "__main__" and END == True:
     os.makedirs(workdir,exist_ok=True)
     file_out = workdir + 'spectrum.pkl'
     file_out_small = workdir + 'spectrum_small.pkl'
+    
+    #mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
+    #mask = np.load(mask_file)
+    mask_file = '/sptlocal/user/creichardt/hiell2022/mask_0p4medwt_6mJy150ghzv2.pkl'
+    with open(mask_file,'rb') as fp:
+        mask  = pkl.load(fp)
+
+    #may need to reformat theoryfiles
+    #theoryfiles = ['/sptlocal/user/creichardt/hiell2022/sim_dls_90ghz.txt',
+    #               '/sptlocal/user/creichardt/hiell2022/sim_dls_150ghz.txt',
+    #               '/sptlocal/user/creichardt/hiell2022/sim_dls_220ghz.txt']
+    #see redo_theory for the creation of this file - intended to handle difference in Poisson term across full sky vs 3g patch
+    theoryfiles = ['/sptlocal/user/creichardt/hiell2022/sim_field_dls_90ghz.txt',
+                   '/sptlocal/user/creichardt/hiell2022/sim_field_dls_150ghz.txt',
+                   '/sptlocal/user/creichardt/hiell2022/sim_field_dls_220ghz.txt']
+
+    
+    dir='/sptgrid/analysis/highell_TT_19-20/v5/obs_shts/'
+    mapfiles = create_real_file_list_v5(dir,sfreqs=['90','150','220'],nbundle=200)
+
+    #change for testing
+#    dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v2.0_testinputsv2/'
+    dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.3_mask_0p4medwt_6mJy150ghzv2/'
+    #mcmapfiles = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=10)
+    mcmapfiles = create_sim_file_list_v2(dir,bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.npz',nsim=100)
+    #dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
+    #mcmapfiles = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
+    
+    print('lmax of {}'.format(lmax))
+    output = end_to_end.end_to_end( mapfiles,
+                         mcmapfiles,
+                         banddef,
+                         beam_arr,
+                         theoryfiles,
+                         workdir,
+                         simbeam_arr=sim_beam_arr,
+                         setdef=setdef,
+                         setdef_mc1=setdef_mc1,
+                         setdef_mc2=setdef_mc2,
+                         do_window_func=True, 
+                         lmax=lmax,
+#                         cl2dl=True,
+                         nside=nside,
+                         kmask=None,
+                         mask=mask,
+                         kernel_file =kernel_file,
+                         #sim_kernel_file=sim_kernel_file,
+                         resume=True, 
+                         checkpoint=True
+                       )
+    with open(file_out,'wb') as fp:
+        pkl.dump(output,fp)
+    with open(file_out_small,'wb') as fp:
+        pkl.dump(end_to_end.trim_end_to_end_output(output),fp)
+
+
+
+if __name__ == "__main__" and ENDBIG == True:
+    #pdb.set_trace() #warning haven't updated to latest SHTs, etc.
+    lmax = 13000
+    nside= 8192
+    banddef = np.arange(0,lmax,500)
+    #banddef = np.asarray([0,1000,1500,2000,2200,2500,2800,3100,3400,3700,4000,4400,4800,5200,5700,6200,6800,7400,8000,9000,10000,11000,12000,13000])
+
+    #change for testing
+    #setdef_mc1, setdef_mc2 = create_sim_setdefs(100,3)
+    setdef_mc1, setdef_mc2 = create_sim_setdefs(100,3)
+
+    setdef = np.zeros([200,3],dtype=np.int32)
+    setdef[:,0]=np.arange(200,dtype=np.int32)
+    setdef[:,1]=np.arange(200,dtype=np.int32)+200
+    setdef[:,2]=np.arange(200,dtype=np.int32)+400
+    #nsets   = setdef.shape[1] #nfreq
+    #setsize = setdef.shape[0] #nbundles
+    
+    #note beam is 90, 150, 220, so everything else needs to be too (or change beam array ordering)
+    beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
+    sim_beam_arr= beam_arr.copy()
+    #real data also has PWF (sims created at 8192)
+    blmax=int(beam_arr[-1,0]+0.001)
+    pwf = hp.pixwin(nside,lmax = blmax)
+    beam_arr[:,1] *= pwf
+    beam_arr[:,2] *= pwf
+    beam_arr[:,3] *= pwf
+        
+    kernel_file = '/sptlocal/user/creichardt/mll_dl_0p4medwt_6mJy150ghzv2_13000.npz'
+#/sptlocal/user/creichardt/mll_dl_13000.npz'
+    #sim_kernel_file = '/sptlocal/user/creichardt/mll_dl_13000.npz'
+    sim_kernel_file=None
+
+    #workdir = '/sptlocal/user/creichardt/xspec_2022/'
+
+    workdir = '/big_scratch/cr/xspec_2022/'
+    os.makedirs(workdir,exist_ok=True)
+    file_out = workdir + 'spectrum500.pkl'
+    file_out_small = workdir + 'spectrum500_small.pkl'
     
     #mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
     #mask = np.load(mask_file)
