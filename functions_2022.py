@@ -872,10 +872,9 @@ if __name__ == "__main__" and ENDBIG == True:
     #setdef_mc1, setdef_mc2 = create_sim_setdefs(100,3)
     setdef_mc1, setdef_mc2 = create_sim_setdefs(100,3)
 
-    setdef = np.zeros([200,3],dtype=np.int32)
-    setdef[:,0]=np.arange(200,dtype=np.int32)
-    setdef[:,1]=np.arange(200,dtype=np.int32)+200
-    setdef[:,2]=np.arange(200,dtype=np.int32)+400
+    
+    #setdef[:,1]=np.arange(200,dtype=np.int32)+200
+    #setdef[:,2]=np.arange(200,dtype=np.int32)+400
     #nsets   = setdef.shape[1] #nfreq
     #setsize = setdef.shape[0] #nbundles
     
@@ -898,8 +897,7 @@ if __name__ == "__main__" and ENDBIG == True:
 
     workdir = '/big_scratch/cr/xspec_2022/'
     os.makedirs(workdir,exist_ok=True)
-    file_out = workdir + 'spectrum500.pkl'
-    file_out_small = workdir + 'spectrum500_small.pkl'
+    
     
     #mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
     #mask = np.load(mask_file)
@@ -928,17 +926,28 @@ if __name__ == "__main__" and ENDBIG == True:
     #dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
     #mcmapfiles = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
     
+    setdef = np.zeros([200,1],dtype=np.int32)
+    i=0
+    setdef[:,0]=np.arange(200,dtype=np.int32)+i*200
+    ii=[0,i+1]
+    this_beam_arr = beam_arr[:,ii]
+    this_sim_beam_arr = sim_beam_arr[:,ii]
+    this_setdef_mc1 = setdef_mc1[:,i]
+    this_setdef_mc2 = setdef_mc2[:,i]
+    this_theory_files = theoryfiles[i]
+    file_out = workdir + 'spectrum500_90.pkl'
+    file_out_small = workdir + 'spectrum500_90_small.pkl'
     print('lmax of {}'.format(lmax))
     output = end_to_end.end_to_end( mapfiles,
                          mcmapfiles,
                          banddef,
-                         beam_arr,
-                         theoryfiles,
+                         this_beam_arr,
+                         this_theoryfiles,
                          workdir,
-                         simbeam_arr=sim_beam_arr,
+                         simbeam_arr=this_sim_beam_arr,
                          setdef=setdef,
-                         setdef_mc1=setdef_mc1,
-                         setdef_mc2=setdef_mc2,
+                         setdef_mc1=this_setdef_mc1,
+                         setdef_mc2=this_setdef_mc2,
                          do_window_func=True, 
                          lmax=lmax,
 #                         cl2dl=True,
