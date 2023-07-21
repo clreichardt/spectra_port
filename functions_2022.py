@@ -1173,7 +1173,7 @@ if __name__ == "__main__" and NULLLR == True:
     mapfiles = create_real_file_list('/sptgrid/analysis/highell_TT_19-20/v5/obs_shts/bundle_',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
     
     spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
-                                            lmax=13000,
+                                            lmax=lmax,
                                             resume=True,
                                             basedir=workdir,
                                             persistdir=workdir,
@@ -1185,10 +1185,9 @@ if __name__ == "__main__" and NULLLR == True:
     with open(file_out,'wb') as fp:
         pkl.dump(spectrum,fp)
         del spectrum
-    os.system('rm '+workdir+'shts_processed.bin')
-    os.system('ln -s /big_scratch/pc/lr_null/sht_lr_150.bin /big_scratch/cr/xspec_2022/datalr/shts_processed.bin')
+    setdef[:,0] += 200
     spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
-                                            lmax=13000,
+                                            lmax=lmax,
                                             resume=True,
                                             basedir=workdir,
                                             persistdir=workdir,
@@ -1200,10 +1199,9 @@ if __name__ == "__main__" and NULLLR == True:
     with open(file_out,'wb') as fp:
         pkl.dump(spectrum,fp)
         del spectrum
-    os.system('rm /big_scratch/cr/xspec_2022/datalr/shts_processed.bin')
-    os.system('ln -s /big_scratch/pc/lr_null/sht_lr_220.bin /big_scratch/cr/xspec_2022/datalr/shts_processed.bin')
+    setdef[:,0] += 200
     spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
-                                            lmax=13000,
+                                            lmax=lmax,
                                             resume=True,
                                             basedir=workdir,
                                             persistdir=workdir,

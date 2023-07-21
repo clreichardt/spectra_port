@@ -80,6 +80,10 @@ if __name__ == '__main__':
     binned = [ dir + 'spectrum90_nullbins.pkl', dir + 'spectrum150_nullbins.pkl', dir + 'spectrum220_nullbins.pkl']
 
 
+    dlfile='/big_scratch/cr/xspec_2022/spectrum_small.pkl'
+    with open(dlfile,'rb') as fp:
+        spec  = pkl.load(fp)
+
     endfile = '/big_scratch/cr/xspec_2022/spectrum_small.pkl'
     covfile = '/big_scratch/cr/xspec_2022/covariance.pkl'
     '''
@@ -114,7 +118,8 @@ if __name__ == '__main__':
         covcov = pkl.load(fp)
         
     ellcov = utils.band_centers(endend['banddef'])
-
+    
+    print('doing theory')
 
     cmbfile = '/home/creichardt/cmb_models/plik_plus_r0p01_highell_lensedtotCls_l25000.txt'
     dls = np.loadtxt(cmbfile)
@@ -151,7 +156,7 @@ if __name__ == '__main__':
     theory90_dl50  = theory_dls[0,:]
     theory150_dl50 = theory_dls[3,:]
     theory220_dl50 = theory_dls[5,:]
-    
+    print('doing rebin theory')
     theory90_dl500  = rebin_spec(theory90_dl50,  dlnull//dlspec)[imin_dl500:imax_dl500] 
     theory150_dl500 = rebin_spec(theory150_dl50, dlnull//dlspec)[imin_dl500:imax_dl500] 
     theory220_dl500 = rebin_spec(theory220_dl50, dlnull//dlspec)[imin_dl500:imax_dl500] 
@@ -164,8 +169,9 @@ if __name__ == '__main__':
     sv150_dl50 = np.sqrt(sv[3*nlc:4*nlc])
     sv220_dl50 = np.sqrt(sv[5*nlc:6*nlc])
 
-    allowed_SV = 0.03
-    
+    allowed_SV = 0.04
+    print('Allowed SV is ',allowed_SV)
+
     sv90_dl500  = allowed_SV*rebin_err(sv90_dl50,dlnull//dlspec)[imin_dl500:imax_dl500]
     sv150_dl500 = allowed_SV*rebin_err(sv150_dl50,dlnull//dlspec)[imin_dl500:imax_dl500]
     sv220_dl500 = allowed_SV*rebin_err(sv220_dl50,dlnull//dlspec)[imin_dl500:imax_dl500]
@@ -173,58 +179,59 @@ if __name__ == '__main__':
     calibration_factors = np.asarray([ (0.9087)**-0.5, (0.9909)**-0.5, (0.9744)**-0.5 ])
     calibration_factors *= 1e3 
 
-    print('still need to iject Tf')
+    print('loading nulls')
 
     with open(nulls[0],'rb') as fp:
         n90 = pkl.load(fp)
-    null90 = n90.spectrum[imin_dl500:imax_dl500] * calibration_factors[0]**2
+    null90 = n90.spectrum[imin_dl500:imax_dl500,0] * calibration_factors[0]**2
     err90 = (np.sqrt(np.diag(n90.est1_cov))* calibration_factors[0]**2)[imin_dl500:imax_dl500]
     
     with open(nulls[1],'rb') as fp:
         n150 = pkl.load(fp)
-    null150 = n150.spectrum[imin_dl500:imax_dl500]* calibration_factors[1]**2
+    null150 = n150.spectrum[imin_dl500:imax_dl500,0]* calibration_factors[1]**2
     err150 = (np.sqrt(np.diag(n150.est1_cov))* calibration_factors[1]**2)[imin_dl500:imax_dl500]
     
     with open(nulls[2],'rb') as fp:
         n220 = pkl.load(fp)
-    null220 = n220.spectrum[imin_dl500:imax_dl500]* calibration_factors[2]**2
+    null220 = n220.spectrum[imin_dl500:imax_dl500,0]* calibration_factors[2]**2
     err220 = (np.sqrt(np.diag(n220.est1_cov))* calibration_factors[2]**2)[imin_dl500:imax_dl500]
 
-
+    print('loading binned for Tf')
     with open(binned[0],'rb') as fp:
         tmp = pkl.load(fp)
-    s90 = tmp.spectrum[imin_dl500:imax_dl500] * calibration_factors[0]**2
+    s90 = tmp.spectrum[imin_dl500:imax_dl500,0] * calibration_factors[0]**2
     with open(binned[1],'rb') as fp:
         tmp = pkl.load(fp)
-    s150 = tmp.spectrum[imin_dl500:imax_dl500] * calibration_factors[1]**2
+    s150 = tmp.spectrum[imin_dl500:imax_dl500,0] * calibration_factors[1]**2
     with open(binned[2],'rb') as fp:
         tmp = pkl.load(fp)
-    s220 = tmp.spectrum[imin_dl500:imax_dl500] * calibration_factors[2]**2
+    s220 = tmp.spectrum[imin_dl500:imax_dl500,0] * calibration_factors[2]**2
+    
     
     tf_90 = theory90_dl500 / s90
     tf_150 = theory150_dl500 / s150
     tf_220 = theory220_dl500 / s220
-    
-    null90  *= tf_90
-    null150 *= tf_150
-    null220 *= tf_220
+    #pdb.set_trace()
+    cnull90  = tf_90  * null90
+    cnull150 = tf_150 * null150
+    cnull220 = tf_220 * null220
 
-    err90  *= tf_90
-    err150 *= tf_150
-    err220 *= tf_220
+    cerr90  = tf_90  * err90
+    cerr150 = tf_150 * err150
+    cerr220 = tf_220 * err220
 
-    comb_err90  = (err90  + sv90_dl500 )
-    comb_err150 = (err150 + sv150_dl500)
-    comb_err220 = (err220 + sv220_dl500)
+    comb_err90  = (cerr90  + sv90_dl500 )
+    comb_err150 = (cerr150 + sv150_dl500)
+    comb_err220 = (cerr220 + sv220_dl500)
     
-    print('90s:',null90/comb_err90)
-    print('Chisq 90:',np.sum((null90/comb_err90)**2), ' dof: ', imax_dl500-imin_dl500)
+    print('90s:',cnull90/comb_err90)
+    print('Chisq 90:',np.sum((cnull90/comb_err90)**2), ' dof: ', imax_dl500-imin_dl500)
     
-    print('150s:',null150/comb_err150)
-    print('Chisq 150:',np.sum((null150/comb_err150)**2), ' dof: ', imax_dl500-imin_dl500)
+    print('150s:',cnull150/comb_err150)
+    print('Chisq 150:',np.sum((cnull150/comb_err150)**2), ' dof: ', imax_dl500-imin_dl500)
     
-    print('220s:',null220/comb_err220)
-    print('Chisq 220:',np.sum((null220/comb_err220)**2), ' dof: ', imax_dl500-imin_dl500)
+    print('220s:',cnull220/comb_err220)
+    print('Chisq 220:',np.sum((cnull220/comb_err220)**2), ' dof: ', imax_dl500-imin_dl500)
     pdb.set_trace()
     
 
