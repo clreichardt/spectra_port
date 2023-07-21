@@ -942,6 +942,8 @@ if __name__ == "__main__" and ENDBIG == True:
                          do_window_func=True, 
                          lmax=lmax,
 #                         cl2dl=True,
+                         mcstub='/mc500/',
+                         datastub='/data500/',
                          nside=nside,
                          kmask=None,
                          mask=mask,
