@@ -943,34 +943,115 @@ if __name__ == "__main__" and ENDBIG == True:
     file_out = workdir + 'spectrum500_90.pkl'
     file_out_small = workdir + 'spectrum500_90_small.pkl'
     print('lmax of {}'.format(lmax))
-    output = end_to_end.end_to_end( mapfiles,
-                         mcmapfiles,
-                         banddef,
-                         this_beam_arr,
-                         this_theory_files,
-                         workdir,
-                         simbeam_arr=this_sim_beam_arr,
-                         setdef=setdef,
-                         setdef_mc1=this_setdef_mc1,
-                         setdef_mc2=this_setdef_mc2,
-                         do_window_func=True, 
-                         lmax=lmax,
-#                         cl2dl=True,
-                         mcstub='/mc500/',
-                         datastub='/data500/',
-                         nside=nside,
-                         kmask=None,
-                         mask=mask,
-                         kernel_file =kernel_file,
-                         #sim_kernel_file=sim_kernel_file,
-                         resume=True, 
-                         checkpoint=True
-                       )
-    with open(file_out,'wb') as fp:
-        pkl.dump(output,fp)
-    with open(file_out_small,'wb') as fp:
-        pkl.dump(end_to_end.trim_end_to_end_output(output),fp)
+    if False:
+        output = end_to_end.end_to_end( mapfiles,
+                            mcmapfiles,
+                            banddef,
+                            this_beam_arr,
+                            this_theory_files,
+                            workdir,
+                            simbeam_arr=this_sim_beam_arr,
+                            setdef=setdef,
+                            setdef_mc1=this_setdef_mc1,
+                            setdef_mc2=this_setdef_mc2,
+                            do_window_func=True, 
+                            lmax=lmax,
+    #                         cl2dl=True,
+                            mcstub='/mc500/',
+                            datastub='/data500/',
+                            nside=nside,
+                            kmask=None,
+                            mask=mask,
+                            kernel_file =kernel_file,
+                            #sim_kernel_file=sim_kernel_file,
+                            resume=True, 
+                            checkpoint=True
+                        )
+        with open(file_out,'wb') as fp:
+            pkl.dump(output,fp)
+        with open(file_out_small,'wb') as fp:
+            pkl.dump(end_to_end.trim_end_to_end_output(output),fp)
 
+
+    i=1
+    setdef[:,0]=np.arange(200,dtype=np.int32)+i*200
+    ii=[0,i+1]
+    this_beam_arr = beam_arr[:,ii]
+    this_sim_beam_arr = sim_beam_arr[:,ii]
+    this_setdef_mc1 = setdef_mc1[:,i].reshape([-1,1])
+    this_setdef_mc2 = setdef_mc2[:,i].reshape([-1,1])
+    this_theory_files = np.asarray([theoryfiles[i]])
+    file_out = workdir + 'spectrum500_150.pkl'
+    file_out_small = workdir + 'spectrum500_150_small.pkl'
+    print('lmax of {}'.format(lmax))
+    if True:
+        output = end_to_end.end_to_end( mapfiles,
+                            mcmapfiles,
+                            banddef,
+                            this_beam_arr,
+                            this_theory_files,
+                            workdir,
+                            simbeam_arr=this_sim_beam_arr,
+                            setdef=setdef,
+                            setdef_mc1=this_setdef_mc1,
+                            setdef_mc2=this_setdef_mc2,
+                            do_window_func=False, 
+                            lmax=lmax,
+    #                         cl2dl=True,
+                            mcstub='/mc500_150/',
+                            datastub='/data500_150/',
+                            nside=nside,
+                            kmask=None,
+                            mask=mask,
+                            kernel_file =kernel_file,
+                            #sim_kernel_file=sim_kernel_file,
+                            resume=True, 
+                            checkpoint=True
+                        )
+        with open(file_out,'wb') as fp:
+            pkl.dump(output,fp)
+        with open(file_out_small,'wb') as fp:
+            pkl.dump(end_to_end.trim_end_to_end_output(output),fp)
+            
+    i=2
+    setdef[:,0]=np.arange(200,dtype=np.int32)+i*200
+    ii=[0,i+1]
+    this_beam_arr = beam_arr[:,ii]
+    this_sim_beam_arr = sim_beam_arr[:,ii]
+    this_setdef_mc1 = setdef_mc1[:,i].reshape([-1,1])
+    this_setdef_mc2 = setdef_mc2[:,i].reshape([-1,1])
+    this_theory_files = np.asarray([theoryfiles[i]])
+    file_out = workdir + 'spectrum500_220.pkl'
+    file_out_small = workdir + 'spectrum500_220_small.pkl'
+    print('lmax of {}'.format(lmax))
+    if True:
+        output = end_to_end.end_to_end( mapfiles,
+                            mcmapfiles,
+                            banddef,
+                            this_beam_arr,
+                            this_theory_files,
+                            workdir,
+                            simbeam_arr=this_sim_beam_arr,
+                            setdef=setdef,
+                            setdef_mc1=this_setdef_mc1,
+                            setdef_mc2=this_setdef_mc2,
+                            do_window_func=False, 
+                            lmax=lmax,
+    #                         cl2dl=True,
+                            mcstub='/mc500_220/',
+                            datastub='/data500_220/',
+                            nside=nside,
+                            kmask=None,
+                            mask=mask,
+                            kernel_file =kernel_file,
+                            #sim_kernel_file=sim_kernel_file,
+                            resume=True, 
+                            checkpoint=True
+                        )
+        with open(file_out,'wb') as fp:
+            pkl.dump(output,fp)
+        with open(file_out_small,'wb') as fp:
+            pkl.dump(end_to_end.trim_end_to_end_output(output),fp)
 
 if __name__ == "__main__" and ENDTEST == True:
     #pdb.set_trace() #warning haven't updated to latest SHTs, etc.
