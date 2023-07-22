@@ -110,7 +110,7 @@ def reformat_multifield_shts(shtfilelist, processedshtfilebase,
     assert nout == 4 # won't gaurantee checked for general case  
 
     if ram_limit is None:
-        ram_limit = 16 * 2**30 # 16 GB
+        ram_limit = 40 * 2**30 # 16 GB
 
     # number of bytes in a Dcomplex: 16
     # number of arrays we need to make to do this efficiently: 6 or less
@@ -214,7 +214,7 @@ def reformat_shts(shtfilelist, processedshtfile,
     Output ordering is expected to 
     '''
     if ram_limit is None:
-        ram_limit = 16 * 2**30 # 16 GB
+        ram_limit = 32 * 2**30 # 16 GB
 
     # number of bytes in a Dcomplex: 16
     # number of arrays we need to make to do this efficiently: 6 or less
@@ -320,7 +320,7 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
     Output ordering is expected to 
     '''
     if ram_limit is None:
-        ram_limit = 16 * 2**30 # 16 GB
+        ram_limit = 32 * 2**30 # 16 GB
 
     # number of bytes in a Dcomplex: 16
     # number of arrays we need to make to do this efficiently: 6 or less
@@ -557,7 +557,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
     ;; Step 2 (this function):  average all the bands to create binned x-spectra
     '''
     if ram_limit is None:
-        ram_limit = 16 * 2**30 # default limit is 64 GB
+        ram_limit = 40 * 2**30 # default limit is 64 GB
 
 
     # Simplifying assumption axb == (a^c b + b^c a)
@@ -703,8 +703,9 @@ def take_all_sim_cross_spectra( processedshtfile, lmax,
     ;; Step 2 (this function):  average all the bands to create binned x-spectra
     ;; this assumes sims are created with two bundles
     '''
+
     if ram_limit is None:
-        ram_limit = 16 * 2**30 # default limit is 32 GB
+        ram_limit = 40 * 2**30 # default limit is 32 GB
 
 
     # Simplifying assumption axb == (a^c b + b^c a)
@@ -938,7 +939,7 @@ class unbiased_multispec:
                  map_key = 'T', #where to fetch maps from
                  skipcov=False, #don't calculate covariances
                  # Run time processing flags ################################################
-                 ramlimit=32 * 2**30, # optional -- set to change default RAM limit from 64gb
+                 ramlimit=40 * 2**30, # optional -- set to change default RAM limit from 64gb
                  resume=True, #optional -- will use existing files if true    
                  basedir=None, # strongly suggested. defaults to current directory and can use a lot of disk space
                  persistdir=None, # optional - can be unset. will create a temp directory within basedir

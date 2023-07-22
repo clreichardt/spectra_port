@@ -15,6 +15,8 @@ import pickle as pkl
 import pdb
 import time
 
+print('what')
+
 PREPCAL= False
 PREP= False
 PREPLR= False
@@ -862,10 +864,11 @@ if __name__ == "__main__" and END == True:
 
 
 if __name__ == "__main__" and ENDBIG == True:
+    print('trying big bins')
     #pdb.set_trace() #warning haven't updated to latest SHTs, etc.
     lmax = 13000
     nside= 8192
-    banddef = np.arange(0,lmax,500)
+    banddef = np.arange(0,lmax-1000,500)
     #banddef = np.asarray([0,1000,1500,2000,2200,2500,2800,3100,3400,3700,4000,4400,4800,5200,5700,6200,6800,7400,8000,9000,10000,11000,12000,13000])
 
     #change for testing
@@ -901,6 +904,7 @@ if __name__ == "__main__" and ENDBIG == True:
     
     #mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
     #mask = np.load(mask_file)
+    print('mask load')
     mask_file = '/sptlocal/user/creichardt/hiell2022/mask_0p4medwt_6mJy150ghzv2.pkl'
     with open(mask_file,'rb') as fp:
         mask  = pkl.load(fp)
@@ -914,7 +918,7 @@ if __name__ == "__main__" and ENDBIG == True:
                    '/sptlocal/user/creichardt/hiell2022/sim_field_dls_150ghz.txt',
                    '/sptlocal/user/creichardt/hiell2022/sim_field_dls_220ghz.txt']
 
-    
+    print('creating real')
     dir='/sptgrid/analysis/highell_TT_19-20/v5/obs_shts/'
     mapfiles = create_real_file_list_v5(dir,['90','150','220'],nbundle=200)
 
@@ -933,9 +937,9 @@ if __name__ == "__main__" and ENDBIG == True:
     ii=[0,i+1]
     this_beam_arr = beam_arr[:,ii]
     this_sim_beam_arr = sim_beam_arr[:,ii]
-    this_setdef_mc1 = setdef_mc1[:,i]
-    this_setdef_mc2 = setdef_mc2[:,i]
-    this_theory_files = theoryfiles[i]
+    this_setdef_mc1 = setdef_mc1[:,i].reshape([-1,1])
+    this_setdef_mc2 = setdef_mc2[:,i].reshape([-1,1])
+    this_theory_files = np.asarray([theoryfiles[i]])
     file_out = workdir + 'spectrum500_90.pkl'
     file_out_small = workdir + 'spectrum500_90_small.pkl'
     print('lmax of {}'.format(lmax))
@@ -943,7 +947,7 @@ if __name__ == "__main__" and ENDBIG == True:
                          mcmapfiles,
                          banddef,
                          this_beam_arr,
-                         this_theoryfiles,
+                         this_theory_files,
                          workdir,
                          simbeam_arr=this_sim_beam_arr,
                          setdef=setdef,

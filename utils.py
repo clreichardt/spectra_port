@@ -4,7 +4,7 @@ os.environ['OMP_NUM_THREADS'] = "6"
 import numpy as np
 # from spt3g import core
 import pdb
-import healpy as hp
+#import healpy as hp
 
 def quickplot(tmap,max=0.5):
     hp.visufunc.cartview(tmap,min=-1*max,max=max,latra=[-73,-38],lonra=[-55,55])
