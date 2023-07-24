@@ -768,7 +768,7 @@ def take_all_cross_spectra_lowmem( processedshtfile, lmax,
         
         if nn > mmax:
             mmax = nn
-        print(i,istop,mmax)
+        print(i,istop,nn,mmax)
         i=istop
     print("Memory limit on nmodes of {}, actual size requested is {}".format(max_nmodes,mmax))
     pdb.set_trace()
