@@ -744,8 +744,8 @@ def take_all_cross_spectra_lowmem( processedshtfile, lmax,
     #so first bin goes 1 - banddef[1]
     # second bin goes banddef[1]+1 - banddef[2], etc
     band_start_idx = get_first_index_ell(banddef+1)
-    split_band = np.zeros(nband,dtype=bool)
-    splits = np.ones(nband,dtype=np.int32)
+    split_band = np.zeros(nbands,dtype=bool)
+    splits = np.ones(nbands,dtype=np.int32)
     #code=reverse_linefeed_code()
     mmax = -1
     i=0 # i is the last bin to have finished. initially 0
@@ -768,6 +768,7 @@ def take_all_cross_spectra_lowmem( processedshtfile, lmax,
         
         if nn > mmax:
             mmax = nn
+        print(i,istop,mmax)
         i=istop
     print("Memory limit on nmodes of {}, actual size requested is {}".format(max_nmodes,mmax))
     pdb.set_trace()
