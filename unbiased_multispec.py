@@ -692,6 +692,12 @@ def take_all_cross_spectra( processedshtfile, lmax,
 def take_all_cross_spectra_lowmem( processedshtfile, lmax,
                             setdef, banddef, ram_limit=None, auto = False,nshts=None,kmask_on_the_fly=None, kmask_on_the_fly_ranges=None):
     '''
+    This is the beginning of a version of take_all_cross_spectra that will allow smaller than a single ell-bin fRAM usage. 
+    ie loading portions of an ell-bin, and combining the portions together. 
+    This should be doable with small changes by looping over loading subsets of a bin.
+    However, I dropped it before it ocmpletes. Currently it just checks if any bins should be split up (and this isn't well-tested)
+    
+    
     Returns set of all x-spectra, binned'
     ;; Step 1, copy all of the fft files and apply scalings masks etc
 
