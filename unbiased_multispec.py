@@ -548,7 +548,9 @@ def load_cross_spectra_data_from_disk_in_place(shtfile,data, startsht,stopsht, n
     return data
 
 def take_all_cross_spectra( processedshtfile, lmax,
-                            setdef, banddef, ram_limit=None, auto = False,nshts=None,kmask_on_the_fly=None, kmask_on_the_fly_ranges=None):
+                            setdef, banddef, ram_limit=None, auto = False,nshts=None,kmask_on_the_fly=None, 
+                            kmask_on_the_fly_ranges=None,
+                            splitband=False):
     '''
     Returns set of all x-spectra, binned'
     ;; Step 1, copy all of the fft files and apply scalings masks etc
@@ -667,7 +669,12 @@ def take_all_cross_spectra( processedshtfile, lmax,
                 for k in range(j, nsets):
                     if not auto:
 
-                        tmpresult  = np.real(np.matmul(banddata[revsetdef[:,j],:],np.conj(banddata[revsetdef[:,k],:]).T)) #need to check dims -- intended to end up for 3 freqs with 3x3 matrix
+                        if splitband:
+                            n2 = nmodes//2
+                            tmpresult  = np.real(np.matmul(banddata[revsetdef[:,j],:nn],np.conj(banddata[revsetdef[:,k],:nn]).T)) #need to check dims -- intended to end up for 3 freqs with 3x3 matrix
+                            tmpresult += np.real(np.matmul(banddata[revsetdef[:,j],nn:],np.conj(banddata[revsetdef[:,k],nn:]).T)) 
+                        else:
+                            tmpresult  = np.real(np.matmul(banddata[revsetdef[:,j],:],np.conj(banddata[revsetdef[:,k],:]).T)) #need to check dims -- intended to end up for 3 freqs with 3x3 matrix
 
                         tmpresult += tmpresult.T # imposing the ab + ba condition
                         tmpresult /= (2*nmodes)
@@ -680,7 +687,14 @@ def take_all_cross_spectra( processedshtfile, lmax,
                             a+=rowlength
                     else:
                         idx=np.arange(setsize,dtype=np.int)
-                        tmpresult=np.sum(np.real(banddata[revsetdef[:, j],:]*np.conj(banddata[revsetdef[:, k],:])), 1,dtype=np.float64) / (nmodes) # had been in flatsky: *reso^2*winsize^2)
+                        
+                        if splitband:
+                            n2 = nmodes//2
+                            tmpresult=np.sum(np.real(banddata[revsetdef[:, j],:nn]*np.conj(banddata[revsetdef[:, k],:nn])), 1,dtype=np.float64) 
+                            tmpresult+=np.sum(np.real(banddata[revsetdef[:, j],nn:]*np.conj(banddata[revsetdef[:, k],nn:])), 1,dtype=np.float64) 
+                            tmpresult /= (nmodes)
+                        else:
+                            tmpresult=np.sum(np.real(banddata[revsetdef[:, j],:]*np.conj(banddata[revsetdef[:, k],:])), 1,dtype=np.float64) / (nmodes) # had been in flatsky: *reso^2*winsize^2)
                         allspectra_out[iprime, spectrum_idx, :]=tmpresult.astype(np.float32)
                     spectrum_idx+=1
                     #           pdb.set_trace()
@@ -1235,7 +1249,7 @@ class unbiased_multispec:
             allspectra, nmodes= take_all_cross_spectra( use_shtfile, self.lmax,
                                                         self.use_setdef, self.banddef,  ram_limit=self.ramlimit, auto = self.auto,
                                                         kmask_on_the_fly_ranges = kmask_on_the_fly_ranges, 
-                                                        kmask_on_the_fly = kmask_on_the_fly) #-> 'Returns set of all x-spectra, binned':
+                                                        kmask_on_the_fly = kmask_on_the_fly,splitband=True) #-> 'Returns set of all x-spectra, binned':
         else:
             allspectra, nmodes= take_all_sim_cross_spectra( use_shtfile, self.lmax,
                                                         self.use_setdef,self.banddef, setdef2=setdef2, ram_limit=self.ramlimit, auto = self.auto,
