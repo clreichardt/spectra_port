@@ -96,7 +96,7 @@ def end_to_end(mapfiles,
     
     #plan to use wrapper to NaMaster, to be written
     
-    if False:
+    if True:
         info, kernel = utils.load_mll(kernel_file)
         if sim_kernel_file is not None:
             siminfo, simkernel = utils.load_mll(sim_kernel_file)
@@ -119,7 +119,7 @@ def end_to_end(mapfiles,
     # 2: Calculate spectra and covariances of monte-carlo sims
     #    This is done at both a fine ell-gridding for Tf, and broader binning that matches data
     ##################
-    if False:
+    if True:
         newtime=time.time()
         print('run sim unbiased: last step took {:.0f}'.format(newtime-lasttime))
         lasttime=newtime
@@ -307,7 +307,7 @@ def end_to_end(mapfiles,
     inv_sim_super_kernel= np.zeros([nspectra, nbands, nspectra, nbands],dtype=np.float64)
     iskips = np.zeros(nspectra, dtype=np.int32)
     eskips = np.zeros(nspectra, dtype=np.int32)
-    pdb.set_trace()
+    #pdb.set_trace()
     for i in range(nspectra):
         print(i,kernel.shape)
         super_kernel[i,:,i,:]     = utils.rebin_coupling_matrix(kernel, ellkern, banddef, transferfunc=transfer[i,:], beamfunc = beams[i,:])
