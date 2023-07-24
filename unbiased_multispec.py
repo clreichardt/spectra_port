@@ -689,6 +689,160 @@ def take_all_cross_spectra( processedshtfile, lmax,
     gc.collect()
     return(allspectra_out, nmodes_out)
 
+def take_all_cross_spectra_lowmem( processedshtfile, lmax,
+                            setdef, banddef, ram_limit=None, auto = False,nshts=None,kmask_on_the_fly=None, kmask_on_the_fly_ranges=None):
+    '''
+    Returns set of all x-spectra, binned'
+    ;; Step 1, copy all of the fft files and apply scalings masks etc
+
+
+    ;; Step 2 (this function):  average all the bands to create binned x-spectra
+    '''
+    if ram_limit is None:
+        ram_limit = 40 * 2**30 # default limit is 64 GB
+
+
+    # Simplifying assumption axb == (a^c b + b^c a)
+    # assume do *not* do x-spectra between same observation
+    nsets   = setdef.shape[1] #nfreq
+    setsize = setdef.shape[0] #nbundles
+    nspectra=np.int((nsets*(nsets+1))/2 + 0.001)
+    print(nsets,setsize,nspectra)
+    if auto:
+        nrealizations=setsize
+    else:
+        nrealizations=np.int( (setsize*(setsize-1))/2 + 0.001)
+
+    nbands = banddef.shape[0]-1
+    if nshts is  None:
+        startsht = np.int(np.min(setdef)+0.001)
+        stopsht = np.int(np.max(setdef)+0.001)
+        nshts  = stopsht-startsht+1
+        revsetdef = setdef - startsht
+    else:
+        startsht=0
+        stopsht = nshts-1
+        revsetdef=setdef
+
+    npersht = healpy.sphtfunc.Alm.getsize(lmax)
+    print('check modes: {} {}'.format(lmax,npersht))
+    #pdb.set_trace()
+    allspectra_out = np.zeros([nbands,nspectra,nrealizations],dtype=np.float32)
+    nmodes_out     = np.zeros(nbands, dtype = np.int32)
+
+    tmpresult = np.zeros([setsize,setsize],dtype=np.float64)
+
+    # number of bytes in a Dcomplex: 16
+    # number of arrays we need to make to do this efficiently: 6 or less
+    # number of pixels in an fft: winsize^2
+    #ram_required=16*6*lmax**2
+    max_nmodes=ram_limit/nshts/12 #64 b complex - uses 8 bytes, and gave it an extra x1.5 for other arrays 
+
+    print('take_all bandefs',banddef[0],banddef[-1],lmax)
+    assert(banddef[0] == 0 and banddef[-1] <= lmax)
+    #assumes banddef[0]=0
+    #so first bin goes 1 - banddef[1]
+    # second bin goes banddef[1]+1 - banddef[2], etc
+    band_start_idx = get_first_index_ell(banddef+1)
+    split_band = np.zeros(nband,dtype=bool)
+    splits = np.ones(nband,dtype=np.int32)
+    #code=reverse_linefeed_code()
+    mmax = -1
+    i=0 # i is the last bin to have finished. initially 0
+    while (i < nbands):
+        #print(i,nbands)
+        istop = np.where((band_start_idx - band_start_idx[i]) < max_nmodes)[0][-1]
+        
+        if istop <= i:
+            split_band[i] = True
+            
+            istop = i+1
+            nn = (band_start_idx[istop]-band_start_idx[i])
+            split = int(np.ceil(nn/max_nmodes))
+            splits[i] = split
+            nn = int(np.ceil(nn/split))
+            print('Need to split band {} to fit RAM',i, ' splitting into {} parts',split)
+            #raise Exception("Insufficient ram for processing even a single bin")
+        else:
+            nn = band_start_idx[istop]-band_start_idx[i]
+        
+        if nn > mmax:
+            mmax = nn
+        i=istop
+    print("Memory limit on nmodes of {}, actual size requested is {}".format(max_nmodes,mmax))
+    pdb.set_trace()
+    nsht = stopsht - startsht + 1
+    banddata_big = np.zeros([nshts, mmax],dtype=AlmType)
+    
+    i=0 # i is the last bin to have finished. initially 0
+    while (i < nbands):
+        istop = np.where((band_start_idx - band_start_idx[i]) < max_nmodes)[0][-1] # get out of tuple, then take last elem of array
+
+        #if istop <= i:
+        #    pdb.set_trace()
+        #    raise Exception("Insufficient ram for processing even a single bin")
+
+        print('take_all_cross_spectra: loading bands {} {} of {}'.format(i,istop-1,nbands))
+        '''
+        # technical: delete the last iteration of banddata_big first
+        try:
+            del banddata_big
+        except:
+            pass
+        # get data for as many bins as will fit in our ramlimit
+
+       banddata_big=load_cross_spectra_data_from_disk(processedshtfile, 
+                                                       startsht, stopsht, 
+                                                       npersht,   
+                                                       band_start_idx[i],
+                                                       band_start_idx[istop]-1 )
+                                                       '''
+        load_cross_spectra_data_from_disk_in_place(processedshtfile, banddata_big,
+                                                       startsht, stopsht, 
+                                                       npersht,   
+                                                       band_start_idx[i],
+                                                       band_start_idx[istop]-1 )
+
+        if kmask_on_the_fly_ranges is not None:
+            nn = band_start_idx[istop] - band_start_idx[i]
+            for k in range(kmask_on_the_fly_ranges.shape[0]):
+                banddata_big[kmask_on_the_fly_ranges[k,0]:kmask_on_the_fly_ranges[k,1],:nn] *= kmask_on_the_fly[k,band_start_idx[i]:band_start_idx[istop]]
+        #process this data
+        for iprime in range(i, istop):
+            printinplace('processing band {}    '.format(iprime))
+                
+            nmodes=(band_start_idx[iprime+1]-band_start_idx[iprime])
+            nmodes_out[iprime]=nmodes
+            aidx=band_start_idx[iprime]-band_start_idx[i]
+            banddata=banddata_big[:,aidx:(aidx+nmodes)] # first index SHT; second index alm
+
+            spectrum_idx=0
+            for j in range(nsets):
+                for k in range(j, nsets):
+                    if not auto:
+
+                        tmpresult  = np.real(np.matmul(banddata[revsetdef[:,j],:],np.conj(banddata[revsetdef[:,k],:]).T)) #need to check dims -- intended to end up for 3 freqs with 3x3 matrix
+
+                        tmpresult += tmpresult.T # imposing the ab + ba condition
+                        tmpresult /= (2*nmodes)
+                        #it had a factor of 1/(reso**2 winsize**2) 
+                        # leaving this out for curved sky
+                        a=0
+                        for l in range(setsize-1):
+                            rowlength=setsize-l-1
+                            allspectra_out[iprime, spectrum_idx, a:(a+rowlength)]=tmpresult[l, l+1:setsize]
+                            a+=rowlength
+                    else:
+                        idx=np.arange(setsize,dtype=np.int)
+                        tmpresult=np.sum(np.real(banddata[revsetdef[:, j],:]*np.conj(banddata[revsetdef[:, k],:])), 1,dtype=np.float64) / (nmodes) # had been in flatsky: *reso^2*winsize^2)
+                        allspectra_out[iprime, spectrum_idx, :]=tmpresult.astype(np.float32)
+                    spectrum_idx+=1
+                    #           pdb.set_trace()
+        i=istop
+    del banddata_big
+    gc.collect()
+    return(allspectra_out, nmodes_out)
+
 
 def take_all_sim_cross_spectra( processedshtfile, lmax,
                             setdef1,  banddef, setdef2=None, ram_limit=None, auto=False,kmask_on_the_fly=None, kmask_on_the_fly_ranges=None):
@@ -936,7 +1090,7 @@ class unbiased_multispec:
                  map_key = 'T', #where to fetch maps from
                  skipcov=False, #don't calculate covariances
                  # Run time processing flags ################################################
-                 ramlimit=40 * 2**30, # optional -- set to change default RAM limit from 64gb
+                 ramlimit=20 * 2**30, # optional -- set to change default RAM limit from 64gb
                  resume=True, #optional -- will use existing files if true    
                  basedir=None, # strongly suggested. defaults to current directory and can use a lot of disk space
                  persistdir=None, # optional - can be unset. will create a temp directory within basedir
@@ -1069,7 +1223,7 @@ class unbiased_multispec:
         
         #figure out cross-spectra (or autospectra)
         if setdef2 is None:
-            allspectra, nmodes= take_all_cross_spectra( use_shtfile, self.lmax,
+            allspectra, nmodes= take_all_cross_spectra_lowmem( use_shtfile, self.lmax,
                                                         self.use_setdef, self.banddef,  ram_limit=self.ramlimit, auto = self.auto,
                                                         kmask_on_the_fly_ranges = kmask_on_the_fly_ranges, 
                                                         kmask_on_the_fly = kmask_on_the_fly) #-> 'Returns set of all x-spectra, binned':
