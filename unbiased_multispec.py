@@ -602,7 +602,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
     #so first bin goes 1 - banddef[1]
     # second bin goes banddef[1]+1 - banddef[2], etc
     band_start_idx = get_first_index_ell(banddef+1)
-
+    
     #code=reverse_linefeed_code()
     mmax = -1
     i=0 # i is the last bin to have finished. initially 0
@@ -616,7 +616,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
         if nn > mmax:
             mmax = nn
         i=istop
-    print("Memory limit on nmodes of {}, actual limit is {}".format(max_nmodes,mmax))
+    print("Memory limit on nmodes of {}, actual size requested is {}".format(max_nmodes,mmax))
     nsht = stopsht - startsht + 1
     banddata_big = np.zeros([nshts, mmax],dtype=AlmType)
     
@@ -661,9 +661,6 @@ def take_all_cross_spectra( processedshtfile, lmax,
             nmodes_out[iprime]=nmodes
             aidx=band_start_idx[iprime]-band_start_idx[i]
             banddata=banddata_big[:,aidx:(aidx+nmodes)] # first index SHT; second index alm
-
-
-
 
             spectrum_idx=0
             for j in range(nsets):
