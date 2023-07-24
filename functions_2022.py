@@ -984,7 +984,7 @@ if __name__ == "__main__" and ENDBIG == True:
     file_out = workdir + 'spectrum500_150.pkl'
     file_out_small = workdir + 'spectrum500_150_small.pkl'
     print('lmax of {}'.format(lmax))
-    if True:
+    if False:
         output = end_to_end.end_to_end( mapfiles,
                             mcmapfiles,
                             banddef,
