@@ -95,85 +95,87 @@ def end_to_end(mapfiles,
     #
     
     #plan to use wrapper to NaMaster, to be written
-    info, kernel = utils.load_mll(kernel_file)
-    if sim_kernel_file is not None:
-        siminfo, simkernel = utils.load_mll(sim_kernel_file)
-    else:
-        simkernel=kernel
-        siminfo=info
-    # dimensions --
-    # kernel[ell_out, ell_in]
-    #
-    banddef_fine = utils.bands_from_range(info)
-    ellkern = utils.band_centers(banddef_fine)
+    
+    if False:
+        info, kernel = utils.load_mll(kernel_file)
+        if sim_kernel_file is not None:
+            siminfo, simkernel = utils.load_mll(sim_kernel_file)
+        else:
+            simkernel=kernel
+            siminfo=info
+        # dimensions --
+        # kernel[ell_out, ell_in]
+        #
+        banddef_fine = utils.bands_from_range(info)
+        ellkern = utils.band_centers(banddef_fine)
 
-    #and store
-    output['info']=info
-    output['kernel']=kernel
-    output['ellkern']=ellkern
-    output['banddef_fine']=banddef_fine
+        #and store
+        output['info']=info
+        output['kernel']=kernel
+        output['ellkern']=ellkern
+        output['banddef_fine']=banddef_fine
 
     ##################
     # 2: Calculate spectra and covariances of monte-carlo sims
     #    This is done at both a fine ell-gridding for Tf, and broader binning that matches data
     ##################
-
-    newtime=time.time()
-    print('run sim unbiased: last step took {:.0f}'.format(newtime-lasttime))
-    lasttime=newtime
-        
-    mcdir = workdir + mcstub
-
-    try:
-        if not resume:
-            raise Exception("Bounce out")
-        with open(mcdir+'mc_spectrum.pkl', 'rb') as f:
-            mc_spectrum = pkl.load(f)
-    except:
-    # will used alm's in mcdir+'shts_processed.bin'
-        mc_spectrum      = spec.unbiased_multispec(mcmapfiles,mask,banddef,nside,
-                                                lmax=lmax,
-                                                resume=resume,
-                                                basedir=mcdir,
-                                                persistdir=mcdir,
-                                                setdef=setdef_mc1,
-                                                setdef2=setdef_mc2,
-                                                jackknife=False, auto=False,
-                                                kmask=kmask,
-                                                kmask_on_the_fly_ranges = kmask_on_the_fly_ranges, 
-                                                kmask_on_the_fly = kmask_on_the_fly,
-                                                weighted_average_for_kmask=weighted_average_for_kmask,
-                                                cmbweighting=True)
-        with open(mcdir+'mc_spectrum.pkl', 'wb') as f:
-            pkl.dump(mc_spectrum,f)
+    if False:
+        newtime=time.time()
+        print('run sim unbiased: last step took {:.0f}'.format(newtime-lasttime))
+        lasttime=newtime
             
-    #return
-            
-    try:
-        if not resume:
-            raise Exception("Bounce out")
-        with open(mcdir+'mc_spectrum_fine.pkl', 'rb') as f:
-            mc_spectrum_fine = pkl.load(f)
-    except:    
-        mc_spectrum_fine = spec.unbiased_multispec(mcmapfiles,mask,banddef_fine,nside,
-                                                lmax=lmax,
-                                                resume=True, #reuse the SHTs
-                                                basedir=mcdir,
-                                                persistdir=mcdir,
-                                                setdef=setdef_mc1,
-                                                setdef2=setdef_mc2,
-                                                jackknife=False, auto=False,
-                                                kmask=kmask,
-                                                kmask_on_the_fly_ranges = kmask_on_the_fly_ranges, 
-                                                kmask_on_the_fly = kmask_on_the_fly,
-                                                weighted_average_for_kmask=weighted_average_for_kmask,
-                                                skipcov=True,
-                                                cmbweighting=True)
-        with open(mcdir+'mc_spectrum_fine.pkl', 'wb') as f:
-            pkl.dump(mc_spectrum_fine,f)
+        mcdir = workdir + mcstub
 
-    output['mc_spectrum']=mc_spectrum
-    output['mc_spectrum_fine']=mc_spectrum_fine
+        try:
+            if not resume:
+                raise Exception("Bounce out")
+            with open(mcdir+'mc_spectrum.pkl', 'rb') as f:
+                mc_spectrum = pkl.load(f)
+        except:
+        # will used alm's in mcdir+'shts_processed.bin'
+            mc_spectrum      = spec.unbiased_multispec(mcmapfiles,mask,banddef,nside,
+                                                    lmax=lmax,
+                                                    resume=resume,
+                                                    basedir=mcdir,
+                                                    persistdir=mcdir,
+                                                    setdef=setdef_mc1,
+                                                    setdef2=setdef_mc2,
+                                                    jackknife=False, auto=False,
+                                                    kmask=kmask,
+                                                    kmask_on_the_fly_ranges = kmask_on_the_fly_ranges, 
+                                                    kmask_on_the_fly = kmask_on_the_fly,
+                                                    weighted_average_for_kmask=weighted_average_for_kmask,
+                                                    cmbweighting=True)
+            with open(mcdir+'mc_spectrum.pkl', 'wb') as f:
+                pkl.dump(mc_spectrum,f)
+                
+        #return
+            
+        try:
+            if not resume:
+                raise Exception("Bounce out")
+            with open(mcdir+'mc_spectrum_fine.pkl', 'rb') as f:
+                mc_spectrum_fine = pkl.load(f)
+        except:    
+            mc_spectrum_fine = spec.unbiased_multispec(mcmapfiles,mask,banddef_fine,nside,
+                                                    lmax=lmax,
+                                                    resume=True, #reuse the SHTs
+                                                    basedir=mcdir,
+                                                    persistdir=mcdir,
+                                                    setdef=setdef_mc1,
+                                                    setdef2=setdef_mc2,
+                                                    jackknife=False, auto=False,
+                                                    kmask=kmask,
+                                                    kmask_on_the_fly_ranges = kmask_on_the_fly_ranges, 
+                                                    kmask_on_the_fly = kmask_on_the_fly,
+                                                    weighted_average_for_kmask=weighted_average_for_kmask,
+                                                    skipcov=True,
+                                                    cmbweighting=True)
+            with open(mcdir+'mc_spectrum_fine.pkl', 'wb') as f:
+                pkl.dump(mc_spectrum_fine,f)
+
+        output['mc_spectrum']=mc_spectrum
+        output['mc_spectrum_fine']=mc_spectrum_fine
 
     ##################
     # 3: Calculate spectra and covariances of data
