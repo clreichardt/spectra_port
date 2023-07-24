@@ -1224,7 +1224,7 @@ class unbiased_multispec:
         
         #figure out cross-spectra (or autospectra)
         if setdef2 is None:
-            allspectra, nmodes= take_all_cross_spectra_lowmem( use_shtfile, self.lmax,
+            allspectra, nmodes= take_all_cross_spectra( use_shtfile, self.lmax,
                                                         self.use_setdef, self.banddef,  ram_limit=self.ramlimit, auto = self.auto,
                                                         kmask_on_the_fly_ranges = kmask_on_the_fly_ranges, 
                                                         kmask_on_the_fly = kmask_on_the_fly) #-> 'Returns set of all x-spectra, binned':
