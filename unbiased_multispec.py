@@ -588,7 +588,7 @@ def take_all_cross_spectra( processedshtfile, lmax,
     allspectra_out = np.zeros([nbands,nspectra,nrealizations],dtype=np.float32)
     nmodes_out     = np.zeros(nbands, dtype = np.int32)
 
-    tmpresult = np.zeros([setsize,setsize],dtype=np.float64)
+    #tmpresult = np.zeros([setsize,setsize],dtype=np.float64)
 
     # number of bytes in a Dcomplex: 16
     # number of arrays we need to make to do this efficiently: 6 or less
@@ -684,6 +684,8 @@ def take_all_cross_spectra( processedshtfile, lmax,
                         allspectra_out[iprime, spectrum_idx, :]=tmpresult.astype(np.float32)
                     spectrum_idx+=1
                     #           pdb.set_trace()
+                    del tmpresult
+                    gc.collect()
         i=istop
     del banddata_big
     gc.collect()
