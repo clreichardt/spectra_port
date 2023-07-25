@@ -106,7 +106,7 @@ if __name__ == '__main__':
         nbands=23
         pdb.set_trace()
         invkernmat =  spec['invkernmat']
-        invkernmattr =  spec['invkernmattr']
+        invkernmattr =  spec['invkernmatt']
         Dl12 = np.reshape(np.matmul(invkernmat, np.reshape(pseudo12.T,[nspectra*nbands])),[nspectra,nbands])
         Dllr = np.reshape(np.matmul(invkernmat, np.reshape(pseudolr.T,[nspectra*nbands])),[nspectra,nbands])
 
