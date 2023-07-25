@@ -78,6 +78,7 @@ if __name__ == '__main__':
     print('loading nulls')
 
     for i in range(3):
+        print('on ',freqs[i])
         with open(binned[i],'rb') as fp:
             spec= pkl.load(fp)
         with open(null12s[i],'rb') as fp:
@@ -103,6 +104,7 @@ if __name__ == '__main__':
         #iskips was 0; eskips was 23
         nspectra=1
         nbands=23
+        pdb.set_trace()
         invkernmat =  spec['invkernmat']
         invkernmattr =  spec['invkernmattr']
         Dl12 = np.reshape(np.matmul(invkernmat, np.reshape(pseudo12.T,[nspectra*nbands])),[nspectra,nbands])
