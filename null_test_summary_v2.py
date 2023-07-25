@@ -86,24 +86,44 @@ if __name__ == '__main__':
             nlr= pkl.load(fp)
         cal = calibration_factors[i]**2
 
-        pseudo_scov = spec['mc_spectrum'].cov
+        #pseudo_scov = spec['mc_spectrum'].cov #23x23 matrix
         pseudo_dcov12 = n12.est1_cov * cal**2
         pseudo_dcovlr = nlr.est1_cov * cal**2
 
+        Dl = spec['spectrum'].squeeze() * cal
         pseudo12 = n12.spectrum * cal
         pseudolr = nlr.spectrum * cal
 
-        #choose ranges
+        #pdb.set_trace()
+        #choose ranges 
 
 
         #apply inverse kernel
+        #kernel starts as 1x23x1x23 matrix - can squeeze to 23x23
+        #iskips was 0; eskips was 23
+        nspectra=1
+        nbands=23
+        invkernmat =  spec['invkernmat']
+        invkernmattr =  spec['invkernmattr']
+        Dl12 = np.reshape(np.matmul(invkernmat, np.reshape(pseudo12.T,[nspectra*nbands])),[nspectra,nbands])
+        Dllr = np.reshape(np.matmul(invkernmat, np.reshape(pseudolr.T,[nspectra*nbands])),[nspectra,nbands])
 
+        sample_cov = spec['sample_cov']
+        serr = allowed_SV * np.sqrt(np.diag(sample_cov.squeeze()))
+        
+        dcov = np.reshape(np.transpose(np.reshape(pseudo_dcov12,[nbands,nspectra,nbands,nspectra]),[1,0,3,2]),[nbands*nspectra,nbands*nspectra])
+        meas_cov12 = np.reshape(np.matmul(np.matmul(invkernmat , dcov), invkernmattr),[nspectra,nbands,nspectra, nbands])
+        dcov = np.reshape(np.transpose(np.reshape(pseudo_dcovlr,[nbands,nspectra,nbands,nspectra]),[1,0,3,2]),[nbands*nspectra,nbands*nspectra])
+        meas_covlr = np.reshape(np.matmul(np.matmul(invkernmat , dcov), invkernmattr),[nspectra,nbands,nspectra, nbands])
+
+        derr12 = np.sqrt(np.diag(meas_cov12.squeeze()))
+        derrlr = np.sqrt(np.diag(meas_covlr.squeeze()))
         comb_err12 = derr12 + serr
         comb_errlr = derrlr + serr
 
         print(freqs[i])
-        print('Chisq 12:',np.sum((cnull12/comb_err12)**2), ' dof: ', imax_dl500-imin_dl500)
-        print('Chisq LR:',np.sum((cnulllr/comb_errlr)**2), ' dof: ', imax_dl500-imin_dl500)
+        print('Chisq 12:',np.sum((Dl12[imin_dl500:imax_dl500]/comb_err12[imin_dl500:imax_dl500])**2), ' dof: ', imax_dl500-imin_dl500)
+        print('Chisq LR:',np.sum((Dllr[imin_dl500:imax_dl500]/comb_errlr[imin_dl500:imax_dl500])**2), ' dof: ', imax_dl500-imin_dl500)
 
     pdb.set_trace()
     
