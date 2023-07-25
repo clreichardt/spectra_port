@@ -58,6 +58,7 @@ my_parser.add_argument('-pk', action='store_true',dest='pk')
 args = my_parser.parse_args()
 
 PREP=args.prep
+PREPLR=args.preplr
 PREPCAL=args.prepcal
 END=args.end
 ENDBIG=args.endbig
@@ -359,6 +360,48 @@ if __name__ == "__main__" and PREPCAL is True:
                            alm_key = '{}_alm',
                           )
 
+
+if __name__ == "__main__" and PREPLR is True:
+
+    workdir = '/big_scratch/cr/xspec_2022/'
+    #workdir = '/big_scratch/pc/xspec_2022/data/mask_v5/'
+    lmax = 13000
+    #dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.0_gaussian_inputs/'
+    dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.3_mask_0p4medwt_6mJy150ghzv2/'
+    #kmask = utils.flatten_kmask( np.load('/home/pc/hiell/k_weighing/w2s_150.npy'), lmax)
+#/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
+    # kmask = utils.flatten_kmask( np.load('/home/pc/hiell/k_weighing/w2s_150.npy'), lmax)
+
+    kmask=None
+
+
+
+        
+    print("Now real")
+    if True:
+    #    exit()
+        lmax=11500
+        if kmask is not None:
+            print("kmask mean {} std {}".format(np.mean(kmask),np.std(kmask)))
+        
+        dir='/sptgrid/analysis/highell_TT_19-20/v5/shts_230718/'
+        #        /sptgrid/analysis/highell_TT_19-20/v4/obs_shts_v2/'
+        #print("Warning -- only 150s for testing")
+        datashtfilelist = create_real_file_list(dir,stub='diiff_alm_bundle_',sfreqs=['90','150','220'],estub='GHz.npz',nbundle=200)
+        #datashtfilelist = create_real_file_list(dir,stub='bundle_',sfreqs=['150'],estub='GHz.npz',nbundle=200)
+        processedshtfile = workdir + '/data_v5_lr/shts_processed.bin'
+        os.makedirs(workdir,exist_ok=True)
+        os.makedirs(workdir+'/data_v5_lr/',exist_ok=True)
+        
+        spec.reformat_shts(datashtfilelist, processedshtfile,
+                           lmax,
+                           cmbweighting = True, 
+                           mask  = None,
+                           kmask = kmask,
+                           ell_reordering=None,
+                           no_reorder=False,
+                           ram_limit = None,
+                          ) 
 
 if __name__ == "__main__" and PREP is True:
     print("First sims")
