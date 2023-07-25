@@ -380,14 +380,14 @@ if __name__ == "__main__" and PREPLR is True:
     print("Now real")
     if True:
     #    exit()
-        lmax=11500
+        lmax=13000
         if kmask is not None:
             print("kmask mean {} std {}".format(np.mean(kmask),np.std(kmask)))
         
         dir='/sptgrid/analysis/highell_TT_19-20/v5/shts_230718/'
         #        /sptgrid/analysis/highell_TT_19-20/v4/obs_shts_v2/'
         #print("Warning -- only 150s for testing")
-        datashtfilelist = create_real_file_list(dir,stub='diiff_alm_bundle_',sfreqs=['90','150','220'],estub='GHz.npz',nbundle=200)
+        datashtfilelist = create_real_file_list(dir,stub='diff_alm_bundle_',sfreqs=['90','150','220'],estub='GHz.npz',nbundle=200)
         #datashtfilelist = create_real_file_list(dir,stub='bundle_',sfreqs=['150'],estub='GHz.npz',nbundle=200)
         processedshtfile = workdir + '/data_v5_lr/shts_processed.bin'
         os.makedirs(workdir,exist_ok=True)
