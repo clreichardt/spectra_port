@@ -1119,6 +1119,7 @@ class unbiased_multispec:
                  persistdir=None, # optional - can be unset. will create a temp directory within basedir
                  remove_temporary_files= False, # optional. Defaults to off (user has to do cleanup, but can restart runs later)
                  dont_store_large_inputs = True, # reduces size of object returned, at the cost of potentially less tracking
+                 splitband=False,
                  verbose = False ): #extra print statements
                 #maybe sometime I'll put in more input file arguments...                  
         '''
@@ -1249,7 +1250,7 @@ class unbiased_multispec:
             allspectra, nmodes= take_all_cross_spectra( use_shtfile, self.lmax,
                                                         self.use_setdef, self.banddef,  ram_limit=self.ramlimit, auto = self.auto,
                                                         kmask_on_the_fly_ranges = kmask_on_the_fly_ranges, 
-                                                        kmask_on_the_fly = kmask_on_the_fly,splitband=True) #-> 'Returns set of all x-spectra, binned':
+                                                        kmask_on_the_fly = kmask_on_the_fly,splitband=splitband) #-> 'Returns set of all x-spectra, binned':
         else:
             allspectra, nmodes= take_all_sim_cross_spectra( use_shtfile, self.lmax,
                                                         self.use_setdef,self.banddef, setdef2=setdef2, ram_limit=self.ramlimit, auto = self.auto,
