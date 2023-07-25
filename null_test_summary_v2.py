@@ -86,14 +86,15 @@ if __name__ == '__main__':
         with open(nulllrs[i],'rb') as fp:
             nlr= pkl.load(fp)
         cal = calibration_factors[i]**2
-
+        nspectra=1
+        nbands=23
         #pseudo_scov = spec['mc_spectrum'].cov #23x23 matrix
-        pseudo_dcov12 = n12.est1_cov * cal**2
-        pseudo_dcovlr = nlr.est1_cov * cal**2
+        pseudo_dcov12 = n12.est1_cov[:nspectra,:nspectra] * cal**2
+        pseudo_dcovlr = nlr.est1_cov[:nspectra,:nspectra]  * cal**2
 
         Dl = spec['spectrum'].squeeze() * cal
-        pseudo12 = n12.spectrum * cal
-        pseudolr = nlr.spectrum * cal
+        pseudo12 = n12.spectrum[:nspectra,0] * cal
+        pseudolr = nlr.spectrum[:nspectra,0] * cal
 
         #pdb.set_trace()
         #choose ranges 
@@ -102,9 +103,8 @@ if __name__ == '__main__':
         #apply inverse kernel
         #kernel starts as 1x23x1x23 matrix - can squeeze to 23x23
         #iskips was 0; eskips was 23
-        nspectra=1
-        nbands=23
-        pdb.set_trace()
+
+        #pdb.set_trace()
         invkernmat =  spec['invkernmat']
         invkernmattr =  spec['invkernmatt']
         Dl12 = np.reshape(np.matmul(invkernmat, np.reshape(pseudo12.T,[nspectra*nbands])),[nspectra,nbands])
