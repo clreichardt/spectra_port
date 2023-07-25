@@ -38,12 +38,12 @@ if __name__ == '__main__':
     nulllrs = [dir + 'data_v5_lr/spectrum90_lrnull.pkl', dir + 'data_v5_lr/spectrum150_lrnull.pkl', dir + 'data_v5_lr/spectrum220_lrnull.pkl']
     binned = [ dir + 'spectrum500_90_small.pkl', dir + 'spectrum500_150_small.pkl', dir + 'spectrum500_220_small.pkl']
 
-    allowed_SV = 0.04
+    allowed_SV = 0.15
     print('Allowed SV is ',allowed_SV)
 
     
     calibration_factors = np.asarray([ (0.9087)**-0.5, (0.9909)**-0.5, (0.9744)**-0.5 ])
-    calibration_factors *= 1e3 
+    calibration_factors *= 1e-3 
 
     '''
     Going to do a simplified transfer function correction here since only used in plotting. 
@@ -89,12 +89,12 @@ if __name__ == '__main__':
         nspectra=1
         nbands=23
         #pseudo_scov = spec['mc_spectrum'].cov #23x23 matrix
-        pseudo_dcov12 = n12.est1_cov[:nspectra,:nspectra] * cal**2
-        pseudo_dcovlr = nlr.est1_cov[:nspectra,:nspectra]  * cal**2
+        pseudo_dcov12 = n12.est1_cov[:nbands,:nbands] * cal**2
+        pseudo_dcovlr = nlr.est1_cov[:nbands,:nbands]  * cal**2
 
         Dl = spec['spectrum'].squeeze() * cal
-        pseudo12 = n12.spectrum[:nspectra,0] * cal
-        pseudolr = nlr.spectrum[:nspectra,0] * cal
+        pseudo12 = n12.spectrum[:nbands,:] * cal
+        pseudolr = nlr.spectrum[:nbands,:] * cal
 
         #pdb.set_trace()
         #choose ranges 
@@ -107,8 +107,8 @@ if __name__ == '__main__':
         #pdb.set_trace()
         invkernmat =  spec['invkernmat']
         invkernmattr =  spec['invkernmatt']
-        Dl12 = np.reshape(np.matmul(invkernmat, np.reshape(pseudo12.T,[nspectra*nbands])),[nspectra,nbands])
-        Dllr = np.reshape(np.matmul(invkernmat, np.reshape(pseudolr.T,[nspectra*nbands])),[nspectra,nbands])
+        Dl12 = np.reshape(np.matmul(invkernmat, np.reshape(pseudo12.T,[nspectra*nbands])),[nspectra*nbands])
+        Dllr = np.reshape(np.matmul(invkernmat, np.reshape(pseudolr.T,[nspectra*nbands])),[nspectra*nbands])
 
         sample_cov = spec['sample_cov']
         serr = allowed_SV * np.sqrt(np.diag(sample_cov.squeeze()))
@@ -126,7 +126,7 @@ if __name__ == '__main__':
         print(freqs[i])
         print('Chisq 12:',np.sum((Dl12[imin_dl500:imax_dl500]/comb_err12[imin_dl500:imax_dl500])**2), ' dof: ', imax_dl500-imin_dl500)
         print('Chisq LR:',np.sum((Dllr[imin_dl500:imax_dl500]/comb_errlr[imin_dl500:imax_dl500])**2), ' dof: ', imax_dl500-imin_dl500)
-
+        pdb.set_trace()
     pdb.set_trace()
     
 
