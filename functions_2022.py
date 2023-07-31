@@ -1397,11 +1397,11 @@ if __name__ == "__main__" and NULLLR == True:
     with open(mask_file,'rb') as fp:
         mask  = pkl.load(fp)
     nside=8192
-    lmax = 11500
+    lmax = 13000
 
     kmask = None
     nside=8192
-    banddef = np.arange(0,lmax+1,500)
+    banddef = np.arange(0,11501,500)
 
 
     workdir = '/big_scratch/cr/xspec_2022/data_v5_lr/'

@@ -32,6 +32,7 @@ to use actual kernels
 
 if __name__ == '__main__':
 
+    dolr=True
     freqs=['90','150','220']
     dir = '/big_scratch/cr/xspec_2022/'
     null12s = [dir + 'data_v5/null_spectrum_90.pkl', dir + 'data_v5/null_spectrum_150.pkl', dir + 'data_v5/null_spectrum_220.pkl']
@@ -83,18 +84,23 @@ if __name__ == '__main__':
             spec= pkl.load(fp)
         with open(null12s[i],'rb') as fp:
             n12= pkl.load(fp)
-        with open(nulllrs[i],'rb') as fp:
-            nlr= pkl.load(fp)
+        if dolr:
+            with open(nulllrs[i],'rb') as fp:
+                nlr= pkl.load(fp)
         cal = calibration_factors[i]**2
+        lrcal = 1./4e-6
         nspectra=1
         nbands=23
         #pseudo_scov = spec['mc_spectrum'].cov #23x23 matrix
+        pseudo_dcov = spec['data_spectrum'].est1_cov[:nbands,:nbands] * cal**2
         pseudo_dcov12 = n12.est1_cov[:nbands,:nbands] * cal**2
-        pseudo_dcovlr = nlr.est1_cov[:nbands,:nbands]  * cal**2
+        if dolr:
+            pseudo_dcovlr = nlr.est1_cov[:nbands,:nbands]  * cal**2 * lrcal**2
 
         Dl = spec['spectrum'].squeeze() * cal
         pseudo12 = n12.spectrum[:nbands,:] * cal
-        pseudolr = nlr.spectrum[:nbands,:] * cal
+        if dolr:
+            pseudolr = nlr.spectrum[:nbands,:] * cal *lrcal
 
         #pdb.set_trace()
         #choose ranges 
@@ -108,26 +114,39 @@ if __name__ == '__main__':
         invkernmat =  spec['invkernmat']
         invkernmattr =  spec['invkernmatt']
         Dl12 = np.reshape(np.matmul(invkernmat, np.reshape(pseudo12.T,[nspectra*nbands])),[nspectra*nbands])
-        Dllr = np.reshape(np.matmul(invkernmat, np.reshape(pseudolr.T,[nspectra*nbands])),[nspectra*nbands])
+        if dolr:
+            Dllr = np.reshape(np.matmul(invkernmat, np.reshape(pseudolr.T,[nspectra*nbands])),[nspectra*nbands])
 
         sample_cov = spec['sample_cov']
         serr = allowed_SV * np.sqrt(np.diag(sample_cov.squeeze()))
         
+        dcov = np.reshape(np.transpose(np.reshape(pseudo_dcov,[nbands,nspectra,nbands,nspectra]),[1,0,3,2]),[nbands*nspectra,nbands*nspectra])
+        meas_cov = np.reshape(np.matmul(np.matmul(invkernmat , dcov), invkernmattr),[nspectra,nbands,nspectra, nbands])
+        derr = np.sqrt(np.diag(meas_cov.squeeze()))
+
         dcov = np.reshape(np.transpose(np.reshape(pseudo_dcov12,[nbands,nspectra,nbands,nspectra]),[1,0,3,2]),[nbands*nspectra,nbands*nspectra])
         meas_cov12 = np.reshape(np.matmul(np.matmul(invkernmat , dcov), invkernmattr),[nspectra,nbands,nspectra, nbands])
-        dcov = np.reshape(np.transpose(np.reshape(pseudo_dcovlr,[nbands,nspectra,nbands,nspectra]),[1,0,3,2]),[nbands*nspectra,nbands*nspectra])
-        meas_covlr = np.reshape(np.matmul(np.matmul(invkernmat , dcov), invkernmattr),[nspectra,nbands,nspectra, nbands])
-
         derr12 = np.sqrt(np.diag(meas_cov12.squeeze()))
-        derrlr = np.sqrt(np.diag(meas_covlr.squeeze()))
         comb_err12 = derr12 + serr
-        comb_errlr = derrlr + serr
+
+        if dolr:
+            dcov = np.reshape(np.transpose(np.reshape(pseudo_dcovlr,[nbands,nspectra,nbands,nspectra]),[1,0,3,2]),[nbands*nspectra,nbands*nspectra])
+            meas_covlr = np.reshape(np.matmul(np.matmul(invkernmat , dcov), invkernmattr),[nspectra,nbands,nspectra, nbands])
+            derrlr = np.sqrt(np.diag(meas_covlr.squeeze()))
+            comb_errlr = derrlr + serr
+
+
 
         print(freqs[i])
         print('Chisq 12:',np.sum((Dl12[imin_dl500:imax_dl500]/comb_err12[imin_dl500:imax_dl500])**2), ' dof: ', imax_dl500-imin_dl500)
-        print('Chisq LR:',np.sum((Dllr[imin_dl500:imax_dl500]/comb_errlr[imin_dl500:imax_dl500])**2), ' dof: ', imax_dl500-imin_dl500)
+        print('Ratios: ',(Dl12[imin_dl500:imax_dl500]/comb_err12[imin_dl500:imax_dl500]))
+        print('power ratios:',Dl12[imin_dl500:imax_dl500]/Dl[imin_dl500:imax_dl500])
+        if dolr:
+            print('Chisq LR:',np.sum((Dllr[imin_dl500:imax_dl500]/comb_errlr[imin_dl500:imax_dl500])**2), ' dof: ', imax_dl500-imin_dl500)
+            print('Ratios: ',(Dllr[imin_dl500:imax_dl500]/comb_errlr[imin_dl500:imax_dl500]))
+            print('power ratios:',Dllr[imin_dl500:imax_dl500]/Dl[imin_dl500:imax_dl500])
         pdb.set_trace()
-    pdb.set_trace()
+    #pdb.set_trace()
     
 
     
