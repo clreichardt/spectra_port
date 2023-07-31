@@ -27,13 +27,39 @@ to use actual kernels
 
 
 
-    
+def single(m,tau):
+    return np.abs(1/complex(1,m*tau) - 1/complex(1,-1*m*tau))
+def single1(m,tau):
+    return 1/complex(1,m*tau)
+
+def taufrac(tau,nb,dl=500):
+
+    #tau = 0.0004
+    vscan = 1.0 * np.cos(np.pi/180 * 57.5) * np.pi/180
+    tau_rad = vscan * tau
+    vals = np.zeros(23)
+    for i in range(23):
+        lmin = i*dl
+        lmax = (i+1)*dl
+        n=0
+        val =0
+        lmin = np.min([300,lmin])
+        for m in range(300,lmin+1):
+            n += dl 
+            val += dl * single(m,tau_rad)
+        for m in range(lmin+1,lmax):
+            n += dl -(m - lmin)
+            val += (dl -(m - lmin))* single(m,tau_rad)
+        val /= n
+        vals[i]=val
+    return vals
 
 
 if __name__ == '__main__':
 
     dolr=True
     freqs=['90','150','220']
+    taus = [.0004, .00023, .00019]
     dir = '/big_scratch/cr/xspec_2022/'
     null12s = [dir + 'data_v5/null_spectrum_90.pkl', dir + 'data_v5/null_spectrum_150.pkl', dir + 'data_v5/null_spectrum_220.pkl']
     nulllrs = [dir + 'data_v5_lr/spectrum90_lrnull.pkl', dir + 'data_v5_lr/spectrum150_lrnull.pkl', dir + 'data_v5_lr/spectrum220_lrnull.pkl']
@@ -91,6 +117,7 @@ if __name__ == '__main__':
         lrcal = 1./4e-6
         nspectra=1
         nbands=23
+        
         #pseudo_scov = spec['mc_spectrum'].cov #23x23 matrix
         pseudo_dcov = spec['data_spectrum'].est1_cov[:nbands,:nbands] * cal**2
         pseudo_dcov12 = n12.est1_cov[:nbands,:nbands] * cal**2
@@ -116,6 +143,8 @@ if __name__ == '__main__':
         Dl12 = np.reshape(np.matmul(invkernmat, np.reshape(pseudo12.T,[nspectra*nbands])),[nspectra*nbands])
         if dolr:
             Dllr = np.reshape(np.matmul(invkernmat, np.reshape(pseudolr.T,[nspectra*nbands])),[nspectra*nbands])
+            taufr = taufrac(taus[i],nbands,dl=500)
+            Dllr -= taufr * Dl
 
         sample_cov = spec['sample_cov']
         serr = allowed_SV * np.sqrt(np.diag(sample_cov.squeeze()))
