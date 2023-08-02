@@ -60,6 +60,7 @@ if __name__ == '__main__':
     dolr=True
     freqs=['90','150','220']
     taus = [.0004, .00023, .00019]
+    taus = [.00022, .00023, .00019]
     dir = '/big_scratch/cr/xspec_2022/'
     null12s = [dir + 'data_v5/null_spectrum_90.pkl', dir + 'data_v5/null_spectrum_150.pkl', dir + 'data_v5/null_spectrum_220.pkl']
     nulllrs = [dir + 'data_v5_lr/spectrum90_lrnull.pkl', dir + 'data_v5_lr/spectrum150_lrnull.pkl', dir + 'data_v5_lr/spectrum220_lrnull.pkl']
@@ -144,7 +145,7 @@ if __name__ == '__main__':
         if dolr:
             Dllr = np.reshape(np.matmul(invkernmat, np.reshape(pseudolr.T,[nspectra*nbands])),[nspectra*nbands])
             taufr = taufrac(taus[i],nbands,dl=500)
-            Dllr -= taufr * Dl
+            Dllr2 = Dllr - taufr * Dl
 
         sample_cov = spec['sample_cov']
         serr = allowed_SV * np.sqrt(np.diag(sample_cov.squeeze()))
@@ -172,8 +173,15 @@ if __name__ == '__main__':
         print('power ratios:',Dl12[imin_dl500:imax_dl500]/Dl[imin_dl500:imax_dl500])
         if dolr:
             print('Chisq LR:',np.sum((Dllr[imin_dl500:imax_dl500]/comb_errlr[imin_dl500:imax_dl500])**2), ' dof: ', imax_dl500-imin_dl500)
+            print('Chisq LR subtracted:',np.sum((Dllr2[imin_dl500:imax_dl500]/comb_errlr[imin_dl500:imax_dl500])**2), ' dof: ', imax_dl500-imin_dl500)
             print('Ratios: ',(Dllr[imin_dl500:imax_dl500]/comb_errlr[imin_dl500:imax_dl500]))
             print('power ratios:',Dllr[imin_dl500:imax_dl500]/Dl[imin_dl500:imax_dl500])
+
+            for ii in range(20):
+                tau = .0001 + .00002*ii
+                taufr = taufrac(tau,nbands,dl=500)
+                Dllr3 = Dllr - taufr * Dl
+                print('Chisq LR subtracted for :',tau,np.sum((Dllr3[imin_dl500:imax_dl500]/comb_errlr[imin_dl500:imax_dl500])**2))
         pdb.set_trace()
     #pdb.set_trace()
     
