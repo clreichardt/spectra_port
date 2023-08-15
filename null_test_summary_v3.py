@@ -25,12 +25,15 @@ to use actual kernels
 
 
 
-
+def dtsingle(m,dt,tau):
+    return np.abs(np.exp(complex(0,dt*m))/complex(1,m*tau) - np.exp(complex(0,-1*dt*m))/complex(1,-1*m*tau))
 
 def single(m,tau):
     return np.abs(1/complex(1,m*tau) - 1/complex(1,-1*m*tau))
+
 def single1(m,tau):
     return 1/complex(1,m*tau)
+#4.015ms
 
 def taufrac(tau,nb,dl=500):
 
@@ -41,9 +44,9 @@ def taufrac(tau,nb,dl=500):
     for i in range(23):
         lmin = i*dl
         lmax = (i+1)*dl
-        n=0
-        val =0
-        lmin = np.min([300,lmin])
+        n=0.0
+        val =0.0
+        lmin = np.max([300,lmin])
         for m in range(300,lmin+1):
             n += dl 
             val += dl * single(m,tau_rad)
@@ -62,9 +65,9 @@ def tautemplate(tau,theory,nb,dl=500):
         lmin = i*dl
         lmax = (i+1)*dl
         dlbin = theory[lmin:lmax]
-        n=0
-        val =0
-        lmin = np.min([300,lmin])
+        n=0.0
+        val =0.0
+        lmin = np.max([300,lmin])
         for m in range(300,lmin+1):
             n += dl 
             val += single(m,tau_rad) * np.sum(dlbin)
@@ -73,6 +76,30 @@ def tautemplate(tau,theory,nb,dl=500):
             val += single(m,tau_rad) * np.sum(dlbin[m-lmin:])
         val /= n
         vals[i]=val
+        #pdb.set_trace()
+    return vals
+
+def dttautemplate(dt,tau,theory,nb,dl=500):
+    vscan = 1.0 * np.cos(np.pi/180 * 57.5) * np.pi/180
+    tau_rad = vscan * tau
+    vals = np.zeros(nb)
+    dt_rad = vscan * dt
+    for i in range(nb):
+        lmin = i*dl
+        lmax = (i+1)*dl
+        dlbin = theory[lmin:lmax]
+        n=0.0
+        val =0.0
+        lmin = np.max([300,lmin])
+        for m in range(300,lmin+1):
+            n += dl 
+            val += dtsingle(m,dt_rad,tau_rad) * np.sum(dlbin)
+        for m in range(lmin+1,lmax):
+            n += dl -(m - lmin)
+            val += dtsingle(m,dt_rad,tau_rad) * np.sum(dlbin[m-lmin:])
+        val /= n
+        vals[i]=val
+        #pdb.set_trace()
     return vals
 
 
@@ -81,7 +108,8 @@ if __name__ == '__main__':
     dolr=True
     freqs=['90','150','220']
     taus = [.0004, .00023, .00019]
-    taus = [.00022, .00023, .00019]
+    taus = [.00032, .0001, .00002]
+    dt = .004015  #try 3.8 ms from software too
     dir = '/big_scratch/cr/xspec_2022/'
     null12s = [dir + 'data_v5/null_spectrum_90.pkl', dir + 'data_v5/null_spectrum_150.pkl', dir + 'data_v5/null_spectrum_220.pkl']
     nulllrs = [dir + 'data_v5_lr/spectrum90_lrnull.pkl', dir + 'data_v5_lr/spectrum150_lrnull.pkl', dir + 'data_v5_lr/spectrum220_lrnull.pkl']
@@ -119,6 +147,7 @@ if __name__ == '__main__':
     imin_dl50  = lmin // dlspec
     imax_dl50  = lmax // dlspec
 
+    #imin_dl500 += 1
 
     cmbfile = '/home/creichardt/cmb_models/plik_plus_r0p01_highell_lensedtotCls_l25000.txt'
     dls = np.loadtxt(cmbfile)
@@ -140,7 +169,7 @@ if __name__ == '__main__':
     rg_dls_interp[2,:] = pois * facs[2]* facs[2]
     fgtheory_dls  = rg_dls_interp + norgfgtheory_dls
 
-    nlc = ellcov.shape[0]
+
     theory_dls = np.zeros([3,ells.shape[0]])
     for i in range(3):
         theory_dls[i,:] = cmb_dls + fgtheory_dls[i,:]
@@ -190,7 +219,7 @@ if __name__ == '__main__':
         Dl12 = np.reshape(np.matmul(invkernmat, np.reshape(pseudo12.T,[nspectra*nbands])),[nspectra*nbands])
         if dolr:
             Dllr = np.reshape(np.matmul(invkernmat, np.reshape(pseudolr.T,[nspectra*nbands])),[nspectra*nbands])
-            tautempl = tautemplate(taus[i],theory_dl,nbands,dl=500)
+            tautempl = dttautemplate(dt,taus[i],theory_dl,nbands,dl=500)
 
             Dllr2 = Dllr - tautempl
 
@@ -221,12 +250,12 @@ if __name__ == '__main__':
         if dolr:
             print('Chisq LR:',np.sum((Dllr[imin_dl500:imax_dl500]/comb_errlr[imin_dl500:imax_dl500])**2), ' dof: ', imax_dl500-imin_dl500)
             print('Chisq LR subtracted:',np.sum((Dllr2[imin_dl500:imax_dl500]/comb_errlr[imin_dl500:imax_dl500])**2), ' dof: ', imax_dl500-imin_dl500)
-            print('Ratios: ',(Dllr[imin_dl500:imax_dl500]/comb_errlr[imin_dl500:imax_dl500]))
-            print('power ratios:',Dllr[imin_dl500:imax_dl500]/Dl[imin_dl500:imax_dl500])
+            print('Ratios: ',(Dllr2[imin_dl500:imax_dl500]/comb_errlr[imin_dl500:imax_dl500]))
+            print('power ratios:',Dllr2[imin_dl500:imax_dl500]/Dl[imin_dl500:imax_dl500])
 
             for ii in range(20):
-                tau = .0001 + .00002*ii
-                tautempl = tautemplate(taus,theory_dl,nbands,dl=500)
+                tau = .003 + .0001*ii
+                tautempl = dttautemplate(dt,tau,theory_dl,nbands,dl=500)
                 Dllr3 = Dllr - tautempl
                 print('Chisq LR subtracted for :',tau,np.sum((Dllr3[imin_dl500:imax_dl500]/comb_errlr[imin_dl500:imax_dl500])**2))
         pdb.set_trace()

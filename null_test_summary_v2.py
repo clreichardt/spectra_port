@@ -41,9 +41,9 @@ def taufrac(tau,nb,dl=500):
     for i in range(23):
         lmin = i*dl
         lmax = (i+1)*dl
-        n=0
-        val =0
-        lmin = np.min([300,lmin])
+        n=0.0
+        val =0.0
+        lmin = np.max([300,lmin])
         for m in range(300,lmin+1):
             n += dl 
             val += dl * single(m,tau_rad)
