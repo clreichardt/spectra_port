@@ -6,6 +6,33 @@ import pickle as pkl
 import numpy as np
 import pdb
 
+
+def print_bps_tex(bpfile, lmins, lmaxs, leffs, bps,sigmas):
+    nkeep = np.sum(keep)
+    #ns = bps.shape[0]
+    ns = lmins.shape[0]
+    print('bps exists: ',bps.shape,np.sum(keep))
+
+    #going to assume all have same number for simplicity
+    #also assume 
+
+    toprow = [0,3,5]
+    botrow = [1,2,4]
+
+    fmtstr = "{:d} - {:d} & {:.1f} & {.1f} & {:.1f} & {.1f} & {:.1f} & {.1f} \\\\"
+    with open(bpfile,'w') as fp:
+        #print("{:d} {:d}".format(ns, nkeep), file=fp)
+        #2001 -  2200 &  2077   & 218.4 &    3.8   & 215.6 &    2.3   & 286.2 &    6.5   \\ 
+
+        for i in range(ns):
+            print(fmtstr.format(lmins[i],lmaxs[i],leffs[i,3], bps[i,toprow[0]],sigmas[i,toprow[0]],
+                                bps[i,toprow[1]],sigmas[i,toprow[1]],bps[i,toprow[2]],sigmas[i,toprow[2]]))
+
+        for i in range(ns):
+            print(fmtstr.format(lmins[i],lmaxs[i],leffs[i,1], bps[i,botrow[0]],sigmas[i,botrow[0]],
+                                bps[i,botrow[1]],sigmas[i,botrow[1]],bps[i,botrow[2]],sigmas[i,botrow[2]]))
+
+
 def print_bps(bpfile, leffs, bps,keep,sigmas):
     nkeep = np.sum(keep)
     ns = bps.shape[0]
@@ -132,3 +159,13 @@ if __name__ == '__main__':
 
     bpfile='/home/creichardt/highell_dls/dls.txt'
     print_bps(bpfile,leffs, spec_out,keep,sigmas)
+
+    #assuming keep same in all... may need to change this
+    nb = nkept//6
+    sigmas2 = np.reshape(sigmas,[nb,6])
+    leffs2 = np.reshape(leffs,[nb,6])
+    lmins = final_bands[i0[0]:i1[0]]+1
+    lmaxs = final_bands[i0[0]+1:i1[0]+1]
+
+    bpfile='/home/creichardt/highell_dls/table_dls.tex'
+    print_bps_tex(bptexfile, lmins, lmaxs, leffs2, spec_out,sigmas):
