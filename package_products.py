@@ -7,7 +7,7 @@ import numpy as np
 import pdb
 
 
-def print_bps_tex(bpfile, lmins, lmaxs, leffs, bps,sigmas):
+def print_bps_tex(bpfile, lmins, lmaxs, leffs, bps,keep,sigmas):
     nkeep = np.sum(keep)
     #ns = bps.shape[0]
     ns = lmins.shape[0]
@@ -18,19 +18,40 @@ def print_bps_tex(bpfile, lmins, lmaxs, leffs, bps,sigmas):
 
     toprow = [0,3,5]
     botrow = [1,2,4]
-
-    fmtstr = "{:d} - {:d} & {:.1f} & {.1f} & {:.1f} & {.1f} & {:.1f} & {.1f} \\\\"
+    print(ns)
+    fmtstr = "{:d} - {:d} & {:.1f} & {:.1f} & {:.1f} & {:.1f} & {:.1f} & {:.1f} & {:.1f}\\\\"
+    fmtstr2 = "{:d} - {:d} & {:.1f} & {:.2f} & {:.2f} & {:.2f} & {:.2f} & {:.2f} & {:.2f}\\\\"
     with open(bpfile,'w') as fp:
         #print("{:d} {:d}".format(ns, nkeep), file=fp)
         #2001 -  2200 &  2077   & 218.4 &    3.8   & 215.6 &    2.3   & 286.2 &    6.5   \\ 
 
-        for i in range(ns):
-            print(fmtstr.format(lmins[i],lmaxs[i],leffs[i,3], bps[i,toprow[0]],sigmas[i,toprow[0]],
-                                bps[i,toprow[1]],sigmas[i,toprow[1]],bps[i,toprow[2]],sigmas[i,toprow[2]]))
+        i=0
+        bp0 = bps[toprow[i],keep[toprow[i],:]]
+        i=1
+        bp1 = bps[toprow[i],keep[toprow[i],:]]
+        i=2
+        bp2 = bps[toprow[i],keep[toprow[i],:]]
 
         for i in range(ns):
-            print(fmtstr.format(lmins[i],lmaxs[i],leffs[i,1], bps[i,botrow[0]],sigmas[i,botrow[0]],
-                                bps[i,botrow[1]],sigmas[i,botrow[1]],bps[i,botrow[2]],sigmas[i,botrow[2]]))
+            if sigmas[i+ns*toprow[1]] >= 1:
+                print(fmtstr.format(lmins[i],lmaxs[i],leffs[i,3], bp0[i],sigmas[i+ns*toprow[0]],
+                                    bp1[i],sigmas[i+ns*toprow[1]],bp2[i],sigmas[i + ns*toprow[2]]))
+            else:
+                print(fmtstr2.format(lmins[i],lmaxs[i],leffs[i,3], bp0[i],sigmas[i+ns*toprow[0]],
+                                    bp1[i],sigmas[i+ns*toprow[1]],bp2[i],sigmas[i + ns*toprow[2]]))
+        i=0
+        bp0 = bps[botrow[i],keep[botrow[i],:]]
+        i=1
+        bp1 = bps[botrow[i],keep[botrow[i],:]]
+        i=2
+        bp2 = bps[botrow[i],keep[botrow[i],:]]
+        for i in range(ns):
+            if sigmas[i+ns*botrow[1]] >= 1:
+                print(fmtstr.format(lmins[i],lmaxs[i],leffs[i,3], bp0[i],sigmas[i+ns*botrow[0]],
+                                    bp1[i],sigmas[i+ns*botrow[1]],bp2[i],sigmas[i + ns*botrow[2]]))
+            else:
+                print(fmtstr2.format(lmins[i],lmaxs[i],leffs[i,3], bp0[i],sigmas[i+ns*botrow[0]],
+                                    bp1[i],sigmas[i+ns*botrow[1]],bp2[i],sigmas[i + ns*botrow[2]]))
 
 
 def print_bps(bpfile, leffs, bps,keep,sigmas):
@@ -167,5 +188,5 @@ if __name__ == '__main__':
     lmins = final_bands[i0[0]:i1[0]]+1
     lmaxs = final_bands[i0[0]+1:i1[0]+1]
 
-    bpfile='/home/creichardt/highell_dls/table_dls.tex'
-    print_bps_tex(bptexfile, lmins, lmaxs, leffs2, spec_out,sigmas):
+    bptexfile='/home/creichardt/highell_dls/table_dls.tex'
+    print_bps_tex(bptexfile, lmins, lmaxs, leffs2, spec_out,keep,sigmas)
