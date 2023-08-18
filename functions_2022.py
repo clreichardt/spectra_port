@@ -1,3 +1,4 @@
+print('start')
 import os
 os.environ['OMP_NUM_THREADS'] = "6"
 import numpy as np
@@ -5,7 +6,7 @@ import glob
 import sys
 sys.path.append('/home/creichardt/spt3g_software/build')
 import healpy as hp
-
+print('imported healpy')
 import unbiased_multispec as spec
 import utils
 import end_to_end
@@ -384,7 +385,8 @@ if __name__ == "__main__" and PREPLR is True:
         if kmask is not None:
             print("kmask mean {} std {}".format(np.mean(kmask),np.std(kmask)))
         
-        dir='/sptgrid/analysis/highell_TT_19-20/v5/shts_230718/'
+            #        dir='/sptgrid/analysis/highell_TT_19-20/v5/shts_230718/'
+        dir='/sptgrid/analysis/highell_TT_19-20/v5/shts_tau/'
         #        /sptgrid/analysis/highell_TT_19-20/v4/obs_shts_v2/'
         #print("Warning -- only 150s for testing")
         datashtfilelist = create_real_file_list(dir,stub='diff_alm_bundle_',sfreqs=['90','150','220'],estub='GHz.npz',nbundle=200)
