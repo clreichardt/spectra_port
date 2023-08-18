@@ -1412,7 +1412,7 @@ if __name__ == "__main__" and NULLLR == True:
     
     #note these are only used for indexing. actual L-R is done
     mapfiles = create_real_file_list('/sptgrid/analysis/highell_TT_19-20/v5/obs_shts/bundle_',stub='GHz_bundle_',sfreqs=['90','150','220'],estub='.npz',nbundle=200)
-    
+
     spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                             lmax=lmax,
                                             resume=True,
@@ -1426,6 +1426,7 @@ if __name__ == "__main__" and NULLLR == True:
     with open(file_out,'wb') as fp:
         pkl.dump(spectrum,fp)
         del spectrum
+    exit()
     setdef[:,0] += 200
     spectrum      = spec.unbiased_multispec(mapfiles,mask,banddef,nside,
                                             lmax=lmax,
