@@ -112,7 +112,7 @@ if __name__ == '__main__':
     dt = .004015  #try 3.8 ms from software too
     dir = '/big_scratch/cr/xspec_2022/'
     null12s = [dir + 'data_v5/null_spectrum_90.pkl', dir + 'data_v5/null_spectrum_150.pkl', dir + 'data_v5/null_spectrum_220.pkl']
-    nulllrs = [dir + 'data_v5_lr/spectrum90_lrnull.pkl', dir + 'data_v5_lr/spectrum150_lrnull.pkl', dir + 'data_v5_lr/spectrum220_lrnull.pkl']
+    nulllrs = [dir + 'data_v5_lr/spectrum90_lrnull.pkl', dir + 'data_v5_lr/notau/spectrum150_lrnull.pkl', dir + 'data_v5_lr/notau/spectrum220_lrnull.pkl']
     binned = [ dir + 'spectrum500_90_small.pkl', dir + 'spectrum500_150_small.pkl', dir + 'spectrum500_220_small.pkl']
 
     allowed_SV = 0.15
@@ -253,11 +253,12 @@ if __name__ == '__main__':
             print('Ratios: ',(Dllr2[imin_dl500:imax_dl500]/comb_errlr[imin_dl500:imax_dl500]))
             print('power ratios:',Dllr2[imin_dl500:imax_dl500]/Dl[imin_dl500:imax_dl500])
 
-            for ii in range(20):
-                tau = .003 + .0001*ii
-                tautempl = dttautemplate(dt,tau,theory_dl,nbands,dl=500)
-                Dllr3 = Dllr - tautempl
-                print('Chisq LR subtracted for :',tau,np.sum((Dllr3[imin_dl500:imax_dl500]/comb_errlr[imin_dl500:imax_dl500])**2))
+            if False:
+                for ii in range(20):
+                    tau = .003 + .0001*ii
+                    tautempl = dttautemplate(dt,tau,theory_dl,nbands,dl=500)
+                    Dllr3 = Dllr - tautempl
+                    print('Chisq LR subtracted for :',tau,np.sum((Dllr3[imin_dl500:imax_dl500]/comb_errlr[imin_dl500:imax_dl500])**2))
         pdb.set_trace()
     #pdb.set_trace()
     
