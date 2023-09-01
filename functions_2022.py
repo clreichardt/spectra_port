@@ -832,13 +832,19 @@ if __name__ == "__main__" and END == True:
     
     #note beam is 90, 150, 220, so everything else needs to be too (or change beam array ordering)
     beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
-    sim_beam_arr= beam_arr.copy()
+
     #real data also has PWF (sims created at 8192)
     blmax=int(beam_arr[-1,0]+0.001)
+    sim_beam_arr= beam_arr.copy()
     pwf = hp.pixwin(nside,lmax = blmax)
     beam_arr[:,1] *= pwf
     beam_arr[:,2] *= pwf
     beam_arr[:,3] *= pwf
+    #changed 2023/9/1 -- before this sim_beam_arr did *not* have PWF
+    sim_beam_arr[:,1] *= pwf**2
+    sim_beam_arr[:,2] *= pwf**2
+    sim_beam_arr[:,3] *= pwf**2
+    
         
     kernel_file = '/sptlocal/user/creichardt/mll_dl_0p4medwt_6mJy150ghzv2_13000.npz'
 #/sptlocal/user/creichardt/mll_dl_13000.npz'
@@ -869,13 +875,14 @@ if __name__ == "__main__" and END == True:
 
     
     dir='/sptgrid/analysis/highell_TT_19-20/v5/obs_shts/'
-    mapfiles = create_real_file_list_v5(dir,sfreqs=['90','150','220'],nbundle=200)
+    mapfiles = create_real_file_list_v5(dir,['90','150','220'],nbundle=200)
 
     #change for testing
 #    dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v2.0_testinputsv2/'
     dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.3_mask_0p4medwt_6mJy150ghzv2/'
     #mcmapfiles = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=10)
-    mcmapfiles = create_sim_file_list_v2(dir,bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.npz',nsim=100)
+    mcmapfiles = create_sim_file_list_v2(dir,bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
+
     #dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
     #mcmapfiles = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
     
