@@ -1,23 +1,24 @@
 import healpy as hp
 import numpy as np
 
-nsidebig = 8192 * 4
-npixbig = 12 * nsidebig**2
-split = nsidebig**2
-locind = np.arange(0,split)
-mapfile = '/sptlocal/user/creichardt/out_maps/sim_220ghz_174.g3'
-inmap = hp.read_map(mapfile)
+nside1=8192
+nside2=nside1*2
+nside4 = nside1 * 4
+nsides = [nisde1,nside2,nside4]
+beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
+theoryfile = '/sptlocal/user/creichardt/hiell2022/sim_dls_220ghz.txt'
 
-omap = np.zeros(npixbig,dtype=np.float32)
-for i in range(12):
-    print(i)
-    theta,phi = hp.pix2ang(nsidebig,locind)
+dls = np.loadtxt(theoryfile)
+locl=dls[:,0]
+dl220 = dls[:,1]
+bl220 = np.interp(locl,beam_arr[:,0],beam_arr[:,3])
+udl220 = dl220 * bl220**2
+ucl220 = udl220 * (2*np.pi)/(locl * (locl+1))
+ucl220[:2]=0.0
 
-    vals = hp.get_interp_val(inmap,theta,phi)
-    omap[i*split:(i+1)*split] = vals
-    locind += split
+alms = hp.synalm(ucl220,lmax=15000)
 
-with open('hires.bin','wb') as fp:
-    omap.tofile(fp)
-
-
+for nside in nsides:
+    hmap = hp.alm2map(alms,nside)
+    hp.write_map('/sptlocal/user/creichardt/test_{}.fits'.format(nside),hmap)
+    hmap=None
