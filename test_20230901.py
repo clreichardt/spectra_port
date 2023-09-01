@@ -4,7 +4,7 @@ import numpy as np
 nside1=8192
 nside2=nside1*2
 nside4 = nside1 * 4
-nsides = [nisde1,nside2,nside4]
+nsides = [nside1,nside2,nside4]
 beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
 theoryfile = '/sptlocal/user/creichardt/hiell2022/sim_dls_220ghz.txt'
 
