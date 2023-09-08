@@ -524,6 +524,10 @@ if __name__ == "__main__" and FULLCAL == True:
     beam_arr[:,1] *= pwf
     beam_arr[:,2] *= pwf
     beam_arr[:,3] *= pwf
+    #changed 2023/9/1 -- before this sim_beam_arr did *not* have PWF
+    sim_beam_arr[:,1] *= pwf**2
+    sim_beam_arr[:,2] *= pwf**2
+    sim_beam_arr[:,3] *= pwf**2
         
     kernel_file = '/sptlocal/user/creichardt/mll_dl_0p4medwt_6mJy150ghzv2_13000.npz'
 #/sptlocal/user/creichardt/mll_dl_13000.npz'
@@ -543,23 +547,22 @@ if __name__ == "__main__" and FULLCAL == True:
         mask  = pkl.load(fp)
 
     #may need to reformat theoryfiles
-    theoryfiles = ['/sptlocal/user/creichardt/hiell2022/sim_dls_90ghz.txt',
-                   '/sptlocal/user/creichardt/hiell2022/sim_dls_150ghz.txt',
-                   '/sptlocal/user/creichardt/hiell2022/sim_dls_220ghz.txt']
+    theoryfiles = ['/sptlocal/user/creichardt/hiell2022/sim_field_dls_90ghz.txt',
+                   '/sptlocal/user/creichardt/hiell2022/sim_field_dls_150ghz.txt',
+                   '/sptlocal/user/creichardt/hiell2022/sim_field_dls_220ghz.txt']
 
     
-    dir='/sptgrid/analysis/highell_TT_19-20/v4/obs_shts/'
-    mapfiles = create_real_file_list(dir,stub='bundle_',sfreqs=['90','150','220'],estub='GHz.npz',nbundle=200)
+    dir='/sptgrid/analysis/highell_TT_19-20/v5/obs_shts/'
+    mapfiles = create_real_file_list_v5(dir,['90','150','220'],nbundle=200)
+
 
     #change for testing
 #    dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v2.0_testinputsv2/'
-    dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.0_gaussian_inputs/'
+   dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v4.3_mask_0p4medwt_6mJy150ghzv2/'
     #mcmapfiles = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=10)
-    mcmapfiles = create_sim_file_list_v2(dir,bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.npz',nsim=100)
-    #dir='/sptgrid/analysis/highell_TT_19-20/v4/mockobs/v1_2bundles/'
-    #mcmapfiles = create_sim_file_list(dir,dstub='inputsky{:03d}/',bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
-    
+    mcmapfiles = create_sim_file_list_v2(dir,bstub='bundles/alm_bundle',sfreqs=['90','150','220'],estub='GHz.g3.gz.npz',nsim=100)
 
+    print('lmax of {}'.format(lmax))
     output = end_to_end.end_to_end( mapfiles,
                          mcmapfiles,
                          banddef,
@@ -585,6 +588,7 @@ if __name__ == "__main__" and FULLCAL == True:
         pkl.dump(output,fp)
     with open(file_out_small,'wb') as fp:
         pkl.dump(end_to_end.trim_end_to_end_output(output),fp)
+
 
 
 
