@@ -70,6 +70,20 @@ def print_bps(bpfile, leffs, bps,keep,sigmas):
                 print("{:d} {:f} {:.3e} {:.3e}".format(k,leffs[kk],val,sigmas[kk]),file=fp)
                 k+=1
                 kk+=1
+
+def print_bps_jax(bpfile, bps,keep):
+    nkeep = np.sum(keep)
+    ns = bps.shape[0]
+    print('bps exists: ',bps.shape,np.sum(keep))
+    with open(bpfile,'w') as fp:
+        #print("{:d} {:d}".format(ns, nkeep), file=fp)
+        for i in range(ns):
+            loc = bps[i,keep[i,:]]
+
+            for val in loc:
+
+                print("{:.3e}".format(val),file=fp)
+
             
 
 def print_cov(covfile,cov):
@@ -182,7 +196,8 @@ if __name__ == '__main__':
 
     bpfile='/home/creichardt/highell_dls/dls.txt'
     print_bps(bpfile,leffs, spec_out,keep,sigmas)
-
+    bpfile='/home/creichardt/highell_dls/dls_jax.txt'
+    print_bps_jax(bpfile, spec_out,keep)
     #assuming keep same in all... may need to change this
     nb = nkept//6
     sigmas2 = np.reshape(sigmas,[nb,6])
