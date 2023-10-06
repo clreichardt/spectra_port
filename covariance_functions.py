@@ -85,6 +85,7 @@ class covariance:
         #We need diagonals, there will be 21 of these for 3 freqs
         #this is supposed to be 2S**2
         diagonals_signal = self.fit_signal_diagonals(sample_cov,theory_dls)
+        #pdb.set_trace()
         print("Finished signal diag")
         raw_diags = self.get_diags(meas_cov)
         raw_diags1 = self.get_diags(meas_cov1)
@@ -129,6 +130,8 @@ class covariance:
         ncross = (self.nspec * (self.nspec+1))//2
         odiag = np.zeros([ncross,self.nb])
         for k in range(ncross):
+            print(k)
+
             i,j = self.get_2d_indices(k)
             diag = raw_diags[k,:]
 
@@ -138,6 +141,8 @@ class covariance:
             if ncommon == 2 and c == d and a != b:
                 ncommon -= 1
             print(';number matches:',ncommon,a,b,c,d)
+            #if k == 9:
+            #    pdb.set_trace()
             match ncommon:
                 case 0:
                     odiag[k,:] = self.fit_no_map_in_common(diag)
@@ -151,7 +156,7 @@ class covariance:
         return odiag
 
     
-    def fit_one_map_in_common(self,k,diag,signal_diags,raw_diags_est1,imin=60,nsmooth=5,bin_transition=120):
+    def fit_one_map_in_common(self,k,diag,signal_diags,raw_diags_est1,imin=65,nsmooth=5,bin_transition=75,stopit=False):
         '''these are off-diagonals, ala 90x150x90x220, and so on. (ab ac)
         Expectation is aa bc + ac ab
         In the absence of correlated noise, this looks like (after subtracted S*S terms)
@@ -207,25 +212,79 @@ class covariance:
         k00 = self.get_1d_index(i_auto,i_auto)
         two_n_squared = self.fit_two_map_in_common(raw_diags_est1[k00,:])
         n_auto = np.sqrt(two_n_squared/2.0)
-        
+        if False:
+            plt.plot(two_n_squared)
+            plt.plot(raw_diags_est1[k00,:],label='est1')
+            plt.legend()
+            yl = np.max(two_n_squared[40:120])
+            plt.ylim(0,2*yl)
+            plt.title('i_auto : {}'.format(i_auto))
+            plt.xlim(40,120)
+            plt.show()
+            
+            #test
+            plt.plot(.02*np.sqrt(signal_diags[k00,:]/2)*n_auto)
+            plt.plot(two_n_squared,label='noise')
+            plt.ylim(0,0.1*yl)
+            plt.legend()
+            plt.title('S*N check : {}'.format(i_auto))
+            plt.xlim(40,80)
+            plt.show()
+            
         #signal cross term:
         i_auto_11 = self.get_1d_index(others[0],others[0],n=self.nf)
         i_auto_22 = self.get_1d_index(others[1],others[1],n=self.nf)
         k12 = self.get_1d_index(i_auto_11,i_auto_22)
         two_s_squared = signal_diags[k12,:]
         s_cross = np.sqrt(two_s_squared/2.0)
+        if False:
+            plt.plot(two_s_squared[40:120])
+            plt.title('signal bit')
+            plt.show()
         
+
+
         prefactor = 1.0 + 1.0 *(a == b or c == d)
+        print(prefactor)
+        #print('forcing prefactor to 1')
+        #prefactor=1.0
+        
         #for something like 90x150x150x220, expect S*N
         # for somethnig like 90x150x150x150, expect 2 S*N
         hi_diag = prefactor * n_auto * s_cross
         #may want to do somethnig else to join them....
         odiag[bin_transition:] = hi_diag[bin_transition:]
-        
-        
+
+        if False:
+            print(k,i,j)
+            print(odiag[bin_transition-2:bin_transition+2])
+            plt.plot(odiag[40:120])
+            plt.plot(odiag[40:120]*5/6.,label='div5/6')
+            plt.plot(diag[40:120],label='est')
+            plt.title('low bins {}'.format(k))
+            plt.legend()
+            plt.show()
+            plt.plot(odiag[120:])
+            plt.plot(diag[120:],label='est')
+            plt.legend()
+            plt.title('hi bins {}'.format(k))
+            plt.show()
+            plt.plot(odiag[90:140])
+            plt.plot(diag[90:140],label='est')
+            plt.legend()
+            plt.title('int bins {}'.format(k))
+            plt.show()
+            plt.plot(odiag[130:180])
+            plt.plot(odiag[130:180]*5/6.,label='div5/6')
+            plt.plot(diag[130:180],label='est')
+            plt.legend()
+            plt.title('hi-int bins {}'.format(k))
+            plt.show()
+
+        #          pdb.set_trace()
         return odiag    
     
-    def fit_two_map_in_common(self,diag,imin=60, nsmooth = 5):
+    def fit_two_map_in_common(self,diag,imin=65, nsmooth = 5):
         '''these are diagonals, ala 90x150x90x150, and so on. (ab ab)
         Expectation is aa bb + (ab)**2
         In the absence of correlated noise, this looks like (after subtracted S*S terms)
@@ -238,7 +297,9 @@ class covariance:
         Used imin = 60 as baseline -- this is about l=3000. used to define what points are 0/Inf
         '''
         y=np.log(diag)
-        good = y >  y[imin] +np.log(0.1)
+        my = np.min(y[imin-3:imin+3])
+        good = y >  my +np.log(0.1)
+        #assert np.logical_and(good[20:-1]) # think should only drop lowest ell
         ll = np.sum(good)
         nk = nsmooth
         i0 = nk + nk//2  # so 7 for fiducial choice of 5-width kernel
@@ -250,6 +311,15 @@ class covariance:
         smtmp = np.convolve(tmp,np.ones(nk)/nk,mode='full') 
         smyy = np.zeros(y.shape[0])
         smyy[good] = smtmp[i0:ll+i0]
+        if False:
+            plt.plot(diag)
+            plt.plot(np.exp(smyy),label='smooth')
+            plt.xlim(40,120)
+            ym = np.max(np.exp(smyy[40:120]))
+            plt.ylim(0,2*ym)
+            plt.legend()
+            plt.show()
+
 
         return np.exp(smyy)
 
@@ -360,11 +430,11 @@ class covariance:
         
         
 
-    def fit_single_block_signal(self,cov,i_block,j_block, theory_dls,fit_range = [30,190], use_range = [40,250] ):
+    def fit_single_block_signal(self,cov,i_block,j_block, theory_dls,fit_range = [30,190], use_range = [40,259] ):
 
-        def signal_func(ells,const,amp):
+        def signal_func(ells,const,amp,ampbump):
             #print(ells.shape,const.shape,amp.shape)
-            return const + amp * (ells)**(-1.3)
+            return const + amp * (ells-9.5)**(-1.) +ampbump*np.exp(-.5*((ells-158.)/30.)**2)
 
 
         theory = self.get_theory_cov(theory_dls,i_block,j_block)
@@ -378,20 +448,35 @@ class covariance:
         fit_vals = obs_prefactor[fit_range[0]:fit_range[1]]
         fit_inds = inds[fit_range[0]:fit_range[1]]
         const_guess = fit_vals[-1]
-        amp_guess = (fit_vals[0] - const_guess) * fit_inds[0]**1.3
-        p0=[const_guess,amp_guess]
-        sigma = 0.1 * (signal_func(fit_inds,const_guess,amp_guess))
+        amp_guess = (fit_vals[0] - const_guess) * fit_inds[0]**1.
+        bump_guess = 0.0
+        p0=[const_guess,amp_guess,bump_guess]
+        sigma = 0.1 * (signal_func(fit_inds,const_guess,amp_guess,bump_guess))
         params = scipy.optimize.curve_fit(signal_func,fit_inds,fit_vals,p0=p0,sigma=sigma)
         
-        prefactor = obs_prefactor
-        prefactor[use_range[0]:use_range[1]] = signal_func(inds[use_range[0]:use_range[1]],params[0][0],params[0][1])
+        prefactor = obs_prefactor.copy()
+        prefactor[use_range[0]:use_range[1]] = signal_func(inds[use_range[0]:use_range[1]],params[0][0],params[0][1],params[0][2])
+        
+        if False:
+            plt.plot(obs_prefactor,label='data')
+            plt.plot(signal_func(inds,params[0][0],params[0][1],params[0][2]),label='fit')
+            plt.legend()
+            plt.title('{} {}'.format(i_block,j_block))
+            plt.xlim(15,259)
+            ymax = np.max(prefactor[30:259])
+            plt.ylim(0,2*ymax)
+            plt.show()
+            print(use_range)
+            #pdb.set_trace()
+            
+                 
 
         out = prefactor * theory
         return out
 
 
 
-    def fit_signal_diagonals(self,sample_cov,theory_dls,fit_range = [30,190], use_range = [40,250] ):
+    def fit_signal_diagonals(self,sample_cov,theory_dls,fit_range = [30,190], use_range = [40,259] ):
         
         nspec = sample_cov.shape[0]
         nb = sample_cov.shape[1]
@@ -401,6 +486,12 @@ class covariance:
             for j in range(nspec):
                 k = self.get_1d_index(i,j,nspec)
                 diagonals[k,:] = self.fit_single_block_signal(sample_cov,i,j,theory_dls,fit_range=fit_range,use_range=use_range)
+                if False:
+                    plt.plot(diagonals[k,40:120])
+                    plt.plot(np.diag(sample_cov[i,:,j,:])[40:120])
+                    plt.title('signal: {}'.format(k))
+                    plt.show()
+                
         return diagonals
 
 

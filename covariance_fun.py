@@ -11,7 +11,7 @@ import numpy as np
 #from spt3g import core,maps, calibration
 
 import pickle as pkl
-
+import pdb
 import matplotlib.pyplot as plt
 import time
 import scipy
@@ -71,3 +71,5 @@ if __name__ == '__main__':
     covfile = '/big_scratch/cr/xspec_2022/covariance.pkl'
     with open(covfile,'wb') as fp:
         pkl.dump(cov_obj, fp)
+
+    pdb.set_trace()
