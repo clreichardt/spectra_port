@@ -68,6 +68,8 @@ if __name__ == '__main__':
     print("initiating cov")
 
     cov_obj = covariance_functions.covariance(spec,theory_dls, calibration_factors)        
+    eval,evec = np.linalg.eig(cov_obj.covariance)
+    print('Returned <0 evals: {}'.format(np.sum(eval<=0)))
     covfile = '/big_scratch/cr/xspec_2022/covariance.pkl'
     with open(covfile,'wb') as fp:
         pkl.dump(cov_obj, fp)
