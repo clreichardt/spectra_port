@@ -140,7 +140,7 @@ class covariance:
             ncommon  = 1* (c == a or c == b)  + 1* (d == a or d == b) 
             if ncommon == 2 and c == d and a != b:
                 ncommon -= 1
-            print(';number matches:',ncommon,a,b,c,d)
+            print(k,';number matches:',ncommon,a,b,c,d)
             #if k == 9:
             #    pdb.set_trace()
             match ncommon:
@@ -333,6 +333,7 @@ class covariance:
 
         ind = np.min(np.where(diag[ibin:] < 0))
         ind = ind + ibin
+        print('nomap in common: max nonzero is at index {}':ind)
         outdiag = diag *0
         outdiag[:ind] = diag[:ind]
         return outdiag
