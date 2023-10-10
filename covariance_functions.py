@@ -333,7 +333,7 @@ class covariance:
 
         ind = np.min(np.where(diag[ibin:] < 0))
         ind = ind + ibin
-        print('nomap in common: max nonzero is at index {}':ind)
+        print('nomap in common: max nonzero is at index {}'.format(ind))
         outdiag = diag *0
         outdiag[:ind] = diag[:ind]
         return outdiag
