@@ -333,6 +333,7 @@ class covariance:
 
         ind = np.min(np.where(diag[ibin:] < 0))
         ind = ind + ibin
+
         print('nomap in common: max nonzero is at index {}':ind)
         #hmmm this is a sharp transition in the ell-ranges of interest.
         # consdering a fit to ell**-7 in range 40 - 50; followed by extrapolation to 60?
