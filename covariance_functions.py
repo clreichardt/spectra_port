@@ -323,7 +323,7 @@ class covariance:
 
         return np.exp(smyy)
 
-    def fit_no_map_in_common(self,diag,ibin = 20):
+    def fit_no_map_in_common(self,diag,ibin = 20,fitrange = [40,50],imax=70,exponent=-7):
         #see low-l correlated power so can't just zero outs cross that don't have maps in common. 
         #This is high-S/N below ell ~ 1500 (bin30)
         #looks consistent with zero above ell ~2500-3000 (depending on cross-spectra)
@@ -333,13 +333,35 @@ class covariance:
 
         ind = np.min(np.where(diag[ibin:] < 0))
         ind = ind + ibin
+        
+        
+        i0=fitrange[0]
+        i1=fitrange[1]
+        assert i1 < ind
+        il = np.arange(i0,i1)+0.5
+        template = il ** exponent
+        y = diag[i0:i1]
+        def chisq(amp):
+            return np.sum((y-amp*template)**2)
+        amp0 = diag[i0]/template[0]
+        amp=scipy.optimize.minimize(chisq,amp0)
+        
+        il2 = np.arange(i0,imax)+0.5
+        template2 = amp * (il2**exponent)
+        
+        np.arange(fitrange[0])
 
         print('nomap in common: max nonzero is at index {}':ind)
         #hmmm this is a sharp transition in the ell-ranges of interest.
-        # consdering a fit to ell**-7 in range 40 - 50; followed by extrapolation to 60?
+        # consdering a fit to ell**-7 in range 40 - 50; followed by extrapolation to 60 or 70?
         # maybe linfit in np.log?
+        
         outdiag = diag *0
-        outdiag[:ind] = diag[:ind]
+        outdiag[:i0]=diag[:i0]
+        outdiag[i0:imax] = template2
+        
+        #this was old version
+        #    outdiag[:ind] = diag[:ind]
         return outdiag
 
 
