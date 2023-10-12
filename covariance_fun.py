@@ -71,7 +71,7 @@ if __name__ == '__main__':
     nn = cov_obj.cov.shape[0]*cov_obj.cov.shape[1]
     eval,evec = np.linalg.eig(cov_obj.cov.reshape([nn,nn]))
     print('Returned <0 evals: {} of {}'.format(np.sum(eval<=0),nn))
-    exit()
+    #exit()
     covfile = '/big_scratch/cr/xspec_2022/covariance.pkl'
     with open(covfile,'wb') as fp:
         pkl.dump(cov_obj, fp)

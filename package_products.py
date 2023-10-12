@@ -1,6 +1,6 @@
 from spectra_port import unbiased_multispec as spec
 from spectra_port import utils
-from spectra_port import covariance_functions as cov
+from spectra_port import covariance_functions #as cov
 
 import pickle as pkl
 import numpy as np
@@ -137,12 +137,19 @@ if __name__ == '__main__':
      
     #should remove this hardcoding
     cov = np.reshape(covobj.cov,[nfcombo*259,nfcombo*259])
+    #pdb.set_trace()  #This seems to be the wrong order...
+    '''
+    Spectrum is 259 90x90, followed by 259 90x150, etc.
+    Not getting this right in cov space...
+    '''
 
     #pdb.set_trace()
 
     #taking weights as inverse diagonal of cov:
     wts = 1./np.diag(cov)
-    
+    #pdb.set_trace()
+    wts[np.diag(cov)==0]=0 #cov was 0 at crazy points. ignore these bins
+    #pdb.set_trace()
 
     print("Warning! need to input true cal uncertainty")
     t_cal_unc = np.ones(nfreq)* 0.01  
@@ -162,7 +169,8 @@ if __name__ == '__main__':
     #i1[0] = 28 #9000 for 90x90
     #i1[1:3] = 29 #10000 for 90x150,90x220 
     spec_out,cov_out,win_out,transform = utils.weighted_rebin_spectrum(orig_bands,final_bands,spectrum,cov0=cov, win0=win,weights = wts)
-    #pdb.set_trace()
+    pdb.set_trace()
+    print(np.diag(cov_out[5,:,5,:]))
     spec_out = np.reshape(spec_out,[nfcombo,nfb])
 
     keep = np.zeros(spec_out.shape,dtype=bool)
@@ -175,16 +183,26 @@ if __name__ == '__main__':
 
 
     cov_out = np.reshape(cov_out,[nfcombo*nfb,nfcombo*nfb])
+
     #pdb.set_trace()
+
     print("Decide if I want to do any band rescaling to reduce dynamic range!!!")
     cc = cov_out[keep1d,:]
     print(cc.shape)
     ocov = cc[:,keep1d]
     print(ocov.shape)
+    print(np.diag(ocov)[1:])
+    pdb.set_trace()
+    eval,evec = np.linalg.eig(ocov)
+    print('evals <0: {} of {}'.format(np.sum(eval <= 0),ocov.shape[0]))
+    print(eval[eval<0])
+    print(eval[-5:])
     covfile='/home/creichardt/highell_dls/cov.bin'
+
     print_cov(covfile,ocov)
 
     owin = win_out[keep1d,:]
+    print('bpwf shape:',owin.shape)
     winfile = '/home/creichardt/highell_dls/windowfunc.bin'
     print_win(winfile, owin,    spec['win_minell'], spec['win_maxell'])
     l = np.arange(spec['win_minell'], spec['win_maxell']+1)

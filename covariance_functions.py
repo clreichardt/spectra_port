@@ -110,6 +110,8 @@ class covariance:
         for i in range(self.nspec):
             for j in range(i,self.nspec):
                 sqrtdiag = np.sqrt(diagonals_noise[self.get_1d_index(i,j),:] + diagonals_signal[self.get_1d_index(i,j),:])
+                
+
                 sqrtdiag2d = np.tile(sqrtdiag,[self.nb,1])
                 cc = sqrtdiag2d* sqrtdiag2d.T * offdiagonal_single_block
                 cov[i,:,j,:] = cc#np.matmul(diag.T, np.matmul(offdiagonal_single_block,diag))
@@ -319,9 +321,12 @@ class covariance:
             plt.ylim(0,2*ym)
             plt.legend()
             plt.show()
+        
 
-
-        return np.exp(smyy)
+        bad = diag == 0
+        retval = np.exp(smyy)
+        retval[bad]=0
+        return retval #np.exp(smyy)
 
     def fit_no_map_in_common(self,diag,ibin = 20,fitrange = [40,50],imax=70,exponent=-7):
         #see low-l correlated power so can't just zero outs cross that don't have maps in common. 
@@ -343,15 +348,16 @@ class covariance:
         y = diag[i0:i1]
         def chisq(amp):
             return np.sum((y-amp*template)**2)
-        amp0 = diag[i0]/template[0]
-        amp=scipy.optimize.minimize(chisq,amp0)
-        
+        norm = diag[i0]/template[0]
+        template *= norm
+        amp0 = 1.0 
+        #
+        result=scipy.optimize.minimize(chisq,amp0)
+        amp = result.x[0]
         il2 = np.arange(i0,imax)+0.5
-        template2 = amp * (il2**exponent)
-        
-        np.arange(fitrange[0])
-
-        print('nomap in common: max nonzero is at index {}':ind)
+        template2 = (amp * norm) * (il2**exponent) 
+        print('changed template')
+        print('nomap in common: max nonzero is at index {}',ind)
         #hmmm this is a sharp transition in the ell-ranges of interest.
         # consdering a fit to ell**-7 in range 40 - 50; followed by extrapolation to 60 or 70?
         # maybe linfit in np.log?
@@ -359,7 +365,7 @@ class covariance:
         outdiag = diag *0
         outdiag[:i0]=diag[:i0]
         outdiag[i0:imax] = template2
-        
+        #pdb.set_trace()
         #this was old version
         #    outdiag[:ind] = diag[:ind]
         return outdiag
