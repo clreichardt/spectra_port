@@ -67,6 +67,31 @@ if __name__ == '__main__':
     calibration_factors = np.asarray([ (0.9017)**-0.5, (0.9833)**-0.5, (0.9703)**-0.5 ])
     calibration_factors *= 1e-3  #correction for units between sims and real data. The transfer function brings it over.  This ends up being brought to the 4 power so 1e-12 effectively.
     
+    
+    sigma_noise = [4.,4.,10.] #need to check these, expect in uK-arcmin
+    arcmin_area = (1./60.*np.pi/180.)**2
+    Nl = sigma_noise**2  * arxmin_area
+    Nls = beams **-2
+    dl=50.
+    prefact = np.sqrt(2/((2*l+1) * dl*fsky))
+    print('maybe add a subtract 300 from these dof - the 2l+1 term')
+    
+    for i in range(3):
+        Nls[i,:] *= Nl[i]
+
+    print('also correlated noise terms')
+    
+    print('bin everything')
+    
+    print('combine it all together')
+    
+    print('define off-diagonal anticorrelation')
+    corr_diag1 = ...
+    
+    print('construct cov')
+    
+    print('also add RG Poisson terms')
+
 
     covfile = '/big_scratch/cr/xspec_2022/covariance.pkl'
     with open(covfile,'rb') as fp:
@@ -74,6 +99,8 @@ if __name__ == '__main__':
         
         
     transform = np.fromfile('/home/creichardt/highells_dls/bptransform.npy',dtype=np.float64)
+    
+    print('Now rebin cov guess to final bins')
     
     
     
