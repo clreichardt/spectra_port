@@ -77,7 +77,7 @@ class covariance:
 
         print("Finished setup")
         #We need offidagonal structure for Poisson
-        self.poisson_offdiagonals = self.fit_poisson(sample_cov[0,:,0,:].squeeze(),factors=factors)
+        self.poisson_offdiagonals, self.poisson = self.fit_poisson(sample_cov[0,:,0,:].squeeze(),factors=factors)
         print("Fiished poisso")
         #We also want off-diagonal structure due to Mll
         self.offdiagonal_single_block = self.fit_mll_offdiagonal(sample_cov,meas_cov)
@@ -391,10 +391,12 @@ class covariance:
                 n   += 1 
         avg /= n
         template=np.matmul(xxout.T,xxout)
+        template_w_diag = template.copy()
         for i in range(nb):
             template[i,i] = 0    
         template *= avg
         
+        template_w_diag *=avg
 
         nf = factors.shape[0]
         ncombo = (nf * (nf+1))//2  
@@ -407,13 +409,15 @@ class covariance:
                 k+= 1
         
         poisson = np.zeros([ncombo,nb,ncombo,nb])
+        poisson_w_diag = np.zeros([ncombo,nb,ncombo,nb])
         for i in range(ncombo):
             for j in range(i,ncombo):
                 poisson[i,:,j,:] = template * scaling[i] * scaling[j]
-
+                poisson_w_diag[i,:,j,:] = template_w_diag * scaling[i] * scaling[j]   
                 if i != j:
                     poisson[j,:,i,:] = poisson[i,:,j,:]
-        return poisson
+                    poisson_w_diag[j,:,i,:] = poisson_w_diag[i,:,j,:] 
+        return poisson, poisson_w_diag
 
 
     def get_2d_indices(self,i):
