@@ -150,6 +150,8 @@ if __name__ == '__main__':
     #pdb.set_trace()
     wts[np.diag(cov)==0]=0 #cov was 0 at crazy points. ignore these bins
     #pdb.set_trace()
+    eval,evec = np.linalg.eig(cov)
+    cov = np.matmul(np.matmul(evec,np.diag(np.abs(eval))),evec.T)
 
     print("Warning! need to input true cal uncertainty")
     t_cal_unc = np.ones(nfreq)* 0.01  
@@ -169,7 +171,7 @@ if __name__ == '__main__':
     #i1[0] = 28 #9000 for 90x90
     #i1[1:3] = 29 #10000 for 90x150,90x220 
     spec_out,cov_out,win_out,transform = utils.weighted_rebin_spectrum(orig_bands,final_bands,spectrum,cov0=cov, win0=win,weights = wts)
-    pdb.set_trace()
+    #pdb.set_trace()
     print(np.diag(cov_out[5,:,5,:]))
     spec_out = np.reshape(spec_out,[nfcombo,nfb])
 
@@ -192,11 +194,13 @@ if __name__ == '__main__':
     ocov = cc[:,keep1d]
     print(ocov.shape)
     print(np.diag(ocov)[1:])
-    pdb.set_trace()
+    
     eval,evec = np.linalg.eig(ocov)
     print('evals <0: {} of {}'.format(np.sum(eval <= 0),ocov.shape[0]))
     print(eval[eval<0])
     print(eval[-5:])
+    print(eval[:10])
+    #pdb.set_trace()
     covfile='/home/creichardt/highell_dls/cov.bin'
 
     print_cov(covfile,ocov)

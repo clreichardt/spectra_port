@@ -121,12 +121,14 @@ if __name__ == '__main__':
      
     #should remove this hardcoding
     cov = np.reshape(covobj.cov,[nfcombo*259,nfcombo*259])
-
+    
     #pdb.set_trace()
 
     #taking weights as inverse diagonal of cov:
     wts = 1./np.diag(cov)
-    
+    wts[np.diag(cov)==0]=0
+    eval,evec = np.linalg.eig(cov)
+    cov = np.matmul(np.matmul(evec,np.diag(np.abs(eval))),evec.T)
 
     print("Warning! need to input true cal uncertainty")
     t_cal_unc = np.ones(nfreq)* 0.01  
@@ -163,6 +165,9 @@ if __name__ == '__main__':
     print(cc.shape)
     ocov = cc[:,keep1d]
     print(ocov.shape)
+
+    eval,evec = np.linalg.eig(ocov)
+    print('evals <0: {} of {}'.format(np.sum(eval <= 0),ocov.shape[0]))
     covfile='/home/creichardt/highell_dls/cov_szpolbins.bin'
     print_cov(covfile,ocov)
 
