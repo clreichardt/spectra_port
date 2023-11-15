@@ -54,6 +54,15 @@ def print_bps_tex(bpfile, lmins, lmaxs, leffs, bps,keep,sigmas):
                                     bp1[i],sigmas[i+ns*botrow[1]],bp2[i],sigmas[i + ns*botrow[2]]))
 
 
+def print_calcov(file, calcov):
+    ns = calcov.shape[0]
+    assert ns == 3
+    with open(file,'w') as fp:
+        #print("{:d} {:d}".format(ns, nkeep), file=fp)
+        for i in range(ns):
+            print("{:.5e}  {:.5e} {:.5e}".format(calcov[0,i],calcov[1,i],calcov[2,i]),file=fp)
+
+
 def print_bps(bpfile, leffs, bps,keep,sigmas):
     nkeep = np.sum(keep)
     ns = bps.shape[0]
@@ -207,6 +216,21 @@ if __name__ == '__main__':
     covfile='/home/creichardt/highell_dls/cov.bin'
 
     print_cov(covfile,ocov)
+    bcovfile='/home/creichardt/highell_dls/beamcov_zero.bin'
+    print_cov(bcovfile,ocov*0)
+    
+    calcov=np.zeros([3,3],dtype=np.float32)
+    SV90150 = .0040**2
+    SV220x = .0067**2
+    calcov[0,0] = .0043**2
+    calcov[0,1] = calcov[1,0] = SV90150
+    calcov[1,1] = .0043**2
+    calcov[:,2] = SV220x
+    calcov[2,:] = SV220x
+    calcov[2,2] = .0073**2
+    
+    calcovfile='/home/creichardt/highell_dls/calcov.txt'
+    print_calcov(calcovfile, calcov)
 
     owin = win_out[keep1d,:]
     print('bpwf shape:',owin.shape)
@@ -232,3 +256,5 @@ if __name__ == '__main__':
 
     bptexfile='/home/creichardt/highell_dls/table_dls.tex'
     print_bps_tex(bptexfile, lmins, lmaxs, leffs2, spec_out,keep,sigmas)
+    
+
