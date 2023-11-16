@@ -181,7 +181,7 @@ if __name__ == '__main__':
     #i1[1:3] = 29 #10000 for 90x150,90x220 
     spec_out,cov_out,win_out,transform = utils.weighted_rebin_spectrum(orig_bands,final_bands,spectrum,cov0=cov, win0=win,weights = wts)
 
-    with open('/home/creichardt/highells_dls/bptransform.npy','wb') as fp:
+    with open('/home/creichardt/highell_dls/bptransform.npy','wb') as fp:
         transform.tofile(fp)
 
     print(np.diag(cov_out[5,:,5,:]))
@@ -221,7 +221,7 @@ if __name__ == '__main__':
     
     calcov=np.zeros([3,3],dtype=np.float32)
     SV90150 = .0040**2
-    SV220x = .0067**2
+    SV220x = 1.8001e-5
     calcov[0,0] = .0043**2
     calcov[0,1] = calcov[1,0] = SV90150
     calcov[1,1] = .0043**2
