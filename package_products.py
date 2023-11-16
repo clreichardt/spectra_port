@@ -221,7 +221,7 @@ if __name__ == '__main__':
     
     calcov=np.zeros([3,3],dtype=np.float32)
     SV90150 = .0040**2
-    SV220x = 1.8001e-5
+    SV220x = SV90150
     calcov[0,0] = .0043**2
     calcov[0,1] = calcov[1,0] = SV90150
     calcov[1,1] = .0043**2
