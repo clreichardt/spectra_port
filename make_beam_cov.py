@@ -94,7 +94,7 @@ if __name__ == "__main__":
     #implied ell's go from 2 to lmax
     
     #theory spectra - 7/8
-    with np.load('SPT3G_JAX_Likelihood/spt_dl_components.npz',allow_pickle=True) as npzfile:
+    with np.load('/home/creichardt/SPT3G_JAX_Likelihood/spt_dl_components.npz',allow_pickle=True) as npzfile:
         cmb_Dls = npzfile['cmb_Dls']    
         fg_Dls = npzfile['fg_Dls']
         #again implicit ell from 2 to lmax (which may be a different lmax than window functions)
