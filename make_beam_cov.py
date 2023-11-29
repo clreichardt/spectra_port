@@ -107,7 +107,7 @@ if __name__ == "__main__":
         
     nf=3
     ncross = nf*(nf+1)//2
-    for i in ncross:
+    for i in range(ncross):
         fg_Dls[i,:] += cmb_Dls 
     
     assert lmax == len(cmb_Dls)+1
@@ -118,42 +118,48 @@ if __name__ == "__main__":
     #lb = beam_arr[:,0], b90 = beam_arr[:,1], etc.
     # this does not include PWF factors, deliberately.
     #this goes from 0 to 14999 in practice 
-    beam_arr = beam_arr[:,2:lmax+1] #cut to relevant ells. 
+    beam_arr = beam_arr[2:lmax+1,:] #cut to relevant ells. 
     
     #now only evectors are on different ell-spacing
 
     bps0 = apply_bpwf(win_arr,fg_Dls)
-    pdb.set_trace() #check dims
+    #pdb.set_trace() #check dims
     frac_beam_cov = 0.0
     #2
     spec_vec = fg_Dls * 0
     for i in range(neval):
-        this_evec090 = np.interp(beam_arr[:,0],ell_cov,norm_evec[:nc,i])
-        this_evec150 = np.interp(beam_arr[:,0],ell_cov,norm_evec[nc:2*nc,i])
-        this_evec220 = np.interp(beam_arr[:,0],ell_cov,norm_evec[2*nc:3*nc,i])
-        ratio090 = this_evec090/beam_arr[:,1]
-        ratio150 = this_evec150/beam_arr[:,2]
-        ratio220 = this_evec220/beam_arr[:,3]
+        this_evec090 = np.interp(beam_arr[:,0],ell_cov,norm_evecs[:nc,i])
+        this_evec150 = np.interp(beam_arr[:,0],ell_cov,norm_evecs[nc:2*nc,i])
+        this_evec220 = np.interp(beam_arr[:,0],ell_cov,norm_evecs[2*nc:3*nc,i])
+
+
+        ratio090 = 1+this_evec090/beam_arr[:,1]
+        ratio150 = 1+this_evec150/beam_arr[:,2]
+        ratio220 = 1+this_evec220/beam_arr[:,3]
         
         #III
-        spec_vec[0,:] = fg_dls[0,:] * ratio090**2
-        spec_vec[1,:] = fg_dls[1,:] * ratio090*ratio150
-        spec_vec[2,:] = fg_dls[2,:] * ratio090*ratio220
-        spec_vec[3,:] = fg_dls[3,:] * ratio150**2
-        spec_vec[4,:] = fg_dls[4,:] * ratio150*ratio220
-        spec_vec[5,:] = fg_dls[5,:] * ratio220**2
+        spec_vec[0,:] = fg_Dls[0,:] * ratio090**2
+        spec_vec[1,:] = fg_Dls[1,:] * ratio090*ratio150
+        spec_vec[2,:] = fg_Dls[2,:] * ratio090*ratio220
+        spec_vec[3,:] = fg_Dls[3,:] * ratio150**2
+        spec_vec[4,:] = fg_Dls[4,:] * ratio150*ratio220
+        spec_vec[5,:] = fg_Dls[5,:] * ratio220**2
         
         #IV
         new_bps = apply_bpwf(win_arr,spec_vec)
         
         #V
-        ratio_bps = new_bps/bps0
+        ratio_bps = (new_bps/bps0 - 1.0).reshape([-1,1]) #promote to right dimensions to do matrix multiply below
         
         #VI
-        frac_beam_cov += np.matmul(ratio_bps.T, ratio_bps) 
-        pdb.set_trace() #check dims
+
+        frac_beam_cov += np.matmul(ratio_bps, ratio_bps.T) 
+        # pdb.set_trace() #check dims
         
-    #3
-    with open('/home/creichardt/highell_dls/fractional_beam_cov.bin') as fp:
-        frac_beam_cov.astype('np.float64').tofile(fp)
+    #
+    with open('/home/creichardt/highell_dls/fractional_beam_cov.bin','wb') as fp:
+        frac_beam_cov.astype(np.float64).tofile(fp)
+
+    eval,evec=np.linalg.eigh(frac_beam_cov)
+    print(eval) #expect ~10 non-zero evals
     
