@@ -77,7 +77,7 @@ if __name__ == "__main__":
     #this goes from 0 to 14999 in practice
     
     #get inputs 5/6 - BPWF
-    win_file = 'highell_dls/windowfunc.bin'
+    win_file = '/home/creichardt/highell_dls/windowfunc.bin'
     with open(win_file, "rb") as fp:
         line = fp.readline()
         sline = line.decode()
