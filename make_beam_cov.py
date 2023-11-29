@@ -1,5 +1,5 @@
 import numpy as np
-
+import pdb
 
 
 '''
@@ -48,7 +48,18 @@ Flowchart:
 
 '''
 
+def apply_bpwf(win_arr,dls):
+    ncross = dls.shape[0]
+    nball = win_arr.shape[0]
+    nb = nball//ncross
 
+    out = np.zeros(nball,dtype=np.float64)
+    for i in range(ncross):
+        dli = dls[i,:]
+        out[i*nb:(i+1)*nb] = np.matmul(win_arr[i*nb:(i+1)*nb,:],dli)
+    
+    return out
+    
 
 def load_beam_evecs(file,threshold=1e-3):
     with np.load(file) as data:
@@ -69,12 +80,7 @@ if __name__ == "__main__":
     nc = ell_cov.shape[0]
     neval = norm_evecs.shape[1]
     
-    #preliminaries:
-    # get inputs 3/4 - beam
-    beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
-    #lb = beam_arr[:,0], b90 = beam_arr[:,1], etc.
-    # this does not include PWF factors, deliberately.
-    #this goes from 0 to 14999 in practice
+
     
     #get inputs 5/6 - BPWF
     win_file = '/home/creichardt/highell_dls/windowfunc.bin'
@@ -98,15 +104,29 @@ if __name__ == "__main__":
         cmb_Dls = npzfile['cmb_Dls']    
         fg_Dls = npzfile['fg_Dls']
         #again implicit ell from 2 to lmax (which may be a different lmax than window functions)
+        
+    nf=3
+    ncross = nf*(nf+1)//2
+    for i in ncross:
+        fg_Dls[i,:] += cmb_Dls 
     
-    print('theory lmax',len(cmb_Dls)+1)
-    print('beam lmax',beam_arr[-1,0])
-    print('bpwf lmax',lmax)
+    assert lmax == len(cmb_Dls)+1
+        
+    #preliminaries:
+    # get inputs 3/4 - beam
+    beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
+    #lb = beam_arr[:,0], b90 = beam_arr[:,1], etc.
+    # this does not include PWF factors, deliberately.
+    #this goes from 0 to 14999 in practice 
+    beam_arr = beam_arr[:,2:lmax+1] #cut to relevant ells. 
+    
+    #now only evectors are on different ell-spacing
 
-    exit()    
-    beam_cov = 0.0
+    bps0 = apply_bpwf(win_arr,fg_Dls)
+    pdb.set_trace() #check dims
+    frac_beam_cov = 0.0
     #2
-    spec_vec = np.zeros()
+    spec_vec = fg_Dls * 0
     for i in range(neval):
         this_evec090 = np.interp(beam_arr[:,0],ell_cov,norm_evec[:nc,i])
         this_evec150 = np.interp(beam_arr[:,0],ell_cov,norm_evec[nc:2*nc,i])
@@ -115,5 +135,25 @@ if __name__ == "__main__":
         ratio150 = this_evec150/beam_arr[:,2]
         ratio220 = this_evec220/beam_arr[:,3]
         
+        #III
+        spec_vec[0,:] = fg_dls[0,:] * ratio090**2
+        spec_vec[1,:] = fg_dls[1,:] * ratio090*ratio150
+        spec_vec[2,:] = fg_dls[2,:] * ratio090*ratio220
+        spec_vec[3,:] = fg_dls[3,:] * ratio150**2
+        spec_vec[4,:] = fg_dls[4,:] * ratio150*ratio220
+        spec_vec[5,:] = fg_dls[5,:] * ratio220**2
         
+        #IV
+        new_bps = apply_bpwf(win_arr,spec_vec)
         
+        #V
+        ratio_bps = new_bps/bps0
+        
+        #VI
+        frac_beam_cov += np.matmul(ratio_bps.T, ratio_bps) 
+        pdb.set_trace() #check dims
+        
+    #3
+    with open('/home/creichardt/highell_dls/fractional_beam_cov.bin') as fp:
+        frac_beam_cov.astype('np.float64').tofile(fp)
+    
