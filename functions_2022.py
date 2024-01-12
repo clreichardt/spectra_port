@@ -516,8 +516,9 @@ if __name__ == "__main__" and FULLCAL == True:
     #setsize = setdef.shape[0] #nbundles
     
     #note beam is 90, 150, 220, so everything else needs to be too (or change beam array ordering)
-    beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
-    sim_beam_arr= beam_arr.copy()
+    sim_beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
+    beam_arr = np.loadtxt('/sptlocal/user/ndhuang/Frankenbeam_v3-beta/compiled.txt')
+    beam_arr = beam_arr[:sim_beam_arr.shape[0],:]
     #real data also has PWF (sims created at 8192)
     blmax=int(beam_arr[-1,0]+0.001)
     pwf = hp.pixwin(nside,lmax = blmax)
