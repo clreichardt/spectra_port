@@ -124,7 +124,12 @@ if __name__ == '__main__':
     nfcombo = nfreq * (nfreq+1) // 2
     #calibration_factors = np.asarray([ (0.9087)**-0.5, (0.9909)**-0.5, (0.9744)**-0.5 ])
     #change to below when reran with latest PWFs/Tfs on 2023 Sep 08
-    calibration_factors = np.asarray([ (0.9017)**-0.5, (0.9833)**-0.5, (0.9703)**-0.5 ])
+    
+    #sep 2023 w v2 beams
+    #calibration_factors = np.asarray([ (0.9017)**-0.5, (0.9833)**-0.5, (0.9703)**-0.5 ])
+    
+    #Jan 2024 w v3 beams
+    calibration_factors = np.asarray([ (0.8831)**-0.5, (0.9728)**-0.5, (0.9691)**-0.5 ])
     calibration_factors *= 1e-3  #correction for units between sims and real data. The transfer function brings it over.  This ends up being brought to the 2 power so 1e-6 effectively.
     global_freq_index_array = np.zeros([nfcombo,2],dtype=np.int32)
     cals = np.ones(nfcombo)
