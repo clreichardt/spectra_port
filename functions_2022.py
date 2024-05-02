@@ -78,6 +78,7 @@ NULLLRSPLIT=args.nulllrsplit
 
 def create_coadds(freq,nbundles=200):
     stub='/sptgrid/analysis/highell_TT_19-20/v4/coadds/bundle_{}_{}GHz.g3'
+    stub='/sptgrid/analysis/highell_TT_19-20/v5/coadds_230718/bundle_{}_{}GHz.g3'
     ofile = '/sptlocal/user/creichardt/hiell2022/coadd_{}ghz.pkl'.format(freq)
 
     
