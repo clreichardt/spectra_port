@@ -10,7 +10,7 @@ print('imported healpy')
 import unbiased_multispec as spec
 import utils
 import end_to_end
-#from spt3g import core,maps, calibration
+from spt3g import core,maps, calibration
 import argparse
 import pickle as pkl
 import pdb
@@ -78,7 +78,7 @@ NULLLRSPLIT=args.nulllrsplit
 
 def create_coadds(freq,nbundles=200):
     stub='/sptgrid/analysis/highell_TT_19-20/v4/coadds/bundle_{}_{}GHz.g3'
-    stub='/sptgrid/analysis/highell_TT_19-20/v5/coadds_230718/bundle_{}_{}GHz.g3'
+    stub='/sptgrid/analysis/highell_TT_19-20/v5/coadds_230718/bundle_{}_{}GHz.g3.gz'
     ofile = '/sptlocal/user/creichardt/hiell2022/coadd_v5_jul2023_{}ghz.pkl'.format(freq)
 
     
@@ -91,12 +91,15 @@ def create_coadds(freq,nbundles=200):
         print('{}, last took {} s'.format(i,(newt-last)))
         last = newt
         a=list(core.G3File(stub.format(i,freq)))
-        loc_ind1,loc_map1 = a[0]['left'].nonzero_pixels()
+        #pdb.set_trace()
+        loc_ind1,loc_map1 = a[0]['T'].nonzero_pixels()
         coadd[loc_ind1] += loc_map1
-        loc_ind1,loc_map1 = a[0]['right'].nonzero_pixels()
-        coadd[loc_ind1] += loc_map1
-        loc_ind1,loc_map1 = (a[0]['Wunpol']).nonzero_pixels()
-        wt[loc_ind1] += loc_map1
+        #loc_ind1,loc_map1 = a[0]['left'].nonzero_pixels()
+        #coadd[loc_ind1] += loc_map1
+        #loc_ind1,loc_map1 = a[0]['right'].nonzero_pixels()
+        #coadd[loc_ind1] += loc_map1
+        #loc_ind1,loc_map1 = (a[0]['Wunpol']).nonzero_pixels()
+        wt[loc_ind1] += 1
     ind = wt.nonzero()
     coadd = coadd[ind] 
     wt = wt[ind]
