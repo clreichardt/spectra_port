@@ -841,7 +841,8 @@ if __name__ == "__main__" and END == True:
     
     #note beam is 90, 150, 220, so everything else needs to be too (or change beam array ordering)
     sim_beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
-    beam_arr = np.loadtxt('/sptlocal/user/ndhuang/Frankenbeam_v3-beta/compiled.txt')
+    #beam_arr = np.loadtxt('/sptlocal/user/ndhuang/Frankenbeam_v3-beta/compiled.txt')
+    beam_arr = np.loadtxt('/home/creichardt/beams_sekret.txt')
     #cutting to same ells as sim beam arra:
     beam_arr = beam_arr[:sim_beam_arr.shape[0],:]
     
@@ -859,7 +860,7 @@ if __name__ == "__main__" and END == True:
     
         
     kernel_file = '/sptlocal/user/creichardt/mll_dl_0p4medwt_6mJy150ghzv2_13000.npz'
-#/sptlocal/user/creichardt/mll_dl_13000.npz'
+    #/sptlocal/user/creichardt/mll_dl_13000.npz'
     #sim_kernel_file = '/sptlocal/user/creichardt/mll_dl_13000.npz'
     sim_kernel_file=None
 
@@ -867,8 +868,8 @@ if __name__ == "__main__" and END == True:
 
     workdir = '/big_scratch/cr/xspec_2022/'
     os.makedirs(workdir,exist_ok=True)
-    file_out = workdir + 'spectrum.pkl'
-    file_out_small = workdir + 'spectrum_small.pkl'
+    file_out = workdir + 'spectrum_sekret.pkl'
+    file_out_small = workdir + 'spectrum_sekret_small.pkl'
     
     #mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
     #mask = np.load(mask_file)
