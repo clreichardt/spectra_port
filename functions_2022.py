@@ -857,6 +857,9 @@ if __name__ == "__main__" and END == True:
     sim_beam_arr[:,1] *= pwf**2
     sim_beam_arr[:,2] *= pwf**2
     sim_beam_arr[:,3] *= pwf**2
+    #sim_beam_arr[:,1] *= pwf
+    #sim_beam_arr[:,2] *= pwf
+    #sim_beam_arr[:,3] *= pwf
     
         
     kernel_file = '/sptlocal/user/creichardt/mll_dl_0p4medwt_6mJy150ghzv2_13000.npz'
