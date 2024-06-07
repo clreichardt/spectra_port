@@ -873,8 +873,8 @@ if __name__ == "__main__" and END == True:
 
     workdir = '/big_scratch/cr/xspec_2022/'
     os.makedirs(workdir,exist_ok=True)
-    file_out = workdir + 'spectrum_sekret.pkl'
-    file_out_small = workdir + 'spectrum_sekret_small.pkl'
+    file_out = workdir + 'spectrum_blv3b6.pkl'
+    file_out_small = workdir + 'spectrum_blv3v6_small.pkl'
     
     #mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
     #mask = np.load(mask_file)
