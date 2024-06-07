@@ -844,7 +844,7 @@ if __name__ == "__main__" and END == True:
     sim_beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
     #beam_arr = np.loadtxt('/sptlocal/user/ndhuang/Frankenbeam_v3-beta/compiled.txt')
     #beam_arr = np.loadtxt('/home/creichardt/beams_sekret.txt')
-    beam_arr = np.loadtxt('/home/creichardt/beams_v3_beta6.txt')
+    beam_arr = np.loadtxt('/home/creichardt/bl_v3_beta6.txt')
     #cutting to same ells as sim beam arra:
     beam_arr = beam_arr[:sim_beam_arr.shape[0],:]
     
