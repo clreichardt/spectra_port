@@ -518,7 +518,8 @@ if __name__ == "__main__" and FULLCAL == True:
     
     #note beam is 90, 150, 220, so everything else needs to be too (or change beam array ordering)
     sim_beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
-    beam_arr = np.loadtxt('/sptlocal/user/ndhuang/Frankenbeam_v3-beta/compiled.txt')
+    #beam_arr = np.loadtxt('/sptlocal/user/ndhuang/Frankenbeam_v3-beta/compiled.txt')
+    beam_arr = np.loadtxt('/home/creichardt/bl_v3_beta6.txt')
     beam_arr = beam_arr[:sim_beam_arr.shape[0],:]
     #real data also has PWF (sims created at 8192)
     blmax=int(beam_arr[-1,0]+0.001)
@@ -839,7 +840,8 @@ if __name__ == "__main__" and END == True:
     #note beam is 90, 150, 220, so everything else needs to be too (or change beam array ordering)
     sim_beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
     #beam_arr = np.loadtxt('/sptlocal/user/ndhuang/Frankenbeam_v3-beta/compiled.txt')
-    beam_arr = np.loadtxt('/home/creichardt/beams_sekret.txt')
+    #beam_arr = np.loadtxt('/home/creichardt/beams_sekret.txt')
+    beam_arr = np.loadtxt('/home/creichardt/beams_v3_beta6.txt')
     #cutting to same ells as sim beam arra:
     beam_arr = beam_arr[:sim_beam_arr.shape[0],:]
     
