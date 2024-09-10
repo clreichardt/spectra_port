@@ -7,6 +7,24 @@ import numpy as np
 import pdb
 import os
 
+import argparse
+NORMAL=True
+SZPOL=False
+
+my_parser = argparse.ArgumentParser()
+my_parser.add_argument('-szpol', action='store_true',dest='szpol')
+args = my_parser.parse_args()
+SZPOL=args.szpol
+ANYTRUE = False
+for key in args.__dict__.keys():
+    ANYTRUE = ANYTRUE or  args.__dict__[key]
+    print(key, args.__dict__[key])
+NORMAL = not ANYTRUE
+print('normal',NORMAL)
+
+
+
+
 def print_bps_tex(bpfile, lmins, lmaxs, leffs, bps,keep,sigmas):
     nkeep = np.sum(keep)
     #ns = bps.shape[0]
@@ -111,9 +129,72 @@ def print_win(wfile,win,minl,maxl):
 
 if __name__ == '__main__':
 
-    dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3b7_small.pkl'
-    covfile='/big_scratch/cr/xspec_2022/covariance_blv3b7.pkl'
-    odir='/home/creichardt/highell_dls_blv3b7_fieldpwf/'
+    nfreq = 3
+    nfcombo = nfreq * (nfreq+1) // 2
+
+    if NORMAL:
+        print("using normal data products, binning, and calibration")
+        
+        dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3b7_small.pkl'
+        covfile='/big_scratch/cr/xspec_2022/covariance_blv3b7.pkl'
+        odir='/home/creichardt/highell_dls_blv3b7_fieldpwf/'
+        final_bands = np.asarray([0,500,1000,1200,1400,1600,
+                            1700,1800,1900,2000,2100,
+                            2200,2300,2400,2500,2700,
+                            3000,3300,3600,4000,4400,
+                            4800,5300,5800,6400,7000,
+                            7600,8300,9000,10000,11000,
+                            12000])
+        i0 = np.ones(nfcombo,dtype=np.int32)*6
+        i1 = np.ones(nfcombo,dtype=np.int32)*30 #11000
+        explodeis=i1+1
+
+        calcov=np.zeros([3,3],dtype=np.float32)
+        SV90150 = .0040**2
+        SV220x = SV90150
+        calcov[0,0] = .0043**2
+        calcov[0,1] = calcov[1,0] = SV90150
+        calcov[1,1] = .0043**2
+        calcov[:,2] = SV220x
+        calcov[2,:] = SV220x
+        calcov[2,2] = .0073**2
+        
+
+    elif SZPOL:
+        dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3b7_small.pkl'
+        covfile='/big_scratch/cr/xspec_2022/covariance_blv3b7.pkl'
+        odir='/home/creichardt/highell_dls_blv3b7_fieldpwf/'
+
+        print("using normal data products and calibration, and SZPOL binning")
+        
+        final_bands = np.asarray([0,500,1000,1850, 2000, 2200, 2500,2800,3100,3500,
+                                  3900,4400,4900,5500,6200,7000,7800,8800,9800,11000,
+                            12000])
+        i0 = np.ones(nfcombo,dtype=np.int32)*3
+        i1 = np.ones(nfcombo,dtype=np.int32)*18 #11000
+        explodeis=i1+1
+        explodeis[0] = 16
+        calcov=np.zeros([3,3],dtype=np.float32)
+        SV90150 = .0040**2
+        SV220x = SV90150
+        calcov[0,0] = .0043**2
+        calcov[0,1] = calcov[1,0] = SV90150
+        calcov[1,1] = .0043**2
+        calcov[:,2] = SV220x
+        calcov[2,:] = SV220x
+        calcov[2,2] = .0073**2
+        
+
+    else:
+        print('unknown option, quitting')
+        return
+    
+
+    
+    calcovfile=odir+'calcov.txt'
+    print_calcov(calcovfile, calcov)
+
+
     with open(dlfile,'rb') as fp:
         spec  = pkl.load(fp)
 
@@ -123,8 +204,7 @@ if __name__ == '__main__':
 
 
     
-    nfreq = 3
-    nfcombo = nfreq * (nfreq+1) // 2
+
     #calibration_factors = np.asarray([ (0.9087)**-0.5, (0.9909)**-0.5, (0.9744)**-0.5 ])
     #change to below when reran with latest PWFs/Tfs on 2023 Sep 08
     
@@ -178,20 +258,10 @@ if __name__ == '__main__':
     t_cal_unc = np.ones(nfreq)* 0.01  
 
     orig_bands = spec['banddef']
-    final_bands = np.asarray([0,500,1000,1200,1400,1600,
-                              1700,1800,1900,2000,2100,
-                              2200,2300,2400,2500,2700,
-                              3000,3300,3600,4000,4400,
-                              4800,5300,5800,6400,7000,
-                              7600,8300,9000,10000,11000,
-                              12000])
+
     nfb = len(final_bands)-1
 
-    i0 = np.ones(nfcombo,dtype=np.int32)*6
-    #print('changed starting lbin to 2100 for testing!!!')
-    #i0 = np.ones(nfcombo,dtype=np.int32)*10
 
-    i1 = np.ones(nfcombo,dtype=np.int32)*30 #11000
     #i1[0] = 28 #9000 for 90x90
     #i1[1:3] = 29 #10000 for 90x150,90x220 
     spec_out,cov_out,win_out,transform = utils.weighted_rebin_spectrum(orig_bands,final_bands,spectrum,cov0=cov, win0=win,weights = wts)
@@ -215,7 +285,7 @@ if __name__ == '__main__':
     keep1d = keep.flatten()
     #pdb.set_trace()
     #ospec = (spec_out.flatten())[keep1d]
-
+    nkept = np.sum(keep1d)
 
 
     cov_out = np.reshape(cov_out,[nfcombo*nfb,nfcombo*nfb])
@@ -228,6 +298,20 @@ if __name__ == '__main__':
     ocov = cc[:,keep1d]
     print(ocov.shape)
     print(np.diag(ocov)[1:])
+    maxdd = np.max(np.diag(ocov))
+    explodeamount = 10000*maxdd #100xlargest diagonal sigma, or 10^4 in cov space
+    explode_diag = np.zeros(nkept)
+    running=0
+    for i in range(nfcombo):
+        thisn = i1[i]-i0[i]
+        explodeany = i1[i]>explodeis[i] 
+        if explodeany:
+            explode_diag[running:running+explodeis[i]-i0[i]]=0
+            explode_diag[running+explodeis[i]-i0[i]:running+i1s[i]-i0[i]]=explodeamount
+        else:
+            explode_diag[running:running+thisn]=0
+    print('Exploded this many:',np.sum(explode_diag > 0))
+    ocov += np.diag(explode_diag)
     
     eval,evec = np.linalg.eig(ocov)
     print('evals <0: {} of {}'.format(np.sum(eval <= 0),ocov.shape[0]))
@@ -242,25 +326,14 @@ if __name__ == '__main__':
     bcovfile=odir+'beamcov_zero.bin'
     print_cov(bcovfile,ocov*0)
     
-    calcov=np.zeros([3,3],dtype=np.float32)
-    SV90150 = .0040**2
-    SV220x = SV90150
-    calcov[0,0] = .0043**2
-    calcov[0,1] = calcov[1,0] = SV90150
-    calcov[1,1] = .0043**2
-    calcov[:,2] = SV220x
-    calcov[2,:] = SV220x
-    calcov[2,2] = .0073**2
-    
-    calcovfile=odir+'calcov.txt'
-    print_calcov(calcovfile, calcov)
+
 
     owin = win_out[keep1d,:]
     print('bpwf shape:',owin.shape)
     winfile = odir+'windowfunc.bin'
     print_win(winfile, owin,    spec['win_minell'], spec['win_maxell'])
     l = np.arange(spec['win_minell'], spec['win_maxell']+1)
-    nkept = np.sum(keep1d)
+
     leffs = np.zeros(nkept)
     for i in range(nkept):
         leffs[i] = np.sum(l * owin[i,:])
