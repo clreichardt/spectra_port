@@ -5,7 +5,7 @@ from spectra_port import covariance_functions #as cov
 import pickle as pkl
 import numpy as np
 import pdb
-
+import os
 
 def print_bps_tex(bpfile, lmins, lmaxs, leffs, bps,keep,sigmas):
     nkeep = np.sum(keep)
@@ -34,11 +34,11 @@ def print_bps_tex(bpfile, lmins, lmaxs, leffs, bps,keep,sigmas):
 
         for i in range(ns):
             if sigmas[i+ns*toprow[1]] >= 1:
-                print(fmtstr.format(lmins[i],lmaxs[i],leffs[i,3], bp0[i],sigmas[i+ns*toprow[0]],
-                                    bp1[i],sigmas[i+ns*toprow[1]],bp2[i],sigmas[i + ns*toprow[2]]))
+                print(fmtstr.format(lmins[i],lmaxs[i],leffs[3,i], bp0[i],sigmas[i+ns*toprow[0]],
+                                    bp1[i],sigmas[i+ns*toprow[1]],bp2[i],sigmas[i + ns*toprow[2]]),file=fp)
             else:
-                print(fmtstr2.format(lmins[i],lmaxs[i],leffs[i,3], bp0[i],sigmas[i+ns*toprow[0]],
-                                    bp1[i],sigmas[i+ns*toprow[1]],bp2[i],sigmas[i + ns*toprow[2]]))
+                print(fmtstr2.format(lmins[i],lmaxs[i],leffs[3,i], bp0[i],sigmas[i+ns*toprow[0]],
+                                     bp1[i],sigmas[i+ns*toprow[1]],bp2[i],sigmas[i + ns*toprow[2]]),file=fp)
         i=0
         bp0 = bps[botrow[i],keep[botrow[i],:]]
         i=1
@@ -47,11 +47,11 @@ def print_bps_tex(bpfile, lmins, lmaxs, leffs, bps,keep,sigmas):
         bp2 = bps[botrow[i],keep[botrow[i],:]]
         for i in range(ns):
             if sigmas[i+ns*botrow[1]] >= 1:
-                print(fmtstr.format(lmins[i],lmaxs[i],leffs[i,3], bp0[i],sigmas[i+ns*botrow[0]],
-                                    bp1[i],sigmas[i+ns*botrow[1]],bp2[i],sigmas[i + ns*botrow[2]]))
+                print(fmtstr.format(lmins[i],lmaxs[i],leffs[3,i], bp0[i],sigmas[i+ns*botrow[0]],
+                                    bp1[i],sigmas[i+ns*botrow[1]],bp2[i],sigmas[i + ns*botrow[2]]),file=fp)
             else:
-                print(fmtstr2.format(lmins[i],lmaxs[i],leffs[i,3], bp0[i],sigmas[i+ns*botrow[0]],
-                                    bp1[i],sigmas[i+ns*botrow[1]],bp2[i],sigmas[i + ns*botrow[2]]))
+                print(fmtstr2.format(lmins[i],lmaxs[i],leffs[3,i], bp0[i],sigmas[i+ns*botrow[0]],
+                                     bp1[i],sigmas[i+ns*botrow[1]],bp2[i],sigmas[i + ns*botrow[2]]),file=fp)
 
 
 def print_calcov(file, calcov):
@@ -110,7 +110,10 @@ def print_win(wfile,win,minl,maxl):
         
 
 if __name__ == '__main__':
-    dlfile='/big_scratch/cr/xspec_2022/spectrum_small.pkl'
+
+    dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3b7_small.pkl'
+    covfile='/big_scratch/cr/xspec_2022/covariance_blv3b7.pkl'
+    odir='/home/creichardt/highell_dls_blv3b7_fieldpwf/'
     with open(dlfile,'rb') as fp:
         spec  = pkl.load(fp)
 
@@ -119,7 +122,7 @@ if __name__ == '__main__':
     win = spec['windowfunc']
 
 
-    print("Do Calibration first!!!")
+    
     nfreq = 3
     nfcombo = nfreq * (nfreq+1) // 2
     #calibration_factors = np.asarray([ (0.9087)**-0.5, (0.9909)**-0.5, (0.9744)**-0.5 ])
@@ -129,7 +132,11 @@ if __name__ == '__main__':
     #calibration_factors = np.asarray([ (0.9017)**-0.5, (0.9833)**-0.5, (0.9703)**-0.5 ])
     
     #Jan 2024 w v3 beams
-    calibration_factors = np.asarray([ (0.8831)**-0.5, (0.9728)**-0.5, (0.9691)**-0.5 ])
+    #calibration_factors = np.asarray([ (0.8831)**-0.5, (0.9728)**-0.5, (0.9691)**-0.5 ])
+    #Jun 2024 w v3beta6 beams
+    #calibration_factors = np.asarray([ (0.8888)**-0.5, (0.9797)**-0.5, (0.9755)**-0.5 ])
+    #Jun 2024: w v3beta7 beams and field PWF
+    calibration_factors = np.asarray([ (0.8880)**-0.5, (0.9789)**-0.5, (0.97505)**-0.5 ])
     calibration_factors *= 1e-3  #correction for units between sims and real data. The transfer function brings it over.  This ends up being brought to the 2 power so 1e-6 effectively.
     global_freq_index_array = np.zeros([nfcombo,2],dtype=np.int32)
     cals = np.ones(nfcombo)
@@ -145,7 +152,7 @@ if __name__ == '__main__':
     spectrum = np.reshape(spectrum,nfcombo*259)
 
 
-    covfile='/big_scratch/cr/xspec_2022/covariance.pkl'
+
     with open(covfile,'rb') as fp:
         covobj  = pkl.load(fp)
      
@@ -181,12 +188,22 @@ if __name__ == '__main__':
     nfb = len(final_bands)-1
 
     i0 = np.ones(nfcombo,dtype=np.int32)*6
+    #print('changed starting lbin to 2100 for testing!!!')
+    #i0 = np.ones(nfcombo,dtype=np.int32)*10
+
     i1 = np.ones(nfcombo,dtype=np.int32)*30 #11000
     #i1[0] = 28 #9000 for 90x90
     #i1[1:3] = 29 #10000 for 90x150,90x220 
     spec_out,cov_out,win_out,transform = utils.weighted_rebin_spectrum(orig_bands,final_bands,spectrum,cov0=cov, win0=win,weights = wts)
 
-    with open('/home/creichardt/highell_dls/bptransform.npy','wb') as fp:
+
+    try:
+        os.mkdir(odir)
+    except:
+        pass
+
+
+    with open(odir+'bptransform.npy','wb') as fp:
         transform.tofile(fp)
 
     print(np.diag(cov_out[5,:,5,:]))
@@ -218,10 +235,11 @@ if __name__ == '__main__':
     print(eval[-5:])
     print(eval[:10])
     #pdb.set_trace()
-    covfile='/home/creichardt/highell_dls/cov.bin'
+
+    covfile=odir+'cov.bin'
 
     print_cov(covfile,ocov)
-    bcovfile='/home/creichardt/highell_dls/beamcov_zero.bin'
+    bcovfile=odir+'beamcov_zero.bin'
     print_cov(bcovfile,ocov*0)
     
     calcov=np.zeros([3,3],dtype=np.float32)
@@ -234,12 +252,12 @@ if __name__ == '__main__':
     calcov[2,:] = SV220x
     calcov[2,2] = .0073**2
     
-    calcovfile='/home/creichardt/highell_dls/calcov.txt'
+    calcovfile=odir+'calcov.txt'
     print_calcov(calcovfile, calcov)
 
     owin = win_out[keep1d,:]
     print('bpwf shape:',owin.shape)
-    winfile = '/home/creichardt/highell_dls/windowfunc.bin'
+    winfile = odir+'windowfunc.bin'
     print_win(winfile, owin,    spec['win_minell'], spec['win_maxell'])
     l = np.arange(spec['win_minell'], spec['win_maxell']+1)
     nkept = np.sum(keep1d)
@@ -248,18 +266,18 @@ if __name__ == '__main__':
         leffs[i] = np.sum(l * owin[i,:])
     sigmas = np.sqrt(np.diag(ocov))
 
-    bpfile='/home/creichardt/highell_dls/dls.txt'
+    bpfile=odir+'dls.txt'
     print_bps(bpfile,leffs, spec_out,keep,sigmas)
-    bpfile='/home/creichardt/highell_dls/dls_jax.txt'
+    bpfile=odir+'dls_jax.txt'
     print_bps_jax(bpfile, spec_out,keep)
     #assuming keep same in all... may need to change this
     nb = nkept//6
-    sigmas2 = np.reshape(sigmas,[nb,6])
-    leffs2 = np.reshape(leffs,[nb,6])
+    #sigmas2 = np.reshape(sigmas,[nb,6])
+    leffs2 = np.reshape(leffs,[6,nb])
     lmins = final_bands[i0[0]:i1[0]]+1
     lmaxs = final_bands[i0[0]+1:i1[0]+1]
-
-    bptexfile='/home/creichardt/highell_dls/table_dls.tex'
+    #pdb.set_trace()
+    bptexfile=odir+'table_dls.tex'
     print_bps_tex(bptexfile, lmins, lmaxs, leffs2, spec_out,keep,sigmas)
     
 

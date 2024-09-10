@@ -23,7 +23,8 @@ from spectra_port import unbiased_multispec, utils, covariance_functions
 if __name__ == '__main__':
 
     print("initiating files")
-    dlfile='/big_scratch/cr/xspec_2022/spectrum_small.pkl'
+    dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3b7_small.pkl' #input
+    covfile = '/big_scratch/cr/xspec_2022/covariance_blv3b7.pkl'  #output
     with open(dlfile,'rb') as fp:
         spec  = pkl.load(fp)
         
@@ -62,7 +63,11 @@ if __name__ == '__main__':
         theory_dls[i,:] = covariance_functions.bin_spectra(cmb_dls + fgtheory_dls[i,:],spec['banddef'])
     #calibration_factors = np.asarray([ (0.9087)**-0.5, (0.9909)**-0.5, (0.9744)**-0.5 ])
     #change to below when reran with latest PWFs/Tfs on 2023 Sep 08
-    calibration_factors = np.asarray([ (0.9017)**-0.5, (0.9833)**-0.5, (0.9703)**-0.5 ])
+    #calibration_factors = np.asarray([ (0.9017)**-0.5, (0.9833)**-0.5, (0.9703)**-0.5 ])
+    #change to latest field-speific PWF and v3bta6 beams:
+    #calibration_factors = np.asarray([ (0.8888)**-0.5, (0.9797)**-0.5, (0.9755)**-0.5 ])
+    #24/6/24: blv3b7 beams (and field pwf)
+    calibration_factors = np.asarray([ (0.8880)**-0.5, (0.9789)**-0.5, (0.97505)**-0.5 ])
     calibration_factors *= 1e-3  #correction for units between sims and real data. The transfer function brings it over.  This ends up being brought to the 4 power so 1e-12 effectively.
     
     print("initiating cov")
@@ -73,7 +78,7 @@ if __name__ == '__main__':
     print('Returned <0 evals: {} of {}'.format(np.sum(eval<=0),nn))
 
     #exit()
-    covfile = '/big_scratch/cr/xspec_2022/covariance.pkl'
+
     with open(covfile,'wb') as fp:
         pkl.dump(cov_obj, fp)
 

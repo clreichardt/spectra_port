@@ -42,8 +42,9 @@ if __name__ == '__main__':
     nspec = nf*(nf+1)//2  # 6 for expected numbers
     nblock = nspec * (nspec+1) //2 #should be 21 for current #s
 
-    print("initiating files")
-    dlfile='/big_scratch/cr/xspec_2022/spectrum_small.pkl'
+    print("initiating files for bl v3beta6")
+    print("Also using field-specific PWF")
+    dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3v6small.pkl'
     with open(dlfile,'rb') as fp:
         spec  = pkl.load(fp)
         
@@ -84,14 +85,19 @@ if __name__ == '__main__':
         theorynorg_dls[i,:] = covariance_functions.bin_spectra(cmb_dls + norgfgtheory_dls[i,:],spec['banddef'])
     #calibration_factors = np.asarray([ (0.9087)**-0.5, (0.9909)**-0.5, (0.9744)**-0.5 ])
     #change to below when reran with latest PWFs/Tfs on 2023 Sep 08
-    calibration_factors = np.asarray([ (0.9017)**-0.5, (0.9833)**-0.5, (0.9703)**-0.5 ])
+    #calibration_factors = np.asarray([ (0.9017)**-0.5, (0.9833)**-0.5, (0.9703)**-0.5 ])
+    
+    calibration_factors = np.asarray([ (0.8888)**-0.5, (0.9797)**-0.5, (0.9755)**-0.5 ])
     calibration_factors *= 1e-3  #correction for units between sims and real data. The transfer function brings it over.  This ends up being brought to the 4 power so 1e-12 effectively.
     
     # get beams
     beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
     #real data also has PWF (sims created at 8192)
     blmax=int(beam_arr[-1,0]+0.001)
-    pwf = hp.pixwin(nside,lmax = blmax)
+    #pwf = hp.pixwin(nside,lmax = blmax)
+    #07 jun 2024: Changed to use PWF from field
+    out=hp.read_cl('/home/creichardt/spt3g_software/mapspectra/data/healpix_8192_pixwin_spt3g1500d.fits')
+    pwf = out[:blmax+1]
     for i in range(nf):
         beam_arr[:,i+1] *= pwf
     lbeam = beam_arr[:,0]
@@ -148,7 +154,7 @@ if __name__ == '__main__':
 
 
 
-    covfile = '/big_scratch/cr/xspec_2022/covariance.pkl'
+    covfile = '/big_scratch/cr/xspec_2022/covariance_blv3b6.pkl'
     with open(covfile,'rb') as fp:
         cov_obj=pkl.load( fp)
     
