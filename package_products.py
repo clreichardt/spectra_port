@@ -138,6 +138,7 @@ if __name__ == '__main__':
         dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3b7_small.pkl'
         covfile='/big_scratch/cr/xspec_2022/covariance_blv3b7.pkl'
         odir='/home/creichardt/highell_dls_blv3b7_fieldpwf/'
+
         final_bands = np.asarray([0,500,1000,1200,1400,1600,
                             1700,1800,1900,2000,2100,
                             2200,2300,2400,2500,2700,
@@ -187,10 +188,15 @@ if __name__ == '__main__':
 
     else:
         print('unknown option, quitting')
-        return
+        exit()
     
 
-    
+    try:
+        os.mkdir(odir)
+    except:
+        pass
+
+        
     calcovfile=odir+'calcov.txt'
     print_calcov(calcovfile, calcov)
 
@@ -267,10 +273,6 @@ if __name__ == '__main__':
     spec_out,cov_out,win_out,transform = utils.weighted_rebin_spectrum(orig_bands,final_bands,spectrum,cov0=cov, win0=win,weights = wts)
 
 
-    try:
-        os.mkdir(odir)
-    except:
-        pass
 
 
     with open(odir+'bptransform.npy','wb') as fp:
@@ -304,12 +306,16 @@ if __name__ == '__main__':
     running=0
     for i in range(nfcombo):
         thisn = i1[i]-i0[i]
-        explodeany = i1[i]>explodeis[i] 
+        explodeany = i1[i]>explodeis[i]
+        #print(i,explodeany)
         if explodeany:
+            #print('Exploding:',running,explodeis[i],i1[i],i0[i],explodeamount)
             explode_diag[running:running+explodeis[i]-i0[i]]=0
-            explode_diag[running+explodeis[i]-i0[i]:running+i1s[i]-i0[i]]=explodeamount
+            explode_diag[running+explodeis[i]-i0[i]:running+i1[i]-i0[i]]=explodeamount
+            #print(explode_diag[running:running+thisn])
         else:
             explode_diag[running:running+thisn]=0
+        running+=thisn
     print('Exploded this many:',np.sum(explode_diag > 0))
     ocov += np.diag(explode_diag)
     
