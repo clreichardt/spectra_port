@@ -163,7 +163,7 @@ if __name__ == '__main__':
     elif SZPOL:
         dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3b7_small.pkl'
         covfile='/big_scratch/cr/xspec_2022/covariance_blv3b7.pkl'
-        odir='/home/creichardt/highell_dls_blv3b7_fieldpwf/'
+        odir='/home/creichardt/highell_dls_blv3b7_fieldpwf_szpol/'
 
         print("using normal data products and calibration, and SZPOL binning")
         
