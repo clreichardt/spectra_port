@@ -23,8 +23,8 @@ from spectra_port import unbiased_multispec, utils, covariance_functions
 if __name__ == '__main__':
 
     print("initiating files")
-    dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3b7_small.pkl' #input
-    covfile = '/big_scratch/cr/xspec_2022/covariance_blv3b7.pkl'  #output
+    dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_small.pkl' #input
+    covfile = '/big_scratch/cr/xspec_2022/covariance_blv3rc4.pkl'  #output
     with open(dlfile,'rb') as fp:
         spec  = pkl.load(fp)
         
@@ -67,7 +67,9 @@ if __name__ == '__main__':
     #change to latest field-speific PWF and v3bta6 beams:
     #calibration_factors = np.asarray([ (0.8888)**-0.5, (0.9797)**-0.5, (0.9755)**-0.5 ])
     #24/6/24: blv3b7 beams (and field pwf)
-    calibration_factors = np.asarray([ (0.8880)**-0.5, (0.9789)**-0.5, (0.97505)**-0.5 ])
+    #calibration_factors = np.asarray([ (0.8880)**-0.5, (0.9789)**-0.5, (0.97505)**-0.5 ])
+    #24/9/20: Tilt from Aylor et al + rc4 beams:
+    calibration_factors = np.asarray([ (0.88546)**-0.5, (0.97518)**-0.5, (0.95894)**-0.5 ])
     calibration_factors *= 1e-3  #correction for units between sims and real data. The transfer function brings it over.  This ends up being brought to the 4 power so 1e-12 effectively.
     
     print("initiating cov")

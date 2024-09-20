@@ -523,7 +523,8 @@ if __name__ == "__main__" and FULLCAL == True:
     sim_beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
     #beam_arr = np.loadtxt('/sptlocal/user/ndhuang/Frankenbeam_v3-beta/compiled.txt')
     #changed to b7 beams on jun23
-    beam_arr = np.loadtxt('/home/creichardt/bl_v3_beta7.txt')
+    #canged to rc4 on Sep24
+    beam_arr = np.loadtxt('/home/creichardt/bl_v3_beta_rc4.txt')
     beam_arr = beam_arr[:sim_beam_arr.shape[0],:]
     #real data also has PWF (sims created at 8192)
     blmax=int(beam_arr[-1,0]+0.001)
@@ -848,8 +849,12 @@ if __name__ == "__main__" and END == True:
     sim_beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
     #beam_arr = np.loadtxt('/sptlocal/user/ndhuang/Frankenbeam_v3-beta/compiled.txt')
     #beam_arr = np.loadtxt('/home/creichardt/beams_sekret.txt')
-    beam_arr = np.loadtxt('/home/creichardt/bl_v3_beta7.txt')
+    #beam_arr = np.loadtxt('/home/creichardt/bl_v3_beta7.txt')
+    #sep2024 change to rc4
+    beam_arr = np.loadtxt('/home/creichardt/bl_v3_beta_rc4.txt')
+
     #cutting to same ells as sim beam arra:
+    
     beam_arr = beam_arr[:sim_beam_arr.shape[0],:]
     
     #real data also has PWF (sims created at 8192)
@@ -883,8 +888,8 @@ if __name__ == "__main__" and END == True:
     workdir = '/big_scratch/cr/xspec_2022/'
     os.makedirs(workdir,exist_ok=True)
     if True:
-          file_out = workdir + 'spectrum_blv3b7.pkl'
-          file_out_small = workdir + 'spectrum_blv3b7_small.pkl'
+          file_out = workdir + 'spectrum_blv3rc4.pkl'
+          file_out_small = workdir + 'spectrum_blv3rc4_small.pkl'
     else:
           file_out = workdir + 'spectrum_blv3b6_nosimpwf.pkl'
           file_out_small = workdir + 'spectrum_blv3b6_nosimpwf_small.pkl'

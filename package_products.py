@@ -135,9 +135,9 @@ if __name__ == '__main__':
     if NORMAL:
         print("using normal data products, binning, and calibration")
         
-        dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3b7_small.pkl'
-        covfile='/big_scratch/cr/xspec_2022/covariance_blv3b7.pkl'
-        odir='/home/creichardt/highell_dls_blv3b7_fieldpwf/'
+        dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_small.pkl'
+        covfile='/big_scratch/cr/xspec_2022/covariance_blv3rc4.pkl'
+        odir='/home/creichardt/highell_dls_blv3rc4_fieldpwf/'
 
         final_bands = np.asarray([0,500,1000,1200,1400,1600,
                             1700,1800,1900,2000,2100,
@@ -151,6 +151,7 @@ if __name__ == '__main__':
         explodeis=i1+1
 
         calcov=np.zeros([3,3],dtype=np.float32)
+        ''' Jan2024 cal file       
         SV90150 = .0040**2
         SV220x = SV90150
         calcov[0,0] = .0043**2
@@ -159,12 +160,23 @@ if __name__ == '__main__':
         calcov[:,2] = SV220x
         calcov[2,:] = SV220x
         calcov[2,2] = .0073**2
-        
+        '''
+        #sep24 cal file
+        SV90150 = .00546**2
+        SV220x = SV90150
+        calcov[0,0] = .00550**2
+        calcov[0,1] = calcov[1,0] = SV90150
+        calcov[1,1] = .00550**2
+        calcov[:,2] = SV220x
+        calcov[2,:] = SV220x
+        calcov[2,2] = .00873**2
 
     elif SZPOL:
-        dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3b7_small.pkl'
-        covfile='/big_scratch/cr/xspec_2022/covariance_blv3b7.pkl'
-        odir='/home/creichardt/highell_dls_blv3b7_fieldpwf_szpol/'
+        dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_small.pkl'
+        covfile='/big_scratch/cr/xspec_2022/covariance_blv3rc4.pkl'
+        #dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3b7_small.pkl'
+        #covfile='/big_scratch/cr/xspec_2022/covariance_blv3b7.pkl'
+        odir='/home/creichardt/highell_dls_blv3rc4_fieldpwf_szpol/'
 
         print("using normal data products and calibration, and SZPOL binning")
         
@@ -176,15 +188,15 @@ if __name__ == '__main__':
         explodeis=i1+1
         explodeis[0] = 16
         calcov=np.zeros([3,3],dtype=np.float32)
-        SV90150 = .0040**2
+                #sep24 cal file
+        SV90150 = .00546**2
         SV220x = SV90150
-        calcov[0,0] = .0043**2
+        calcov[0,0] = .00550**2
         calcov[0,1] = calcov[1,0] = SV90150
-        calcov[1,1] = .0043**2
+        calcov[1,1] = .00550**2
         calcov[:,2] = SV220x
         calcov[2,:] = SV220x
-        calcov[2,2] = .0073**2
-        
+        calcov[2,2] = .00873**2
 
     else:
         print('unknown option, quitting')
@@ -222,7 +234,9 @@ if __name__ == '__main__':
     #Jun 2024 w v3beta6 beams
     #calibration_factors = np.asarray([ (0.8888)**-0.5, (0.9797)**-0.5, (0.9755)**-0.5 ])
     #Jun 2024: w v3beta7 beams and field PWF
-    calibration_factors = np.asarray([ (0.8880)**-0.5, (0.9789)**-0.5, (0.97505)**-0.5 ])
+    #calibration_factors = np.asarray([ (0.8880)**-0.5, (0.9789)**-0.5, (0.97505)**-0.5 ])
+    #Sep 2024: Changed ell-range for tilt in Aylro et al. + RC4 beams
+    calibration_factors = np.asarray([ (0.88546)**-0.5, (0.97518)**-0.5, (0.95894)**-0.5 ])
     calibration_factors *= 1e-3  #correction for units between sims and real data. The transfer function brings it over.  This ends up being brought to the 2 power so 1e-6 effectively.
     global_freq_index_array = np.zeros([nfcombo,2],dtype=np.int32)
     cals = np.ones(nfcombo)
