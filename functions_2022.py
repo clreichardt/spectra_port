@@ -10,7 +10,7 @@ print('imported healpy')
 import unbiased_multispec as spec
 import utils
 import end_to_end
-#from spt3g import core,maps, calibration
+from spt3g import core,maps, calibration
 import argparse
 import pickle as pkl
 import pdb
@@ -78,7 +78,7 @@ NULLLRSPLIT=args.nulllrsplit
 
 def create_coadds(freq,nbundles=200):
     stub='/sptgrid/analysis/highell_TT_19-20/v4/coadds/bundle_{}_{}GHz.g3'
-    stub='/sptgrid/analysis/highell_TT_19-20/v5/coadds_230718/bundle_{}_{}GHz.g3'
+    stub='/sptgrid/analysis/highell_TT_19-20/v5/coadds_230718/bundle_{}_{}GHz.g3.gz'
     ofile = '/sptlocal/user/creichardt/hiell2022/coadd_v5_jul2023_{}ghz.pkl'.format(freq)
 
     
@@ -91,12 +91,15 @@ def create_coadds(freq,nbundles=200):
         print('{}, last took {} s'.format(i,(newt-last)))
         last = newt
         a=list(core.G3File(stub.format(i,freq)))
-        loc_ind1,loc_map1 = a[0]['left'].nonzero_pixels()
+        #pdb.set_trace()
+        loc_ind1,loc_map1 = a[0]['T'].nonzero_pixels()
         coadd[loc_ind1] += loc_map1
-        loc_ind1,loc_map1 = a[0]['right'].nonzero_pixels()
-        coadd[loc_ind1] += loc_map1
-        loc_ind1,loc_map1 = (a[0]['Wunpol']).nonzero_pixels()
-        wt[loc_ind1] += loc_map1
+        #loc_ind1,loc_map1 = a[0]['left'].nonzero_pixels()
+        #coadd[loc_ind1] += loc_map1
+        #loc_ind1,loc_map1 = a[0]['right'].nonzero_pixels()
+        #coadd[loc_ind1] += loc_map1
+        #loc_ind1,loc_map1 = (a[0]['Wunpol']).nonzero_pixels()
+        wt[loc_ind1] += 1
     ind = wt.nonzero()
     coadd = coadd[ind] 
     wt = wt[ind]
@@ -519,11 +522,16 @@ if __name__ == "__main__" and FULLCAL == True:
     #note beam is 90, 150, 220, so everything else needs to be too (or change beam array ordering)
     sim_beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
     #beam_arr = np.loadtxt('/sptlocal/user/ndhuang/Frankenbeam_v3-beta/compiled.txt')
-    beam_arr = np.loadtxt('/home/creichardt/bl_v3_beta6.txt')
+    #changed to b7 beams on jun23
+    #canged to rc4 on Sep24
+    beam_arr = np.loadtxt('/home/creichardt/bl_v3_beta_rc4.txt')
     beam_arr = beam_arr[:sim_beam_arr.shape[0],:]
     #real data also has PWF (sims created at 8192)
     blmax=int(beam_arr[-1,0]+0.001)
-    pwf = hp.pixwin(nside,lmax = blmax)
+    #pwf = hp.pixwin(nside,lmax = blmax)
+    #swap to 1500 deg2 PWF on 7 Jun 2024
+    out=hp.read_cl('/home/creichardt/spt3g_software/mapspectra/data/healpix_8192_pixwin_spt3g1500d.fits')
+    pwf = out[:blmax+1]
     beam_arr[:,1] *= pwf
     beam_arr[:,2] *= pwf
     beam_arr[:,3] *= pwf
@@ -841,21 +849,37 @@ if __name__ == "__main__" and END == True:
     sim_beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
     #beam_arr = np.loadtxt('/sptlocal/user/ndhuang/Frankenbeam_v3-beta/compiled.txt')
     #beam_arr = np.loadtxt('/home/creichardt/beams_sekret.txt')
-    beam_arr = np.loadtxt('/home/creichardt/beams_v3_beta6.txt')
+    #beam_arr = np.loadtxt('/home/creichardt/bl_v3_beta7.txt')
+    #sep2024 change to rc4
+    beam_arr = np.loadtxt('/home/creichardt/bl_v3_beta_rc4.txt')
+
     #cutting to same ells as sim beam arra:
+    
     beam_arr = beam_arr[:sim_beam_arr.shape[0],:]
     
     #real data also has PWF (sims created at 8192)
     blmax=int(beam_arr[-1,0]+0.001)
     #sim_beam_arr= beam_arr.copy()
-    pwf = hp.pixwin(nside,lmax = blmax)
+    #pwf = hp.pixwin(nside,lmax = blmax)
+    #swap to 1500 deg2 PWF on 7 Jun 2024
+    out=hp.read_cl('/home/creichardt/spt3g_software/mapspectra/data/healpix_8192_pixwin_spt3g1500d.fits')
+    pwf = out[:blmax+1]
     beam_arr[:,1] *= pwf
     beam_arr[:,2] *= pwf
     beam_arr[:,3] *= pwf
+    #print("Warning! not applying pwf**2 to sim for testing!")
     #changed 2023/9/1 -- before this sim_beam_arr did *not* have PWF
-    sim_beam_arr[:,1] *= pwf**2
-    sim_beam_arr[:,2] *= pwf**2
-    sim_beam_arr[:,3] *= pwf**2
+    if True:
+          sim_beam_arr[:,1] *= pwf**2
+          sim_beam_arr[:,2] *= pwf**2
+          sim_beam_arr[:,3] *= pwf**2
+    if False:
+          sim_beam_arr[:,1] *= pwf**1
+          sim_beam_arr[:,2] *= pwf**1
+          sim_beam_arr[:,3] *= pwf**1
+    #sim_beam_arr[:,1] *= pwf
+    #sim_beam_arr[:,2] *= pwf
+    #sim_beam_arr[:,3] *= pwf
     
         
     kernel_file = '/sptlocal/user/creichardt/mll_dl_0p4medwt_6mJy150ghzv2_13000.npz'
@@ -867,9 +891,16 @@ if __name__ == "__main__" and END == True:
 
     workdir = '/big_scratch/cr/xspec_2022/'
     os.makedirs(workdir,exist_ok=True)
-    file_out = workdir + 'spectrum_sekret.pkl'
-    file_out_small = workdir + 'spectrum_sekret_small.pkl'
-    
+    if True:
+          file_out = workdir + 'spectrum_blv3rc4.pkl'
+          file_out_small = workdir + 'spectrum_blv3rc4_small.pkl'
+    elif False:
+          file_out = workdir + 'spectrum_blv3rc4_nosimpwf.pkl'
+          file_out_small = workdir + 'spectrum_blv3rc4_nosimpwf_small.pkl'
+    else:
+          file_out = workdir + 'spectrum_blv3rc4_1simpwf.pkl'
+          file_out_small = workdir + 'spectrum_blv3rc4_1simpwf_small.pkl'
+
     #mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
     #mask = np.load(mask_file)
     mask_file = '/sptlocal/user/creichardt/hiell2022/mask_0p4medwt_6mJy150ghzv2.pkl'

@@ -70,20 +70,45 @@ def load_beam_evecs(file,threshold=1e-3):
     kept_val = eval[eval>threshold*mx]
     kept_evec = evec[:,eval>threshold*mx]
     nkept = kept_val.shape[0]
+    print('keeping {} evalues'.format(nkept))
     for i in range(nkept):
+        print(kept_val[i])
         kept_evec[:,i] *= np.sqrt(kept_val[i])
+    return kept_evec, ell
+
+def load_beam_evecs_v3beta7(file,threshold=1e-3):
+    with np.load(file) as data:
+        ell=data['ell']
+        kept_evec = data['modes']
+        #        cov=data['cov']
+        #    eval,evec=np.linalg.eigh(cov)
+        #    mx=np.max(eval)
+        #    kept_val = eval[eval>threshold*mx]
+        #    kept_evec = evec[:,eval>threshold*mx]
+        #    nkept = kept_val.shape[0]
+        #    for i in range(nkept):
+        #        kept_evec[:,i] *= np.sqrt(kept_val[i])
     return kept_evec, ell
     
 if __name__ == "__main__":
     #1, and inputs 1/2
-    norm_evecs, ell_cov = load_beam_evecs('/home/marius311/beamcov_ndh_oct30.npz', threshold = 1e-3)
+    #now using v3-beta7
+    #norm_evecs, ell_cov = load_beam_evecs_v3beta7('/sptlocal/user/ndhuang/Frankenbeam_v3-beta/unblinded/v3-beta7_final/cov_eigenmodes.npz')
+    #now for rc4 beam release
+    norm_evecs, ell_cov = load_beam_evecs('/sptlocal/user/ndhuang/Frankenbeam_v3-beta/release_candidates/rc4/cov.npz')
+
+    #        '/home/marius311/beamcov_ndh_oct30.npz', threshold = 1e-3)
     nc = ell_cov.shape[0]
     neval = norm_evecs.shape[1]
-    
+    #pdb.set_trace()
 
     
     #get inputs 5/6 - BPWF
-    win_file = '/home/creichardt/highell_dls/windowfunc.bin'
+    #v3-beta7
+    #dir = '/home/creichardt/highell_dls_blv3b7_fieldpwf/'
+    #beam rc4
+    dir = '/home/creichardt/highell_dls_blv3rc4_fieldpwf/'
+    win_file = dir+'windowfunc.bin'
     with open(win_file, "rb") as fp:
         line = fp.readline()
         sline = line.decode()
@@ -114,7 +139,8 @@ if __name__ == "__main__":
         
     #preliminaries:
     # get inputs 3/4 - beam
-    beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
+    #beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
+    beam_arr = np.loadtxt('/home/creichardt/bl_v3_beta_rc4.txt')
     #lb = beam_arr[:,0], b90 = beam_arr[:,1], etc.
     # this does not include PWF factors, deliberately.
     #this goes from 0 to 14999 in practice 
@@ -157,9 +183,14 @@ if __name__ == "__main__":
         # pdb.set_trace() #check dims
         
     #
-    with open('/home/creichardt/highell_dls/fractional_beam_cov.bin','wb') as fp:
+    with open(dir+'fractional_beam_cov.bin','wb') as fp:
         frac_beam_cov.astype(np.float64).tofile(fp)
 
+    with open(dir+'fractional_beam_covx4.bin','wb') as fp:
+        (4.*frac_beam_cov).astype(np.float64).tofile(fp)
+    with open(dir+'fractional_beam_covx100.bin','wb') as fp:
+        (100.*frac_beam_cov).astype(np.float64).tofile(fp)
+
     eval,evec=np.linalg.eigh(frac_beam_cov)
-    print(eval) #expect ~10 non-zero evals
+    print(eval) #expect ~30 non-zero evals
     
