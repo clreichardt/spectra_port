@@ -13,13 +13,19 @@ SZPOL=False
 
 my_parser = argparse.ArgumentParser()
 my_parser.add_argument('-szpol', action='store_true',dest='szpol')
+my_parser.add_argument('-onesimpwf', action='store_true',dest='onesimpwf')
+my_parser.add_argument('-nosimpwf', action='store_true',dest='nosimpwf')
+
 args = my_parser.parse_args()
+
 SZPOL=args.szpol
+NOSIMPWF=args.nosimpwf
+ONESIMPWF=args.onesimpwf
 ANYTRUE = False
 for key in args.__dict__.keys():
     ANYTRUE = ANYTRUE or  args.__dict__[key]
     print(key, args.__dict__[key])
-NORMAL = not ANYTRUE
+NORMAL = not SZPOL
 print('normal',NORMAL)
 
 
@@ -132,50 +138,59 @@ if __name__ == '__main__':
     nfreq = 3
     nfcombo = nfreq * (nfreq+1) // 2
 
-    if NORMAL:
-        print("using normal data products, binning, and calibration")
+    dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_small.pkl'
+    covfile='/big_scratch/cr/xspec_2022/covariance_blv3rc4.pkl'
+    odir='/home/creichardt/highell_dls_blv3rc4_fieldpwf/'
+
+    final_bands = np.asarray([0,500,1000,1200,1400,1600,
+                        1700,1800,1900,2000,2100,
+                        2200,2300,2400,2500,2700,
+                        3000,3300,3600,4000,4400,
+                        4800,5300,5800,6400,7000,
+                        7600,8300,9000,10000,11000,
+                        12000])
+    i0 = np.ones(nfcombo,dtype=np.int32)*6
+    i1 = np.ones(nfcombo,dtype=np.int32)*30 #11000
+    explodeis=i1+1
+
+    calcov=np.zeros([3,3],dtype=np.float32)
+    ''' Jan2024 cal file       
+    SV90150 = .0040**2
+    SV220x = SV90150
+    calcov[0,0] = .0043**2
+    calcov[0,1] = calcov[1,0] = SV90150
+    calcov[1,1] = .0043**2
+    calcov[:,2] = SV220x
+    calcov[2,:] = SV220x
+    calcov[2,2] = .0073**2
+    '''
+    #sep24 cal file
+    SV90150 = .00546**2
+    SV220x = SV90150
+    calcov[0,0] = .00550**2
+    calcov[0,1] = calcov[1,0] = SV90150
+    calcov[1,1] = .00550**2
+    calcov[:,2] = SV220x
+    calcov[2,:] = SV220x
+    calcov[2,2] = .00873**2
+
+    if ONESIMPWF:
+        print("using onesimpwf data products, binning, and calibration")
         
-        dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_small.pkl'
-        covfile='/big_scratch/cr/xspec_2022/covariance_blv3rc4.pkl'
-        odir='/home/creichardt/highell_dls_blv3rc4_fieldpwf/'
+        dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_1simpwf_small.pkl'
+        covfile='/big_scratch/cr/xspec_2022/covariance_blv3rc4_1simpwf.pkl'
+        odir='/home/creichardt/highell_dls_blv3rc4_fieldpwf_1simpwf/'
 
-        final_bands = np.asarray([0,500,1000,1200,1400,1600,
-                            1700,1800,1900,2000,2100,
-                            2200,2300,2400,2500,2700,
-                            3000,3300,3600,4000,4400,
-                            4800,5300,5800,6400,7000,
-                            7600,8300,9000,10000,11000,
-                            12000])
-        i0 = np.ones(nfcombo,dtype=np.int32)*6
-        i1 = np.ones(nfcombo,dtype=np.int32)*30 #11000
-        explodeis=i1+1
+    if NOSIMPWF:
+        print("using nosimpwf data products, binning, and calibration")
+        
+        dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_nosimpwf_small.pkl'
+        covfile='/big_scratch/cr/xspec_2022/covariance_blv3rc4_nosimpwf.pkl'
+        odir='/home/creichardt/highell_dls_blv3rc4_fieldpwf_nosimpwf/'
 
-        calcov=np.zeros([3,3],dtype=np.float32)
-        ''' Jan2024 cal file       
-        SV90150 = .0040**2
-        SV220x = SV90150
-        calcov[0,0] = .0043**2
-        calcov[0,1] = calcov[1,0] = SV90150
-        calcov[1,1] = .0043**2
-        calcov[:,2] = SV220x
-        calcov[2,:] = SV220x
-        calcov[2,2] = .0073**2
-        '''
-        #sep24 cal file
-        SV90150 = .00546**2
-        SV220x = SV90150
-        calcov[0,0] = .00550**2
-        calcov[0,1] = calcov[1,0] = SV90150
-        calcov[1,1] = .00550**2
-        calcov[:,2] = SV220x
-        calcov[2,:] = SV220x
-        calcov[2,2] = .00873**2
+    if SZPOL:
+        print('outputting to SZPOL bins')
 
-    elif SZPOL:
-        dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_small.pkl'
-        covfile='/big_scratch/cr/xspec_2022/covariance_blv3rc4.pkl'
-        #dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3b7_small.pkl'
-        #covfile='/big_scratch/cr/xspec_2022/covariance_blv3b7.pkl'
         odir='/home/creichardt/highell_dls_blv3rc4_fieldpwf_szpol/'
 
         print("using normal data products and calibration, and SZPOL binning")
@@ -187,20 +202,7 @@ if __name__ == '__main__':
         i1 = np.ones(nfcombo,dtype=np.int32)*18 #11000
         explodeis=i1+1
         explodeis[0] = 16
-        calcov=np.zeros([3,3],dtype=np.float32)
-                #sep24 cal file
-        SV90150 = .00546**2
-        SV220x = SV90150
-        calcov[0,0] = .00550**2
-        calcov[0,1] = calcov[1,0] = SV90150
-        calcov[1,1] = .00550**2
-        calcov[:,2] = SV220x
-        calcov[2,:] = SV220x
-        calcov[2,2] = .00873**2
 
-    else:
-        print('unknown option, quitting')
-        exit()
     
 
     try:
