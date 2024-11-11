@@ -873,6 +873,10 @@ if __name__ == "__main__" and END == True:
           sim_beam_arr[:,1] *= pwf**2
           sim_beam_arr[:,2] *= pwf**2
           sim_beam_arr[:,3] *= pwf**2
+    if False:
+          sim_beam_arr[:,1] *= pwf**1
+          sim_beam_arr[:,2] *= pwf**1
+          sim_beam_arr[:,3] *= pwf**1
     #sim_beam_arr[:,1] *= pwf
     #sim_beam_arr[:,2] *= pwf
     #sim_beam_arr[:,3] *= pwf
@@ -890,9 +894,12 @@ if __name__ == "__main__" and END == True:
     if True:
           file_out = workdir + 'spectrum_blv3rc4.pkl'
           file_out_small = workdir + 'spectrum_blv3rc4_small.pkl'
+    elif False:
+          file_out = workdir + 'spectrum_blv3rc4_nosimpwf.pkl'
+          file_out_small = workdir + 'spectrum_blv3rc4_nosimpwf_small.pkl'
     else:
-          file_out = workdir + 'spectrum_blv3b6_nosimpwf.pkl'
-          file_out_small = workdir + 'spectrum_blv3b6_nosimpwf_small.pkl'
+          file_out = workdir + 'spectrum_blv3rc4_1simpwf.pkl'
+          file_out_small = workdir + 'spectrum_blv3rc4_1simpwf_small.pkl'
 
     #mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
     #mask = np.load(mask_file)

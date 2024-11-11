@@ -211,6 +211,10 @@ if __name__ == '__main__':
         
     calcovfile=odir+'calcov.txt'
     print_calcov(calcovfile, calcov)
+    calcovfile=odir+'calcovx4.txt'
+    print_calcov(calcovfile, calcov*4.)
+    calcovfile=odir+'calcovx100.txt'
+    print_calcov(calcovfile, calcov*100.)
 
 
     with open(dlfile,'rb') as fp:
