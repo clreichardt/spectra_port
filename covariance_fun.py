@@ -25,6 +25,8 @@ if __name__ == '__main__':
     print("initiating files")
     dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_small.pkl' #input
     covfile = '/big_scratch/cr/xspec_2022/covariance_blv3rc4.pkl'  #output
+    #dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_1simpwf_small.pkl' #input                                                                           
+    #covfile = '/big_scratch/cr/xspec_2022/covariance_blv3rc4_1simpwf.pkl'  #output      
     with open(dlfile,'rb') as fp:
         spec  = pkl.load(fp)
         
