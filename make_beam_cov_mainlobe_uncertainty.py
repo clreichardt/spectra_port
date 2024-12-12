@@ -82,7 +82,7 @@ def create_mainlobe_evecs(ell,frac_unc=.02,lsigmas=[8100.,7000.,5300.]):
     for i in range(3):
         lsig = lsigmas[i]
         bl = np.exp(-0.5*(ell/lsig)**2)
-        blb= np.exp(-0.5*(ell/((1+frac)*lsig))**2)
+        blb= np.exp(-0.5*(ell/((1+frac_unc)*lsig))**2)
         fracbl = blb/bl - 1
         out[i*nl:(i+1)*nl,i]=fracbl
     return out
@@ -192,7 +192,7 @@ if __name__ == "__main__":
 
         frac_beam_cov += np.matmul(ratio_bps, ratio_bps.T) 
         # pdb.set_trace() #check dims
-    new_frac_mainlobe = create_mainlobe_evecs(beam_arr[:,0])
+    new_frac_mainlobe = create_mainlobe_evecs(beam_arr[:,0],frac_unc=0.02)
     for i in range(3):
         ratio090 = 1+new_frac_mainlobe[:nl_padded,i]
         ratio150 = 1+new_frac_mainlobe[nl_padded:2*nl_padded,i]
