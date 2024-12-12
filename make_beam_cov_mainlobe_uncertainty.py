@@ -76,6 +76,17 @@ def load_beam_evecs(file,threshold=1e-3):
         kept_evec[:,i] *= np.sqrt(kept_val[i])
     return kept_evec, ell
 
+def create_mainlobe_evecs(ell,frac_unc=.02,lsigmas=[8100.,7000.,5300.]):
+    nl = ell.shape[0]
+    out = np.zeros([3*nl,3])
+    for i in range(3):
+        lsig = lsigmas[i]
+        bl = np.exp(-0.5*(ell/lsig)**2)
+        blb= np.exp(-0.5*(ell/((1+frac)*lsig))**2)
+        fracbl = blb/bl - 1
+        out[i*nl:(i+1)*nl,i]=fracbl
+    return out
+
 def load_beam_evecs_v3beta7(file,threshold=1e-3):
     with np.load(file) as data:
         ell=data['ell']
@@ -181,14 +192,36 @@ if __name__ == "__main__":
 
         frac_beam_cov += np.matmul(ratio_bps, ratio_bps.T) 
         # pdb.set_trace() #check dims
+    new_frac_mainlobe = create_mainlobe_evecs(beam_arr[:,0])
+    for i in range(3):
+        ratio090 = 1+new_frac_mainlobe[:nl_padded,i]
+        ratio150 = 1+new_frac_mainlobe[nl_padded:2*nl_padded,i]
+        ratio220 = 1+new_frac_mainlobe[2*nl_padded:3*nl_padded,i]
+        #III
+        spec_vec[0,:] = fg_Dls[0,:] * ratio090**2
+        spec_vec[1,:] = fg_Dls[1,:] * ratio090*ratio150
+        spec_vec[2,:] = fg_Dls[2,:] * ratio090*ratio220
+        spec_vec[3,:] = fg_Dls[3,:] * ratio150**2
+        spec_vec[4,:] = fg_Dls[4,:] * ratio150*ratio220
+        spec_vec[5,:] = fg_Dls[5,:] * ratio220**2
         
+        #IV
+        new_bps = apply_bpwf(win_arr,spec_vec)
+        
+        #V
+        ratio_bps = (new_bps/bps0 - 1.0).reshape([-1,1]) #promote to right dimensions to do matrix multiply below
+        
+        #VI
+
+        frac_beam_cov += np.matmul(ratio_bps, ratio_bps.T)
+    
     #
-    with open(dir+'fractional_beam_cov.bin','wb') as fp:
+    with open(dir+'fractional_beam_cov_mainlobe.bin','wb') as fp:
         frac_beam_cov.astype(np.float64).tofile(fp)
 
-    with open(dir+'fractional_beam_covx4.bin','wb') as fp:
+    with open(dir+'fractional_beam_cov_mainlobe_x4.bin','wb') as fp:
         (4.*frac_beam_cov).astype(np.float64).tofile(fp)
-    with open(dir+'fractional_beam_covx100.bin','wb') as fp:
+    with open(dir+'fractional_beam_cov_mainlobe_x100.bin','wb') as fp:
         (100.*frac_beam_cov).astype(np.float64).tofile(fp)
 
     eval,evec=np.linalg.eigh(frac_beam_cov)
