@@ -26,7 +26,7 @@ class covariance:
     nf = 0
     nspec = 0
     nb = 0 
-    def __init__(self,spec,theory_dls,calibration_factors,factors=np.asarray([2.86,1.06,0.61])):
+    def __init__(self,spec,theory_dls,calibration_factors,factors=np.asarray([2.86,1.06,0.61]),extra=0.0):
         self.nf = factors.shape[0]
         self.nspec = (self.nf * (self.nf+1))//2
         self.nb = spec['sample_cov'].shape[1]
@@ -95,7 +95,7 @@ class covariance:
         diagonals_noise = self.fit_noise_diagonals(meas_cov,diagonals_signal,raw_diags,raw_diags1)
         print("Finished noise diag")
         #blow this back up to a 4Dim Array
-        self.simple_cov = self.construct_cov(diagonals_signal,diagonals_noise,self.offdiagonal_single_block)
+        self.simple_cov = self.construct_cov(diagonals_signal,diagonals_noise,self.offdiagonal_single_block,extra=extra)
         #and combine with poisson terms
         self.cov = self.simple_cov + self.poisson_offdiagonals
         self.diagonals_signal = diagonals_signal
@@ -105,12 +105,11 @@ class covariance:
         #Cov should be my final cov estimate. 
         print("Finished cov codition")
 
-    def construct_cov(self,diagonals_signal,diagonals_noise,offdiagonal_single_block):
+    def construct_cov(self,diagonals_signal,diagonals_noise,offdiagonal_single_block,extra=0):
         cov = np.zeros([self.nspec,self.nb,self.nspec,self.nb])
         for i in range(self.nspec):
             for j in range(i,self.nspec):
                 sqrtdiag = np.sqrt(diagonals_noise[self.get_1d_index(i,j),:] + diagonals_signal[self.get_1d_index(i,j),:])
-                
 
                 sqrtdiag2d = np.tile(sqrtdiag,[self.nb,1])
                 cc = sqrtdiag2d* sqrtdiag2d.T * offdiagonal_single_block
@@ -118,6 +117,8 @@ class covariance:
                 #pdb.set_trace()
                 if i != j:
                     cov[j,:,i,:] = cov[i,:,j,:].T
+                else:
+                    cov[i,:,j,:] *= 1+extra
         return cov
     
     def get_diags(self,cov):

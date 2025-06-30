@@ -24,7 +24,7 @@ if __name__ == '__main__':
 
     print("initiating files")
     dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_small.pkl' #input
-    covfile = '/big_scratch/cr/xspec_2022/covariance_blv3rc4.pkl'  #output
+    covfile = '/big_scratch/cr/xspec_2022/covariance_blv3rc4_1.1.pkl'  #output
     #dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_1simpwf_small.pkl' #input                                                                           
     #covfile = '/big_scratch/cr/xspec_2022/covariance_blv3rc4_1simpwf.pkl'  #output      
     with open(dlfile,'rb') as fp:
@@ -76,7 +76,7 @@ if __name__ == '__main__':
     
     print("initiating cov")
 
-    cov_obj = covariance_functions.covariance(spec,theory_dls, calibration_factors)        
+    cov_obj = covariance_functions.covariance(spec,theory_dls, calibration_factors,extra=0.1)        
     nn = cov_obj.cov.shape[0]*cov_obj.cov.shape[1]
     eval,evec = np.linalg.eig(cov_obj.cov.reshape([nn,nn]))
     print('Returned <0 evals: {} of {}'.format(np.sum(eval<=0),nn))
