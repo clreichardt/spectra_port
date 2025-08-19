@@ -3,6 +3,8 @@ import pdb
 
 
 '''
+Aug 19, 2025 -- Added new modes from NDH
+
 This set of code is intended to create a fractional beam covariance matrix for bandpowers.
 
 
@@ -25,11 +27,16 @@ Flowchart:
    a) cut to the top N e-vecs
    b) normalize by sqrt(eval)
 
+1*) Read the new error modes from NDH -- added Aug 19, 2025
+    Already normalized by magnitude
+
 2) Loop over e-vecs that are kept:
 
     I) Take ratio of beam cov evector to beams
         a) interpolate to make match ells
         b) take ratio
+
+    I*) Take ratio of new error modes from NDH (added Aug 19,2025). interpolation is not needed
     
     II) Turn this into an Ncross x Nlt array -- interpolate to ell_theory, and then take appropriate number of powers for each freq band based on the cross-spectra
     
@@ -89,7 +96,17 @@ def load_beam_evecs_v3beta7(file,threshold=1e-3):
         #    for i in range(nkept):
         #        kept_evec[:,i] *= np.sqrt(kept_val[i])
     return kept_evec, ell
-    
+
+def load_new_beam_evecs(file):
+    with np.load(file) as data:
+        ell=data['ell']
+        sidelobe = data['sidelobe_mode']
+        mainlobe = data['mainlobe_mode']
+    nl = ell.shape[0]
+    mainlobe = mainlobe.reshape([3,nl]).T 
+    sidelobe = sidelobe.reshape([3,nl]).T 
+    return mainlobe, sidelobe, ell
+
 if __name__ == "__main__":
     #1, and inputs 1/2
     #now using v3-beta7
@@ -97,11 +114,17 @@ if __name__ == "__main__":
     #now for rc4 beam release
     norm_evecs, ell_cov = load_beam_evecs('/sptlocal/user/ndhuang/Frankenbeam_v3-beta/release_candidates/rc4/cov.npz')
 
+    mainlobe,sidelobe,ell_lobe = load_new_beam_evecs('/home/creichardt/modeling_uncertainty_modes.npz')
+
     #        '/home/marius311/beamcov_ndh_oct30.npz', threshold = 1e-3)
     nc = ell_cov.shape[0]
     neval = norm_evecs.shape[1]
     #pdb.set_trace()
 
+    #estimated 3% error on error:
+    mainlobe   *= 1.03
+    sidelobe   *= 1.03
+    norm_evecs *= 1.03
     
     #get inputs 5/6 - BPWF
     #v3-beta7
@@ -146,6 +169,10 @@ if __name__ == "__main__":
     #this goes from 0 to 14999 in practice 
     beam_arr = beam_arr[2:lmax+1,:] #cut to relevant ells. 
     
+    #similar for lobe modes
+    mainlobe = mainlobe[2:lmax+1,:] #cut to relevant ells. 
+    sidelobe = sidelobe[2:lmax+1,:] #cut to relevant ells. 
+
     #now only evectors are on different ell-spacing
 
     bps0 = apply_bpwf(win_arr,fg_Dls)
@@ -181,6 +208,30 @@ if __name__ == "__main__":
 
         frac_beam_cov += np.matmul(ratio_bps, ratio_bps.T) 
         # pdb.set_trace() #check dims
+    #now lobe modes:
+    lobes = [mainlobe,sidelobe]
+    for mode in lobes:
+        ratio090 = 1+mode[:,0]/beam_arr[:,1]
+        ratio150 = 1+mode[:,1]/beam_arr[:,2]
+        ratio220 = 1+mode[:,2]/beam_arr[:,3]    
+        
+        #III
+        spec_vec[0,:] = fg_Dls[0,:] * ratio090**2
+        spec_vec[1,:] = fg_Dls[1,:] * ratio090*ratio150
+        spec_vec[2,:] = fg_Dls[2,:] * ratio090*ratio220
+        spec_vec[3,:] = fg_Dls[3,:] * ratio150**2
+        spec_vec[4,:] = fg_Dls[4,:] * ratio150*ratio220
+        spec_vec[5,:] = fg_Dls[5,:] * ratio220**2
+        
+        #IV
+        new_bps = apply_bpwf(win_arr,spec_vec)
+        
+        #V
+        ratio_bps = (new_bps/bps0 - 1.0).reshape([-1,1]) #promote to right dimensions to do matrix multiply below
+        
+        #VI
+
+        frac_beam_cov += np.matmul(ratio_bps, ratio_bps.T) 
         
     #
     with open(dir+'fractional_beam_cov.bin','wb') as fp:
