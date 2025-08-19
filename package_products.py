@@ -100,7 +100,7 @@ def print_bps(bpfile, leffs, bps,keep,sigmas):
 
             for val in loc:
 
-                print("{:d} {:f} {:.3e} {:.3e}".format(k,leffs[kk],val,sigmas[kk]),file=fp)
+                print("{:d} {:f} {:.5e} {:.3e}".format(k,leffs[kk],val,sigmas[kk]),file=fp)
                 k+=1
                 kk+=1
 
@@ -115,7 +115,7 @@ def print_bps_jax(bpfile, bps,keep):
 
             for val in loc:
 
-                print("{:.3e}".format(val),file=fp)
+                print("{:.5e}".format(val),file=fp)
 
             
 
@@ -139,8 +139,10 @@ if __name__ == '__main__':
     nfcombo = nfreq * (nfreq+1) // 2
 
     dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_small.pkl'
-    covfile='/big_scratch/cr/xspec_2022/covariance_blv3rc4_extra1.1.pkl'
+    covfile='/big_scratch/cr/xspec_2022/covariance_blv3rc4_1.1.pkl'
     odir='/home/creichardt/highell_dls_blv3rc4_fieldpwf_extra1p1/'
+    covfile='/big_scratch/cr/xspec_2022/covariance_blv3rc4.pkl'
+    odir='/home/creichardt/highell_dls_blv3rc4_fieldpwf/'
 
     final_bands = np.asarray([0,500,1000,1200,1400,1600,
                         1700,1800,1900,2000,2100,
