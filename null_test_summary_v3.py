@@ -113,13 +113,15 @@ if __name__ == '__main__':
     dir = '/big_scratch/cr/xspec_2022/'
     null12s = [dir + 'data_v5/null_spectrum_90.pkl', dir + 'data_v5/null_spectrum_150.pkl', dir + 'data_v5/null_spectrum_220.pkl']
     nulllrs = [dir + 'data_v5_lr/spectrum90_lrnull.pkl', dir + 'data_v5_lr/notau/spectrum150_lrnull.pkl', dir + 'data_v5_lr/notau/spectrum220_lrnull.pkl']
+    nulllr90_notau = dir+'data_v5_lr/notau/spectrum90_lrnull.pkl'
     binned = [ dir + 'spectrum500_90_small.pkl', dir + 'spectrum500_150_small.pkl', dir + 'spectrum500_220_small.pkl']
 
-    allowed_SV = 0.15
+    allowed_SV = 0.1
     print('Allowed SV is ',allowed_SV)
 
     
-    calibration_factors = np.asarray([ (0.9087)**-0.5, (0.9909)**-0.5, (0.9744)**-0.5 ])
+    calibration_factors =np.asarray([ (0.88546)**-0.5, (0.97518)**-0.5, (0.95894)**-0.5 ])
+    #np.asarray([ (0.9087)**-0.5, (0.9909)**-0.5, (0.9744)**-0.5 ])
     calibration_factors *= 1e-3 
 
     '''
@@ -187,6 +189,9 @@ if __name__ == '__main__':
         if dolr:
             with open(nulllrs[i],'rb') as fp:
                 nlr= pkl.load(fp)
+            if i == 0:
+                with open(nulllr90_notau,'rb') as fp:
+                    nlr2= pkl.load(fp)
         cal = calibration_factors[i]**2
         lrcal = 1./4e-6
         nspectra=1
@@ -199,11 +204,15 @@ if __name__ == '__main__':
         pseudo_dcov12 = n12.est1_cov[:nbands,:nbands] * cal**2
         if dolr:
             pseudo_dcovlr = nlr.est1_cov[:nbands,:nbands]  * cal**2 * lrcal**2
-
+            pseudo_dcovlr2 = nlr2.est1_cov[:nbands,:nbands]  * cal**2 * lrcal**2 #will be garabage except at 90
+            
+            
         Dl = spec['spectrum'].squeeze() * cal
         pseudo12 = n12.spectrum[:nbands,:] * cal
         if dolr:
             pseudolr = nlr.spectrum[:nbands,:] * cal *lrcal
+            pseudolr2 = nlr2.spectrum[:nbands,:] * cal *lrcal# only works at 90
+
 
         #pdb.set_trace()
         #choose ranges 
@@ -219,6 +228,7 @@ if __name__ == '__main__':
         Dl12 = np.reshape(np.matmul(invkernmat, np.reshape(pseudo12.T,[nspectra*nbands])),[nspectra*nbands])
         if dolr:
             Dllr = np.reshape(np.matmul(invkernmat, np.reshape(pseudolr.T,[nspectra*nbands])),[nspectra*nbands])
+            Dllr_notau = np.reshape(np.matmul(invkernmat, np.reshape(pseudolr2.T,[nspectra*nbands])),[nspectra*nbands])
             tautempl = dttautemplate(dt,taus[i],theory_dl,nbands,dl=500)
 
             Dllr2 = Dllr - tautempl
@@ -244,11 +254,21 @@ if __name__ == '__main__':
 
 
         print(freqs[i])
-        print('Chisq 12:',np.sum((Dl12[imin_dl500:imax_dl500]/comb_err12[imin_dl500:imax_dl500])**2), ' dof: ', imax_dl500-imin_dl500)
+        chi2=np.sum((Dl12[imin_dl500:imax_dl500]/comb_err12[imin_dl500:imax_dl500])**2)
+        dof=imax_dl500-imin_dl500
+        print('Chisq 12:',chi2, ' dof: ', dof)
+        print('PTE:',1-scipy.stats.f.cdf(chi2/dof,dof,199))
         print('Ratios: ',(Dl12[imin_dl500:imax_dl500]/comb_err12[imin_dl500:imax_dl500]))
         print('power ratios:',Dl12[imin_dl500:imax_dl500]/Dl[imin_dl500:imax_dl500])
         if dolr:
-            print('Chisq LR:',np.sum((Dllr[imin_dl500:imax_dl500]/comb_errlr[imin_dl500:imax_dl500])**2), ' dof: ', imax_dl500-imin_dl500)
+            chi2=np.sum((Dllr[imin_dl500:imax_dl500]/comb_errlr[imin_dl500:imax_dl500])**2)
+
+            print('Chisq LR:',chi2, ' dof: ', dof)
+            print('PTE:',1-scipy.stats.f.cdf(chi2/dof,dof,199))
+            if i == 0:
+                chi2b=np.sum((Dllr_notau[imin_dl500:imax_dl500]/comb_errlr[imin_dl500:imax_dl500])**2)
+                print('Chisq 90 no tau LR:',chi2b, ' dof: ', dof)
+            #print('Chisq LR:',np.sum((Dllr[imin_dl500:imax_dl500]/comb_errlr[imin_dl500:imax_dl500])**2), ' dof: ', imax_dl500-imin_dl500)
             print('Chisq LR subtracted:',np.sum((Dllr2[imin_dl500:imax_dl500]/comb_errlr[imin_dl500:imax_dl500])**2), ' dof: ', imax_dl500-imin_dl500)
             print('Ratios: ',(Dllr2[imin_dl500:imax_dl500]/comb_errlr[imin_dl500:imax_dl500]))
             print('power ratios:',Dllr2[imin_dl500:imax_dl500]/Dl[imin_dl500:imax_dl500])
