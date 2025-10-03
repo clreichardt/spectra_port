@@ -26,7 +26,7 @@ class covariance:
     nf = 0
     nspec = 0
     nb = 0 
-    def __init__(self,spec,theory_dls,calibration_factors,factors=np.asarray([2.86,1.06,0.61]),extra=0.0):
+    def __init__(self,spec,theory_dls,calibration_factors,factors=np.asarray([2.86,1.06,0.61]),extra=0.0,revised_dls=None, poisson_fac=1.):
         self.nf = factors.shape[0]
         self.nspec = (self.nf * (self.nf+1))//2
         self.nb = spec['sample_cov'].shape[1]
@@ -84,7 +84,7 @@ class covariance:
         print("Finished corr matrix")
         #We need diagonals, there will be 21 of these for 3 freqs
         #this is supposed to be 2S**2
-        diagonals_signal = self.fit_signal_diagonals(sample_cov,theory_dls)
+        diagonals_signal = self.fit_signal_diagonals(sample_cov,theory_dls,revised_dls = revised_dls)
         #pdb.set_trace()
         print("Finished signal diag")
         raw_diags = self.get_diags(meas_cov)
@@ -97,7 +97,7 @@ class covariance:
         #blow this back up to a 4Dim Array
         self.simple_cov = self.construct_cov(diagonals_signal,diagonals_noise,self.offdiagonal_single_block,extra=extra)
         #and combine with poisson terms
-        self.cov = self.simple_cov + self.poisson_offdiagonals
+        self.cov = self.simple_cov + self.poisson_offdiagonals * poisson_fac**2 # scale Poisson but
         self.diagonals_signal = diagonals_signal
         self.diagonals_noise = diagonals_noise
         self.raw_noise_diags = raw_diags
@@ -468,7 +468,9 @@ class covariance:
         
         
 
-    def fit_single_block_signal(self,cov,i_block,j_block, theory_dls,fit_range = [30,190], use_range = [40,259] ):
+    def fit_single_block_signal(self,cov,i_block,j_block, theory_dls,fit_range = [30,190], use_range = [40,259],revised_dls=None ):
+        if revised_dls is None or revised_dls.shape[0] != theory_dls.shape[0]:
+            revised_dls=theory_dls
 
         def signal_func(ells,const,amp,ampbump):
             #print(ells.shape,const.shape,amp.shape)
@@ -476,6 +478,7 @@ class covariance:
 
 
         theory = self.get_theory_cov(theory_dls,i_block,j_block)
+        revised_theory = self.get_theory_cov(revised_dls,i_block,j_block)
         # theory is eg (150x150)(90x90)+ (90x150)**2
         
         observed = np.diag(cov[i_block,:,j_block,:])
@@ -508,14 +511,14 @@ class covariance:
             #pdb.set_trace()
             
                  
-
-        out = prefactor * theory
+        #having fit using the inout sims, return scaled version with same prefactor
+        out = prefactor * revised_theory
         return out
 
 
 
-    def fit_signal_diagonals(self,sample_cov,theory_dls,fit_range = [30,190], use_range = [40,259] ):
-        
+    def fit_signal_diagonals(self,sample_cov,theory_dls,fit_range = [30,190], use_range = [40,259] ,revised_dls=None):
+
         nspec = sample_cov.shape[0]
         nb = sample_cov.shape[1]
         ncross = nspec * (nspec+1)//2
@@ -523,7 +526,7 @@ class covariance:
         for i in range(nspec):
             for j in range(nspec):
                 k = self.get_1d_index(i,j,nspec)
-                diagonals[k,:] = self.fit_single_block_signal(sample_cov,i,j,theory_dls,fit_range=fit_range,use_range=use_range)
+                diagonals[k,:] = self.fit_single_block_signal(sample_cov,i,j,theory_dls,fit_range=fit_range,use_range=use_range,revised_dls=revised_dls)
                 if False:
                     plt.plot(diagonals[k,40:120])
                     plt.plot(np.diag(sample_cov[i,:,j,:])[40:120])
@@ -617,17 +620,22 @@ if __name__ == '__main__':
     rg_dls_interp[4,:] = pois * facs[1]* facs[2]
     rg_dls_interp[5,:] = pois * facs[2]* facs[2]
     fgtheory_dls  = rg_dls_interp + norgfgtheory_dls
+    bestfit_fac = 6.32/2.86**2
+    revised_fgtheory_dls  = bestfit_fac * rg_dls_interp + norgfgtheory_dls
 
     nlc = ellcov.shape[0]
     theory_dls = np.zeros([6,nlc])
     for i in range(6):
         theory_dls[i,:] = bin_spectra(cmb_dls + fgtheory_dls[i,:],spec['banddef'])
+    revised_theory_dls = np.zeros([6,nlc])
+    for i in range(6):
+        revised_theory_dls[i,:] = bin_spectra(cmb_dls + revised_fgtheory_dls[i,:],spec['banddef'])
     calibration_factors = np.asarray([ (0.9087)**-0.5, (0.9909)**-0.5, (0.9744)**-0.5 ])
     calibration_factors *= 1e-3  #correction for units between sims and real data. The transfer function brings it over.  This ends up being brought to the 4 power so 1e-12 effectively.
     
     print("initiating cov")
 
-    cov_obj = covariance(spec,theory_dls, calibration_factors)        
+    cov_obj = covariance(spec,theory_dls, calibration_factors,poisson_fac=bestfit_fac,revised_dls = revised_theory_dls)        
     covfile = '/big_scratch/cr/xspec_2022/covariance.pkl'
     with open(covfile,'wb') as fp:
         pkl.dump(cov_obj, fp)
