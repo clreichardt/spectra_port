@@ -585,7 +585,7 @@ def bin_spectra(dl,banddef):
 if __name__ == '__main__':
 
     print("initiating files")
-    dlfile='/big_scratch/cr/xspec_2022/spectrum_small.pkl'
+    dlfile='/big_scratch/cr/xspec_2022/spectrum_blrc5p1_small.pkl'
     with open(dlfile,'rb') as fp:
         spec  = pkl.load(fp)
         
