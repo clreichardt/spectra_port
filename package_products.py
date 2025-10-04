@@ -138,11 +138,16 @@ if __name__ == '__main__':
     nfreq = 3
     nfcombo = nfreq * (nfreq+1) // 2
 
-    dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_small.pkl'
+'''    dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_small.pkl'
     covfile='/big_scratch/cr/xspec_2022/covariance_blv3rc4_1.1.pkl'
     odir='/home/creichardt/highell_dls_blv3rc4_fieldpwf_extra1p1/'
     covfile='/big_scratch/cr/xspec_2022/covariance_blv3rc4.pkl'
-    odir='/home/creichardt/highell_dls_blv3rc4_fieldpwf/'
+    odir='/home/creichardt/highell_dls_blv3rc4_fieldpwf/'''
+    dlfile='/big_scratch/cr/xspec_2022/spectrum_blrc5p1_small.pkl'
+    covfile='/big_scratch/cr/xspec_2022/covariance_blrc5p1.pkl'
+    #odir='/home/creichardt/highell_dls_blv3rc4_fieldpwf_extra1p1/'
+    #covfile='/big_scratch/cr/xspec_2022/covariance_blv3rc4.pkl'
+    odir='/home/creichardt/highell_dls_blrc5p1/'
 
     final_bands = np.asarray([0,500,1000,1200,1400,1600,
                         1700,1800,1900,2000,2100,
@@ -167,6 +172,7 @@ if __name__ == '__main__':
     calcov[2,2] = .0073**2
     '''
     #sep24 cal file
+    #also oct 25 cal file -- errors didn't change
     SV90150 = .00546**2
     SV220x = SV90150
     calcov[0,0] = .00550**2
@@ -175,22 +181,24 @@ if __name__ == '__main__':
     calcov[:,2] = SV220x
     calcov[2,:] = SV220x
     calcov[2,2] = .00873**2
+    
 
     if ONESIMPWF:
         print("using onesimpwf data products, binning, and calibration")
-        
+        pdb.set_trace()
         dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_1simpwf_small.pkl'
         covfile='/big_scratch/cr/xspec_2022/covariance_blv3rc4_1simpwf.pkl'
         odir='/home/creichardt/highell_dls_blv3rc4_fieldpwf_1simpwf/'
 
     if NOSIMPWF:
         print("using nosimpwf data products, binning, and calibration")
-        
+        pdb.set_trace()
         dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_nosimpwf_small.pkl'
         covfile='/big_scratch/cr/xspec_2022/covariance_blv3rc4_nosimpwf.pkl'
         odir='/home/creichardt/highell_dls_blv3rc4_fieldpwf_nosimpwf/'
 
     if SZPOL:
+        pdb.set_trace()
         print('outputting to SZPOL bins')
 
         odir='/home/creichardt/highell_dls_blv3rc4_fieldpwf_szpol/'
@@ -244,7 +252,9 @@ if __name__ == '__main__':
     #Jun 2024: w v3beta7 beams and field PWF
     #calibration_factors = np.asarray([ (0.8880)**-0.5, (0.9789)**-0.5, (0.97505)**-0.5 ])
     #Sep 2024: Changed ell-range for tilt in Aylro et al. + RC4 beams
-    calibration_factors = np.asarray([ (0.88546)**-0.5, (0.97518)**-0.5, (0.95894)**-0.5 ])
+    #calibration_factors = np.asarray([ (0.88546)**-0.5, (0.97518)**-0.5, (0.95894)**-0.5 ])
+    #oct 2025: changed beam, and fg model
+    calibration_factors = np.asarray([ (0.88632)**-0.5, (0.97714)**-0.5, (0.97445)**-0.5 ])
     calibration_factors *= 1e-3  #correction for units between sims and real data. The transfer function brings it over.  This ends up being brought to the 2 power so 1e-6 effectively.
     global_freq_index_array = np.zeros([nfcombo,2],dtype=np.int32)
     cals = np.ones(nfcombo)

@@ -16,6 +16,7 @@ import pickle as pkl
 import pdb
 import time
 
+from astropy.io import fits
 print('what')
 
 PREPCAL= False
@@ -524,13 +525,18 @@ if __name__ == "__main__" and FULLCAL == True:
     #beam_arr = np.loadtxt('/sptlocal/user/ndhuang/Frankenbeam_v3-beta/compiled.txt')
     #changed to b7 beams on jun23
     #canged to rc4 on Sep24
-    beam_arr = np.loadtxt('/home/creichardt/bl_v3_beta_rc4.txt')
+    #beam_arr = np.loadtxt('/home/creichardt/bl_v3_beta_rc4.txt')
+    #change to rc5.1 on Oct 4 2025
+    beam_arr = np.loadtxt('/home/creichardt/beam_rc5.1_noslope/compiled_bl_rc5p1_noslope.txt')
     beam_arr = beam_arr[:sim_beam_arr.shape[0],:]
     #real data also has PWF (sims created at 8192)
     blmax=int(beam_arr[-1,0]+0.001)
     #pwf = hp.pixwin(nside,lmax = blmax)
     #swap to 1500 deg2 PWF on 7 Jun 2024
-    out=hp.read_cl('/home/creichardt/spt3g_software/mapspectra/data/healpix_8192_pixwin_spt3g1500d.fits')
+    #out=hp.read_cl('/home/creichardt/spt3g_software/mapspectra/data/healpix_8192_pixwin_spt3g1500d.fits')
+    #swap to different IO on 4 oct 2025
+    with fits.open('/home/creichardt/spt3g_software/mapspectra/data/healpix_8192_pixwin_spt3g1500d.fits') as hdu:
+        out = np.asarray(hdu[1].data.astype(np.float64))
     pwf = out[:blmax+1]
     beam_arr[:,1] *= pwf
     beam_arr[:,2] *= pwf
@@ -851,8 +857,10 @@ if __name__ == "__main__" and END == True:
     #beam_arr = np.loadtxt('/home/creichardt/beams_sekret.txt')
     #beam_arr = np.loadtxt('/home/creichardt/bl_v3_beta7.txt')
     #sep2024 change to rc4
-    beam_arr = np.loadtxt('/home/creichardt/bl_v3_beta_rc4.txt')
-
+    #beam_arr = np.loadtxt('/home/creichardt/bl_v3_beta_rc4.txt')
+    #change to rc5.1 on Oct 4 2025 
+    beam_arr = np.loadtxt('/home/creichardt/beam_rc5.1_noslope/compiled_bl_rc5p1_noslope.txt')
+    
     #cutting to same ells as sim beam arra:
     
     beam_arr = beam_arr[:sim_beam_arr.shape[0],:]
@@ -862,7 +870,10 @@ if __name__ == "__main__" and END == True:
     #sim_beam_arr= beam_arr.copy()
     #pwf = hp.pixwin(nside,lmax = blmax)
     #swap to 1500 deg2 PWF on 7 Jun 2024
-    out=hp.read_cl('/home/creichardt/spt3g_software/mapspectra/data/healpix_8192_pixwin_spt3g1500d.fits')
+    #out=hp.read_cl('/home/creichardt/spt3g_software/mapspectra/data/healpix_8192_pixwin_spt3g1500d.fits')
+    #swap to different IO on 4 oct 2025                                                          
+    with fits.open('/home/creichardt/spt3g_software/mapspectra/data/healpix_8192_pixwin_spt3g1500d.fits') as hdu:
+        out = np.asarray(hdu[1].data.astype(np.float64))
     pwf = out[:blmax+1]
     beam_arr[:,1] *= pwf
     beam_arr[:,2] *= pwf
@@ -892,14 +903,14 @@ if __name__ == "__main__" and END == True:
     workdir = '/big_scratch/cr/xspec_2022/'
     os.makedirs(workdir,exist_ok=True)
     if True:
-          file_out = workdir + 'spectrum_blv3rc4.pkl'
-          file_out_small = workdir + 'spectrum_blv3rc4_small.pkl'
+          file_out = workdir + 'spectrum_blrc5p1.pkl'
+          file_out_small = workdir + 'spectrum_blrc5p1_small.pkl'
     elif False:
-          file_out = workdir + 'spectrum_blv3rc4_nosimpwf.pkl'
-          file_out_small = workdir + 'spectrum_blv3rc4_nosimpwf_small.pkl'
+          file_out = workdir + 'spectrum_blrd5p1_nosimpwf.pkl'
+          file_out_small = workdir + 'spectrum_blrc5p1_nosimpwf_small.pkl'
     else:
-          file_out = workdir + 'spectrum_blv3rc4_1simpwf.pkl'
-          file_out_small = workdir + 'spectrum_blv3rc4_1simpwf_small.pkl'
+          file_out = workdir + 'spectrum_blrc5p1_1simpwf.pkl'
+          file_out_small = workdir + 'spectrum_blrc5p1_1simpwf_small.pkl'
 
     #mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
     #mask = np.load(mask_file)
