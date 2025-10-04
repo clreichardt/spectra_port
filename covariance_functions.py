@@ -586,9 +586,11 @@ def bin_spectra(dl,banddef):
 
 
 if __name__ == '__main__':
+    pdb.set_trace()
+    print('pickle doesnt work with this')
 
     print("initiating files")
-    dlfile='/big_scratch/cr/xspec_2022/spectrum_blrc5p1_small.pkl'
+    dlfile='/big_scratch/cr/xspec_2022/spectrum_small.pkl'
     with open(dlfile,'rb') as fp:
         spec  = pkl.load(fp)
         
@@ -630,16 +632,12 @@ if __name__ == '__main__':
     revised_theory_dls = np.zeros([6,nlc])
     for i in range(6):
         revised_theory_dls[i,:] = bin_spectra(cmb_dls + revised_fgtheory_dls[i,:],spec['banddef'])
-    calibration_factors = np.asarray([ (0.88632)**-0.5, (0.97714)**-0.5, (0.97445)**-0.5 ])
+    calibration_factors = np.asarray([ (0.9087)**-0.5, (0.9909)**-0.5, (0.9744)**-0.5 ])
     calibration_factors *= 1e-3  #correction for units between sims and real data. The transfer function brings it over.  This ends up being brought to the 4 power so 1e-12 effectively.
     
     print("initiating cov")
 
     cov_obj = covariance(spec,theory_dls, calibration_factors,poisson_fac=bestfit_fac,revised_dls = revised_theory_dls)        
-    nn = cov_obj.cov.shape[0]*cov_obj.cov.shape[1]
-    eval,evec = np.linalg.eig(cov_obj.cov.reshape([nn,nn]))
-    print('Returned <0 evals: {} of {}'.format(np.sum(eval<=0),nn))
-
-    covfile = '/big_scratch/cr/xspec_2022/covariance_blrc5p1.pkl'
+    covfile = '/big_scratch/cr/xspec_2022/covariance.pkl'
     with open(covfile,'wb') as fp:
         pkl.dump(cov_obj, fp)

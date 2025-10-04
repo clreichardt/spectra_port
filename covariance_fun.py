@@ -23,8 +23,10 @@ from spectra_port import unbiased_multispec, utils, covariance_functions
 if __name__ == '__main__':
 
     print("initiating files")
-    dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_small.pkl' #input
-    covfile = '/big_scratch/cr/xspec_2022/covariance_blv3rc4_1.1.pkl'  #output
+    dlfile='/big_scratch/cr/xspec_2022/spectrum_blrc5p1_small.pkl' #input
+    covfile = '/big_scratch/cr/xspec_2022/covariance_blrc5p1.pkl'  #output
+    #dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_small.pkl' #input
+    #covfile = '/big_scratch/cr/xspec_2022/covariance_blv3rc4_1.1.pkl'  #output
     #dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_1simpwf_small.pkl' #input                                                                           
     #covfile = '/big_scratch/cr/xspec_2022/covariance_blv3rc4_1simpwf.pkl'  #output      
     with open(dlfile,'rb') as fp:
@@ -58,6 +60,23 @@ if __name__ == '__main__':
     rg_dls_interp[4,:] = pois * facs[1]* facs[2]
     rg_dls_interp[5,:] = pois * facs[2]* facs[2]
     fgtheory_dls  = rg_dls_interp + norgfgtheory_dls
+    bestfit_fac = 6.32/2.86**2
+    revised_fgtheory_dls  = bestfit_fac * rg_dls_interp + norgfgtheory_dls
+
+    nlc = ellcov.shape[0]
+    theory_dls = np.zeros([6,nlc])
+    for i in range(6):
+        theory_dls[i,:] = bin_spectra(cmb_dls + fgtheory_dls[i,:],spec['banddef'])
+    revised_theory_dls = np.zeros([6,nlc])
+    for i in range(6):
+        revised_theory_dls[i,:] = bin_spectra(cmb_dls + revised_fgtheory_dls[i,:],spec['banddef'])
+    calibration_factors = np.asarray([ (0.9087)**-0.5, (0.9909)**-0.5, (0.9744)**-0.5 ])
+    calibration_factors *= 1e-3  #correction for units between sims and real data. The transfer function brings it over.  This ends up being brought to the 4 power so 1e-12 effectively.
+    
+    print("initiating cov")
+
+    cov_obj = covariance(spec,theory_dls, calibration_factors,poisson_fac=bestfit_fac,revised_dls = revised_theory_dls)        
+    
 
     nlc = ellcov.shape[0]
     theory_dls = np.zeros([6,nlc])
@@ -71,7 +90,7 @@ if __name__ == '__main__':
     #24/6/24: blv3b7 beams (and field pwf)
     #calibration_factors = np.asarray([ (0.8880)**-0.5, (0.9789)**-0.5, (0.97505)**-0.5 ])
     #24/9/20: Tilt from Aylor et al + rc4 beams:
-    calibration_factors = np.asarray([ (0.88546)**-0.5, (0.97518)**-0.5, (0.95894)**-0.5 ])
+    calibration_factors = np.asarray([ (0.88632)**-0.5, (0.97714)**-0.5, (0.97445)**-0.5 ])
     calibration_factors *= 1e-3  #correction for units between sims and real data. The transfer function brings it over.  This ends up being brought to the 4 power so 1e-12 effectively.
     
     print("initiating cov")
