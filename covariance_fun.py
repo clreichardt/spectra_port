@@ -63,25 +63,16 @@ if __name__ == '__main__':
     bestfit_fac = 6.32/2.86**2
     revised_fgtheory_dls  = bestfit_fac * rg_dls_interp + norgfgtheory_dls
 
+
+
     nlc = ellcov.shape[0]
     theory_dls = np.zeros([6,nlc])
-    for i in range(6):
-        theory_dls[i,:] = bin_spectra(cmb_dls + fgtheory_dls[i,:],spec['banddef'])
     revised_theory_dls = np.zeros([6,nlc])
     for i in range(6):
-        revised_theory_dls[i,:] = bin_spectra(cmb_dls + revised_fgtheory_dls[i,:],spec['banddef'])
-    calibration_factors = np.asarray([ (0.9087)**-0.5, (0.9909)**-0.5, (0.9744)**-0.5 ])
-    calibration_factors *= 1e-3  #correction for units between sims and real data. The transfer function brings it over.  This ends up being brought to the 4 power so 1e-12 effectively.
-    
-    print("initiating cov")
-
-    cov_obj = covariance(spec,theory_dls, calibration_factors,poisson_fac=bestfit_fac,revised_dls = revised_theory_dls)        
-    
-
-    nlc = ellcov.shape[0]
-    theory_dls = np.zeros([6,nlc])
-    for i in range(6):
         theory_dls[i,:] = covariance_functions.bin_spectra(cmb_dls + fgtheory_dls[i,:],spec['banddef'])
+    for i in range(6):
+        revised_theory_dls[i,:] = covariance_functions.bin_spectra(cmb_dls + revised_fgtheory_dls[i,:],spec['banddef'])
+    
     #calibration_factors = np.asarray([ (0.9087)**-0.5, (0.9909)**-0.5, (0.9744)**-0.5 ])
     #change to below when reran with latest PWFs/Tfs on 2023 Sep 08
     #calibration_factors = np.asarray([ (0.9017)**-0.5, (0.9833)**-0.5, (0.9703)**-0.5 ])
