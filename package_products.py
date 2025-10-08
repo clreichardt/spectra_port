@@ -138,7 +138,7 @@ if __name__ == '__main__':
     nfreq = 3
     nfcombo = nfreq * (nfreq+1) // 2
 
-'''    dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_small.pkl'
+    '''    dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_small.pkl'
     covfile='/big_scratch/cr/xspec_2022/covariance_blv3rc4_1.1.pkl'
     odir='/home/creichardt/highell_dls_blv3rc4_fieldpwf_extra1p1/'
     covfile='/big_scratch/cr/xspec_2022/covariance_blv3rc4.pkl'

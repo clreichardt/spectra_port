@@ -86,7 +86,8 @@ if __name__ == '__main__':
     
     print("initiating cov")
 
-    cov_obj = covariance_functions.covariance(spec,theory_dls, calibration_factors,extra=0.1)        
+    cov_obj = covariance(spec,theory_dls, calibration_factors,poisson_fac=bestfit_fac,revised_dls = revised_theory_dls)
+    #cov_obj = covariance_functions.covariance(spec,theory_dls, calibration_factors,extra=0.1)        
     nn = cov_obj.cov.shape[0]*cov_obj.cov.shape[1]
     eval,evec = np.linalg.eig(cov_obj.cov.reshape([nn,nn]))
     print('Returned <0 evals: {} of {}'.format(np.sum(eval<=0),nn))
