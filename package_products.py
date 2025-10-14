@@ -227,7 +227,13 @@ if __name__ == '__main__':
     print_calcov(calcovfile, calcov*4.)
     calcovfile=odir+'calcovx100.txt'
     print_calcov(calcovfile, calcov*100.)
-
+    tmp = calcov*4.
+    tmp[0,0]+= 1e-4
+    tmp[1,1]+= 1e-4
+    tmp[2,2]+= 1e-4
+    calcovfile=odir+'calcovx4_1percentindep.txt'
+    print_calcov(calcovfile, tmp)
+    
 
     with open(dlfile,'rb') as fp:
         spec  = pkl.load(fp)
