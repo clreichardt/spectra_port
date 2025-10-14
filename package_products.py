@@ -10,13 +10,24 @@ import os
 import argparse
 NORMAL=True
 SZPOL=False
+NOMIDL=False
+NOHIGHL=False
+NOLOWL=False
 
 my_parser = argparse.ArgumentParser()
 my_parser.add_argument('-szpol', action='store_true',dest='szpol')
 my_parser.add_argument('-onesimpwf', action='store_true',dest='onesimpwf')
 my_parser.add_argument('-nosimpwf', action='store_true',dest='nosimpwf')
 
+my_parser.add_argument('-nolowl', action='store_true',dest='nolowl')
+my_parser.add_argument('-nohighl', action='store_true',dest='nohighl')
+my_parser.add_argument('-nomidl', action='store_true',dest='nomidl')
+
 args = my_parser.parse_args()
+
+NOMIDL=args.nomidl
+NOLOWL=args.nolowl
+NOHIGHL=args.nohighl
 
 SZPOL=args.szpol
 NOSIMPWF=args.nosimpwf
@@ -158,6 +169,17 @@ if __name__ == '__main__':
                         12000])
     i0 = np.ones(nfcombo,dtype=np.int32)*6
     i1 = np.ones(nfcombo,dtype=np.int32)*30 #11000
+
+    if NOLOWL:
+        i0[:]=16
+        odir = odr[:-1]+'_nolowl/'
+    if NOHIGHL:
+        i1[:] = 28
+        odir = odr[:-1]+'_nohighl/'
+    if NOMIDL:
+        i1[:]=23
+        odir = odr[:-1]+'_nomidl/'
+
     explodeis=i1+1
 
     calcov=np.zeros([3,3],dtype=np.float32)
