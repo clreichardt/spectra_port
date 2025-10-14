@@ -131,7 +131,7 @@ if __name__ == "__main__":
     #v3-beta7
     #dir = '/home/creichardt/highell_dls_blv3b7_fieldpwf/'
     #beam rc4
-    dir = '/home/creichardt/highell_dls_blrc5p1_nolowl/'
+    dir = '/home/creichardt/highell_dls_blrc5p1_nomidl/'
     win_file = dir+'windowfunc.bin'
     with open(win_file, "rb") as fp:
         line = fp.readline()
