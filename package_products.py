@@ -172,13 +172,13 @@ if __name__ == '__main__':
 
     if NOLOWL:
         i0[:]=16
-        odir = odr[:-1]+'_nolowl/'
+        odir = odir[:-1]+'_nolowl/'
     if NOHIGHL:
         i1[:] = 28
-        odir = odr[:-1]+'_nohighl/'
+        odir = odir[:-1]+'_nohighl/'
     if NOMIDL:
         i1[:]=23
-        odir = odr[:-1]+'_nomidl/'
+        odir = odir[:-1]+'_nomidl/'
 
     explodeis=i1+1
 
