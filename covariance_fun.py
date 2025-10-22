@@ -24,7 +24,7 @@ if __name__ == '__main__':
 
     print("initiating files")
     dlfile='/big_scratch/cr/xspec_2022/spectrum_blrc5p1_small.pkl' #input
-    covfile = '/big_scratch/cr/xspec_2022/covariance_blrc5p1.pkl'  #output
+    covfile = '/big_scratch/cr/xspec_2022/covariance_blrc5p1_recal.pkl'  #output
     #dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_small.pkl' #input
     #covfile = '/big_scratch/cr/xspec_2022/covariance_blv3rc4_1.1.pkl'  #output
     #dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_1simpwf_small.pkl' #input                                                                           
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     rg_dls_interp[4,:] = pois * facs[1]* facs[2]
     rg_dls_interp[5,:] = pois * facs[2]* facs[2]
     fgtheory_dls  = rg_dls_interp + norgfgtheory_dls
-    bestfit_fac = 6.32/2.86**2
+    bestfit_fac = 7.1/2.86**2
     revised_fgtheory_dls  = bestfit_fac * rg_dls_interp + norgfgtheory_dls
 
 
@@ -82,11 +82,14 @@ if __name__ == '__main__':
     #calibration_factors = np.asarray([ (0.8880)**-0.5, (0.9789)**-0.5, (0.97505)**-0.5 ])
     #24/9/20: Tilt from Aylor et al + rc4 beams:
     calibration_factors = np.asarray([ (0.88632)**-0.5, (0.97714)**-0.5, (0.97445)**-0.5 ])
+    calibration_factors[0] /= 0.9921
+    calibration_factors[1] /= 0.9951
+    calibration_factors[2] /= 1.0124
     calibration_factors *= 1e-3  #correction for units between sims and real data. The transfer function brings it over.  This ends up being brought to the 4 power so 1e-12 effectively.
     
     print("initiating cov")
 
-    cov_obj = covariance(spec,theory_dls, calibration_factors,poisson_fac=bestfit_fac,revised_dls = revised_theory_dls)
+    cov_obj = covariance_functions.covariance(spec,theory_dls, calibration_factors,poisson_fac=bestfit_fac,revised_dls = revised_theory_dls)
     #cov_obj = covariance_functions.covariance(spec,theory_dls, calibration_factors,extra=0.1)        
     nn = cov_obj.cov.shape[0]*cov_obj.cov.shape[1]
     eval,evec = np.linalg.eig(cov_obj.cov.reshape([nn,nn]))

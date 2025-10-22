@@ -22,9 +22,12 @@ my_parser.add_argument('-nosimpwf', action='store_true',dest='nosimpwf')
 my_parser.add_argument('-nolowl', action='store_true',dest='nolowl')
 my_parser.add_argument('-nohighl', action='store_true',dest='nohighl')
 my_parser.add_argument('-nomidl', action='store_true',dest='nomidl')
+my_parser.add_argument('-calib', action='store_true',dest='calib')
 
 args = my_parser.parse_args()
 
+
+CALIB = args.calib
 NOMIDL=args.nomidl
 NOLOWL=args.nolowl
 NOHIGHL=args.nohighl
@@ -155,21 +158,35 @@ if __name__ == '__main__':
     covfile='/big_scratch/cr/xspec_2022/covariance_blv3rc4.pkl'
     odir='/home/creichardt/highell_dls_blv3rc4_fieldpwf/'''
     dlfile='/big_scratch/cr/xspec_2022/spectrum_blrc5p1_small.pkl'
-    covfile='/big_scratch/cr/xspec_2022/covariance_blrc5p1.pkl'
+    #covfile='/big_scratch/cr/xspec_2022/covariance_blrc5p1.pkl'
     #odir='/home/creichardt/highell_dls_blv3rc4_fieldpwf_extra1p1/'
     #covfile='/big_scratch/cr/xspec_2022/covariance_blv3rc4.pkl'
-    odir='/home/creichardt/highell_dls_blrc5p1/'
+    odir='/home/creichardt/highell_dls_blrc5p1_recal/'
+    covfile='/big_scratch/cr/xspec_2022/covariance_blrc5p1_recal.pkl'
 
-    final_bands = np.asarray([0,500,1000,1200,1400,1600,
-                        1700,1800,1900,2000,2100,
-                        2200,2300,2400,2500,2700,
-                        3000,3300,3600,4000,4400,
-                        4800,5300,5800,6400,7000,
-                        7600,8300,9000,10000,11000,
+    final_bands = np.asarray([0,500,1000,1200,1400,1600, #6
+                        1700,1800,1900,2000,2100,#11
+                        2200,2300,2400,2500,2700,#16
+                        3000,3300,3600,4000,4400,#21
+                        4800,5300,5800,6400,7000,#26
+                        7600,8300,9000,10000,11000,#31
                         12000])
     i0 = np.ones(nfcombo,dtype=np.int32)*6
     i1 = np.ones(nfcombo,dtype=np.int32)*30 #11000
 
+    if CALIB:
+        final_bands = np.asarray([0,500,700,#3
+                                  900,1000,1100,1200,1300,#8
+                                  1400,1500,1600,#11
+                                  1700,1800,1900,2000,2100,#16
+                                  2200,2300,2400,2500,2700,
+                                  3000,3300,3600,4000,4400,#26
+                                  4800,5300,5800,6400,7000,
+                                  7600,8300,9000,10000,11000,#36
+                                  12000])
+        i0 = np.ones(nfcombo,dtype=np.int32)*3
+        i1 = np.ones(nfcombo,dtype=np.int32)*35 #11000
+        odir = odir[:-1]+'_calib/'
     if NOLOWL:
         i0[:]=16
         odir = odir[:-1]+'_nolowl/'
@@ -203,6 +220,20 @@ if __name__ == '__main__':
     calcov[:,2] = SV220x
     calcov[2,:] = SV220x
     calcov[2,2] = .00873**2
+
+    #21 Oct 2025 -- adjusted for bandpower spectrum calibration from chains:
+    #Main change -- see some 0.3% shifts between 90 and 150 -- larger than should.
+    #also see a 1.6% shift in 220 
+    #so increase their diagonals, while leaving common SV unchanged
+    calcov[0,0] = SV90150 + .003**2
+    calcov[1,1] = SV90150 + .003**2
+    calcov[2,2] = SV90150 + .01**2
+
+    if CALIB:
+        calcov[:,:]=0
+        calcov[0,0]=.01 #10%
+        calcov[1,1]=.01 #10%
+        calcov[2,2]=.01 #10%
     
 
     if ONESIMPWF:
@@ -283,6 +314,10 @@ if __name__ == '__main__':
     #calibration_factors = np.asarray([ (0.88546)**-0.5, (0.97518)**-0.5, (0.95894)**-0.5 ])
     #oct 2025: changed beam, and fg model
     calibration_factors = np.asarray([ (0.88632)**-0.5, (0.97714)**-0.5, (0.97445)**-0.5 ])
+    # - adjustment factor from chain
+    calibration_factors[0] /= 0.9921
+    calibration_factors[1] /= 0.9951
+    calibration_factors[2] /= 1.0124
     calibration_factors *= 1e-3  #correction for units between sims and real data. The transfer function brings it over.  This ends up being brought to the 2 power so 1e-6 effectively.
     global_freq_index_array = np.zeros([nfcombo,2],dtype=np.int32)
     cals = np.ones(nfcombo)
