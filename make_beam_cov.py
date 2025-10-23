@@ -68,10 +68,12 @@ def apply_bpwf(win_arr,dls):
     return out
     
 
-def load_beam_evecs(file,threshold=1e-3):
+def load_beam_evecs(file,threshold=1e-4,subtract_cov = None):
     with np.load(file) as data:
         ell=data['ell']
         cov=data['cov']
+    if subtract_cov is not None:
+        cov = cov - subtract_cov
     eval,evec=np.linalg.eigh(cov)
     mx=np.max(eval)
     kept_val = eval[eval>threshold*mx]
@@ -81,7 +83,7 @@ def load_beam_evecs(file,threshold=1e-3):
     for i in range(nkept):
         print(kept_val[i])
         kept_evec[:,i] *= np.sqrt(kept_val[i])
-    return kept_evec, ell
+    return kept_evec, ell, cov
 
 def load_beam_evecs_v3beta7(file,threshold=1e-3):
     with np.load(file) as data:
@@ -107,30 +109,44 @@ def load_new_beam_evecs(file):
     sidelobe = sidelobe.reshape([3,nl]).T 
     return mainlobe, sidelobe, ell
 
+def load_beam_array(file,lmax):
+    with np.load(file) as data:
+        l = data['ell']
+        b90 = data['90']
+        b150= data['150']
+        b220= data['220']
+    beam_array = np.zeros([lmax-1,4],dtype=np.float64)
+    beam_array[:,0]=l[2:lmax+1]
+    beam_array[:,1]=b90[2:lmax+1]
+    beam_array[:,2]=b150[2:lmax+1]
+    beam_array[:,3]=b220[2:lmax+1]
+    return beam_array
+
 if __name__ == "__main__":
     #1, and inputs 1/2
-    #now using v3-beta7
-    #norm_evecs, ell_cov = load_beam_evecs_v3beta7('/sptlocal/user/ndhuang/Frankenbeam_v3-beta/unblinded/v3-beta7_final/cov_eigenmodes.npz')
-    #now for rc4 beam release
-    norm_evecs, ell_cov = load_beam_evecs('/sptlocal/user/ndhuang/Frankenbeam_v3-beta/release_candidates/rc4/cov.npz')
 
-    mainlobe,sidelobe,ell_lobe = load_new_beam_evecs('/home/creichardt/modeling_uncertainty_modes.npz')
+    #Common error modes
+    norm_evecs, ell_cov, cov = load_beam_evecs('/home/creichardt/beam_rc5.1_noslope/agn_cov.npz')
+        
+    #CMB error modes:
+    cmb_norm_evecs, cmb_ell_cov, _ = load_beam_evecs('/home/creichardt/beam_rc5.1_noslope/cmb/cov.npz',subtract_cov=cov,threshold=1e-3)
+    #CIB error modes:
+    cib_norm_evecs, cib_ell_cov, _ = load_beam_evecs('/home/creichardt/beam_rc5.1_noslope/cmb/cov.npz',subtract_cov=cov,threshold=1e-3)
+    #tSZ error modes:
+    tsz_norm_evecs, tsz_ell_cov, _ = load_beam_evecs('/home/creichardt/beam_rc5.1_noslope/cmb/cov.npz',subtract_cov=cov,threshold=1e-3)
+    #RG error modes:
+    rg_norm_evecs, rg_ell_cov, _ = load_beam_evecs('/home/creichardt/beam_rc5.1_noslope/cmb/cov.npz',subtract_cov=cov,threshold=1e-3)
 
-    #        '/home/marius311/beamcov_ndh_oct30.npz', threshold = 1e-3)
+    assert ell_cov[0] == cmb_ell_cov[0] == cib_ell_cov[0]== tsz_ell_cov[0]== rg_ell_cov[0]
+    assert ell_cov.shape[0] == cmb_ell_cov.shape[0] == cib_ell_cov.shape[0]== tsz_ell_cov.shape[0]== rg_ell_cov.shape[0]
+
+
     nc = ell_cov.shape[0]
     neval = norm_evecs.shape[1]
-    #pdb.set_trace()
 
-    #estimated 3% error on error:
-    mainlobe   *= 1.03
-    sidelobe   *= 1.03
-    norm_evecs *= 1.03
     
     #get inputs 5/6 - BPWF
-    #v3-beta7
-    #dir = '/home/creichardt/highell_dls_blv3b7_fieldpwf/'
-    #beam rc4
-    dir = '/home/creichardt/highell_dls_blv3rc4_fieldpwf/'
+    dir = '/home/creichardt/highell_dls_blrc5p1_recal/'
     win_file = dir+'windowfunc.bin'
     with open(win_file, "rb") as fp:
         line = fp.readline()
@@ -148,9 +164,10 @@ if __name__ == "__main__":
     #implied ell's go from 2 to lmax
     
     #theory spectra - 7/8
-    with np.load('/home/creichardt/SPT3G_JAX_Likelihood/spt_dl_components.npz',allow_pickle=True) as npzfile:
+    with np.load('/home/creichardt/SPT3G_JAX_Likelihood/bestfit_blrc5p1/spt_dl_components.npz',allow_pickle=True) as npzfile:
         cmb_Dls = npzfile['cmb_Dls']    
         fg_Dls = npzfile['fg_Dls']
+        components = npzfile['component_spectra'] #these should be in CMB beam deconvolved space. 
         #again implicit ell from 2 to lmax (which may be a different lmax than window functions)
         
     nf=3
@@ -163,15 +180,16 @@ if __name__ == "__main__":
     #preliminaries:
     # get inputs 3/4 - beam
     #beam_arr = np.loadtxt('/home/creichardt/spt3g_software/beams/products/compiled_2020_beams.txt')
-    beam_arr = np.loadtxt('/home/creichardt/bl_v3_beta_rc4.txt')
+    beam_arr = np.loadtxt('/home/creichardt/beam_rc5.1_noslope/compiled_bl_rc5p1_noslope.txt')
     #lb = beam_arr[:,0], b90 = beam_arr[:,1], etc.
     # this does not include PWF factors, deliberately.
     #this goes from 0 to 14999 in practice 
     beam_arr = beam_arr[2:lmax+1,:] #cut to relevant ells. 
     
-    #similar for lobe modes
-    mainlobe = mainlobe[2:lmax+1,:] #cut to relevant ells. 
-    sidelobe = sidelobe[2:lmax+1,:] #cut to relevant ells. 
+    cmb_beam_arr = load_beam_arr('/home/creichardt/beam_rc5.1_noslope/cmb/B_ell.npz',  lmax)
+    cib_beam_arr = load_beam_arr('/home/creichardt/beam_rc5.1_noslope/modbb/B_ell.npz',lmax)
+    tsz_beam_arr = load_beam_arr('/home/creichardt/beam_rc5.1_noslope/tsz/B_ell.npz',  lmax)
+    rg_beam_arr  = load_beam_arr('/home/creichardt/beam_rc5.1_noslope/sync/B_ell.npz', lmax)
 
     #now only evectors are on different ell-spacing
 
@@ -180,6 +198,9 @@ if __name__ == "__main__":
     frac_beam_cov = 0.0
     #2
     spec_vec = fg_Dls * 0
+
+    #First do the common error modes
+    neval = norm_evecs.shape[1]
     for i in range(neval):
         this_evec090 = np.interp(beam_arr[:,0],ell_cov,norm_evecs[:nc,i])
         this_evec150 = np.interp(beam_arr[:,0],ell_cov,norm_evecs[nc:2*nc,i])
@@ -189,7 +210,7 @@ if __name__ == "__main__":
         ratio090 = 1+this_evec090/beam_arr[:,1]
         ratio150 = 1+this_evec150/beam_arr[:,2]
         ratio220 = 1+this_evec220/beam_arr[:,3]
-        
+
         #III
         spec_vec[0,:] = fg_Dls[0,:] * ratio090**2
         spec_vec[1,:] = fg_Dls[1,:] * ratio090*ratio150
@@ -207,32 +228,146 @@ if __name__ == "__main__":
         #VI
 
         frac_beam_cov += np.matmul(ratio_bps, ratio_bps.T) 
-        # pdb.set_trace() #check dims
-    #now lobe modes:
-    lobes = [mainlobe,sidelobe]
-    for mode in lobes:
-        ratio090 = 1+mode[:,0]/beam_arr[:,1]
-        ratio150 = 1+mode[:,1]/beam_arr[:,2]
-        ratio220 = 1+mode[:,2]/beam_arr[:,3]    
-        
-        #III
-        spec_vec[0,:] = fg_Dls[0,:] * ratio090**2
-        spec_vec[1,:] = fg_Dls[1,:] * ratio090*ratio150
-        spec_vec[2,:] = fg_Dls[2,:] * ratio090*ratio220
-        spec_vec[3,:] = fg_Dls[3,:] * ratio150**2
-        spec_vec[4,:] = fg_Dls[4,:] * ratio150*ratio220
-        spec_vec[5,:] = fg_Dls[5,:] * ratio220**2
-        
-        #IV
-        new_bps = apply_bpwf(win_arr,spec_vec)
-        
-        #V
-        ratio_bps = (new_bps/bps0 - 1.0).reshape([-1,1]) #promote to right dimensions to do matrix multiply below
-        
-        #VI
 
-        frac_beam_cov += np.matmul(ratio_bps, ratio_bps.T) 
-        
+    #Now other modes
+    #need to treat tsz and cib specially due to tsz-cib
+    list_evecs = [cmb_norm_evecs, rg_norm_evecs]
+    list_beams = [ cmb_beam_arr, rg_beam_arr]
+    list_fgs   = [cmb_Dls + components['foreground_ksz'], components['foreground_rg'] ]
+    for j in range(2):
+        evec = list_evecs[j]
+        beam = list_beams[j]
+        loc_neval = evec.shape[1]
+        this_fg_Dls  = list_fgs[j]
+        bps1 = apply_bpwf(win_arr,this_fg_Dls)
+        for i in range(loc_neval):
+            this_evec090 = np.interp(beam[:,0],ell_cov,evec[:nc,i])
+            this_evec150 = np.interp(beam[:,0],ell_cov,evec[nc:2*nc,i])
+            this_evec220 = np.interp(beam[:,0],ell_cov,evec[2*nc:3*nc,i])
+
+
+            ratio090 = 1+this_evec090/beam[:,1]
+            ratio150 = 1+this_evec150/beam[:,2]
+            ratio220 = 1+this_evec220/beam[:,3]
+
+            #III
+            spec_vec[0,:] = this_fg_Dls[0,:] * ratio090**2
+            spec_vec[1,:] = this_fg_Dls[1,:] * ratio090*ratio150
+            spec_vec[2,:] = this_fg_Dls[2,:] * ratio090*ratio220
+            spec_vec[3,:] = this_fg_Dls[3,:] * ratio150**2
+            spec_vec[4,:] = this_fg_Dls[4,:] * ratio150*ratio220
+            spec_vec[5,:] = this_fg_Dls[5,:] * ratio220**2
+            
+            #IV
+            new_bps = apply_bpwf(win_arr,spec_vec)
+            #get change in power of this term from (new_bps - bps1)
+            #change to change in fractional total power by dividing by bps0
+
+            #V
+            ratio_bps = ((new_bps-bps1)/bps0).reshape([-1,1]) #promote to right dimensions to do matrix multiply below
+            
+            #VI
+            frac_beam_cov += np.matmul(ratio_bps, ratio_bps.T) 
+
+
+    tSZ_fg_Dls    = components['foreground_tsz']
+    cib_fg_Dls    = components['foreground_cib_pois']+components['foreground_cib_clus']
+    tszcib_fg_Dls = components['foreground_tsz_cib']
+    #tSZ first:
+    beam = tsz_beam_arr
+    evec = tsz_norm_evecs
+    this_fg_Dls = tSZ_fg_Dls
+    bps1 = apply_bpwf(win_arr,tSZ_fg_Dls+tszcib_fg_Dls)
+
+    for i in range(loc_neval):
+            
+            this_evec090 = np.interp(beam[:,0],ell_cov,evec[:nc,i])
+            this_evec150 = np.interp(beam[:,0],ell_cov,evec[nc:2*nc,i])
+            this_evec220 = np.interp(beam[:,0],ell_cov,evec[2*nc:3*nc,i])
+
+
+            ratio090 = 1+this_evec090/beam[:,1]
+            ratio150 = 1+this_evec150/beam[:,2]
+            ratio220 = 1+this_evec220/beam[:,3]
+            ratios = [ratio090,ratio150,ratio220]
+
+            #IIIa
+            #the easy part -  the tSZ spectra change
+            spec_vec[0,:] = this_fg_Dls[0,:] * ratio090**2
+            spec_vec[1,:] = this_fg_Dls[1,:] * ratio090*ratio150
+            spec_vec[2,:] = this_fg_Dls[2,:] * ratio090*ratio220
+            spec_vec[3,:] = this_fg_Dls[3,:] * ratio150**2
+            spec_vec[4,:] = this_fg_Dls[4,:] * ratio150*ratio220
+            spec_vec[5,:] = this_fg_Dls[5,:] * ratio220**2
+
+            #IIIb
+            # a change to tSZ also changes the tSZ-CIB prediction...
+            kk=0
+            for ii in range(3):
+                for jj in range(ii,3):
+                    spec_vec[kk,:]+=tszcib_fg_Dls[kk,:] / 
+                        (np.sqrt(tSZ_fg_Dls[ii,:]*cib_fg_Dls[jj,:])+np.sqrt(tSZ_fg_Dls[jj,:]*cib_fg_Dls[ii,:]))  *
+                        (np.sqrt(tSZ_fg_Dls[ii,:]*ratios[ii][:]**2 *cib_fg_Dls[jj,:])+np.sqrt(tSZ_fg_Dls[jj,:]*ratios[jj][:]**2*cib_fg_Dls[ii,:])) 
+                    kk+=1
+
+            #IV
+            new_bps = apply_bpwf(win_arr,spec_vec)
+            #get change in power of this term from (new_bps - bps1)
+            #change to change in fractional total power by dividing by bps0
+
+            #V
+            ratio_bps = ((new_bps-bps1)/bps0).reshape([-1,1])
+            #VI
+            frac_beam_cov += np.matmul(ratio_bps, ratio_bps.T) 
+
+    #and CIB:
+    beam = cib_beam_arr
+    evec = cib_norm_evecs
+    this_fg_Dls = cib_fg_Dls
+    bps1 = apply_bpwf(win_arr,cib_fg_Dls+tszcib_fg_Dls)
+
+    for i in range(loc_neval):
+            
+            this_evec090 = np.interp(beam[:,0],ell_cov,evec[:nc,i])
+            this_evec150 = np.interp(beam[:,0],ell_cov,evec[nc:2*nc,i])
+            this_evec220 = np.interp(beam[:,0],ell_cov,evec[2*nc:3*nc,i])
+
+
+            ratio090 = 1+this_evec090/beam[:,1]
+            ratio150 = 1+this_evec150/beam[:,2]
+            ratio220 = 1+this_evec220/beam[:,3]
+            ratios = [ratio090,ratio150,ratio220]
+
+            #IIIa
+            #the easy part -  the CIB spectra change
+            spec_vec[0,:] = this_fg_Dls[0,:] * ratio090**2
+            spec_vec[1,:] = this_fg_Dls[1,:] * ratio090*ratio150
+            spec_vec[2,:] = this_fg_Dls[2,:] * ratio090*ratio220
+            spec_vec[3,:] = this_fg_Dls[3,:] * ratio150**2
+            spec_vec[4,:] = this_fg_Dls[4,:] * ratio150*ratio220
+            spec_vec[5,:] = this_fg_Dls[5,:] * ratio220**2
+
+            #IIIb
+            # a change to CIB also changes the tSZ-CIB prediction...
+            kk=0
+            for ii in range(3):
+                for jj in range(ii,3):
+                    spec_vec[kk,:]+=tszcib_fg_Dls[kk,:] / 
+                        (np.sqrt(tSZ_fg_Dls[ii,:]*cib_fg_Dls[jj,:])+np.sqrt(tSZ_fg_Dls[jj,:]*cib_fg_Dls[ii,:]))  *
+                        (np.sqrt(tSZ_fg_Dls[ii,:]*cib_fg_Dls[jj,:]*ratios[jj][:]**2)+np.sqrt(tSZ_fg_Dls[jj,:]*cib_fg_Dls[ii,:]*ratios[ii][:]**2)) 
+                    kk+=1
+
+            #IV
+            new_bps = apply_bpwf(win_arr,spec_vec)
+            #get change in power of this term from (new_bps - bps1)
+            #change to change in fractional total power by dividing by bps0
+
+            #V
+            ratio_bps = ((new_bps-bps1)/bps0).reshape([-1,1])
+            #VI
+            frac_beam_cov += np.matmul(ratio_bps, ratio_bps.T) 
+
+                        
     #
     with open(dir+'fractional_beam_cov.bin','wb') as fp:
         frac_beam_cov.astype(np.float64).tofile(fp)
