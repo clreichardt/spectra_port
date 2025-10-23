@@ -305,9 +305,10 @@ if __name__ == "__main__":
             kk=0
             for ii in range(3):
                 for jj in range(ii,3):
-                    spec_vec[kk,:]+=tszcib_fg_Dls[kk,:] / 
-                        (np.sqrt(tSZ_fg_Dls[ii,:]*cib_fg_Dls[jj,:])+np.sqrt(tSZ_fg_Dls[jj,:]*cib_fg_Dls[ii,:]))  *
-                        (np.sqrt(tSZ_fg_Dls[ii,:]*ratios[ii][:]**2 *cib_fg_Dls[jj,:])+np.sqrt(tSZ_fg_Dls[jj,:]*ratios[jj][:]**2*cib_fg_Dls[ii,:])) 
+                    spec_vec[kk,:]+=tszcib_fg_Dls[kk,:] / (
+                            (np.sqrt(tSZ_fg_Dls[ii,:]*cib_fg_Dls[jj,:])+np.sqrt(tSZ_fg_Dls[jj,:]*cib_fg_Dls[ii,:]))  *
+                            (np.sqrt(tSZ_fg_Dls[ii,:]*ratios[ii][:]**2 *cib_fg_Dls[jj,:])+np.sqrt(tSZ_fg_Dls[jj,:]*ratios[jj][:]**2*cib_fg_Dls[ii,:])) 
+                    )
                     kk+=1
 
             #IV
@@ -352,9 +353,10 @@ if __name__ == "__main__":
             kk=0
             for ii in range(3):
                 for jj in range(ii,3):
-                    spec_vec[kk,:]+=tszcib_fg_Dls[kk,:] / 
-                        (np.sqrt(tSZ_fg_Dls[ii,:]*cib_fg_Dls[jj,:])+np.sqrt(tSZ_fg_Dls[jj,:]*cib_fg_Dls[ii,:]))  *
-                        (np.sqrt(tSZ_fg_Dls[ii,:]*cib_fg_Dls[jj,:]*ratios[jj][:]**2)+np.sqrt(tSZ_fg_Dls[jj,:]*cib_fg_Dls[ii,:]*ratios[ii][:]**2)) 
+                    spec_vec[kk,:]+=tszcib_fg_Dls[kk,:] / (
+                            (np.sqrt(tSZ_fg_Dls[ii,:]*cib_fg_Dls[jj,:])+np.sqrt(tSZ_fg_Dls[jj,:]*cib_fg_Dls[ii,:]))  *
+                            (np.sqrt(tSZ_fg_Dls[ii,:]*cib_fg_Dls[jj,:]*ratios[jj][:]**2)+np.sqrt(tSZ_fg_Dls[jj,:]*cib_fg_Dls[ii,:]*ratios[ii][:]**2)) 
+                        )
                     kk+=1
 
             #IV
