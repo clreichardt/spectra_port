@@ -164,6 +164,20 @@ if __name__ == '__main__':
     odir='/home/creichardt/highell_dls_blrc5p1_recal/'
     covfile='/big_scratch/cr/xspec_2022/covariance_blrc5p1_recal.pkl'
 
+    if ONESIMPWF:
+        print("using onesimpwf data products, binning, and calibration")
+        pdb.set_trace()
+        dlfile='/big_scratch/cr/xspec_2022/spectrum_blrc5p1_1simpwf_small.pkl'
+        covfile='/big_scratch/cr/xspec_2022/covariance_blrc5p1_1simpwf_recal.pkl'
+        odir='/home/creichardt/highell_dls_blrc5p1_1simpwf/'
+
+    if NOSIMPWF:
+        print("using nosimpwf data products, binning, and calibration")
+        pdb.set_trace()
+        dlfile='/big_scratch/cr/xspec_2022/spectrum_blrc5p1_nosimpwf_small.pkl'
+        covfile='/big_scratch/cr/xspec_2022/covariance_blrc5p1_nosimpwf_recal.pkl'
+        odir='/home/creichardt/highell_dls_blrc5p1_nosimpwf/'
+    
     final_bands = np.asarray([0,500,1000,1200,1400,1600, #6
                         1700,1800,1900,2000,2100,#11
                         2200,2300,2400,2500,2700,#16
@@ -236,19 +250,7 @@ if __name__ == '__main__':
         calcov[2,2]=.01 #10%
     
 
-    if ONESIMPWF:
-        print("using onesimpwf data products, binning, and calibration")
-        pdb.set_trace()
-        dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_1simpwf_small.pkl'
-        covfile='/big_scratch/cr/xspec_2022/covariance_blv3rc4_1simpwf.pkl'
-        odir='/home/creichardt/highell_dls_blv3rc4_fieldpwf_1simpwf/'
 
-    if NOSIMPWF:
-        print("using nosimpwf data products, binning, and calibration")
-        pdb.set_trace()
-        dlfile='/big_scratch/cr/xspec_2022/spectrum_blv3rc4_nosimpwf_small.pkl'
-        covfile='/big_scratch/cr/xspec_2022/covariance_blv3rc4_nosimpwf.pkl'
-        odir='/home/creichardt/highell_dls_blv3rc4_fieldpwf_nosimpwf/'
 
     if SZPOL:
         pdb.set_trace()

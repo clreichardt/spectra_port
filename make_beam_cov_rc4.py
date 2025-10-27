@@ -189,6 +189,7 @@ if __name__ == "__main__":
         ratio090 = 1+this_evec090/beam_arr[:,1]
         ratio150 = 1+this_evec150/beam_arr[:,2]
         ratio220 = 1+this_evec220/beam_arr[:,3]
+        print('ratio at 90, 5000',ratio090[5000])
         
         #III
         spec_vec[0,:] = fg_Dls[0,:] * ratio090**2

@@ -880,14 +880,20 @@ if __name__ == "__main__" and END == True:
     beam_arr[:,3] *= pwf
     #print("Warning! not applying pwf**2 to sim for testing!")
     #changed 2023/9/1 -- before this sim_beam_arr did *not* have PWF
-    if True:
-          sim_beam_arr[:,1] *= pwf**2
-          sim_beam_arr[:,2] *= pwf**2
-          sim_beam_arr[:,3] *= pwf**2
-    if False:
-          sim_beam_arr[:,1] *= pwf**1
-          sim_beam_arr[:,2] *= pwf**1
-          sim_beam_arr[:,3] *= pwf**1
+    NORMAL = True
+    SIMONE=False
+    if NORMAL:
+        print('2 PWFs in sim')
+        sim_beam_arr[:,1] *= pwf**2
+        sim_beam_arr[:,2] *= pwf**2
+        sim_beam_arr[:,3] *= pwf**2
+    elif SIMONE:
+        print('1 PWFs in sim')
+        sim_beam_arr[:,1] *= pwf**1
+        sim_beam_arr[:,2] *= pwf**1
+        sim_beam_arr[:,3] *= pwf**1
+    else:
+        print('0 PWFs in sim')
     #sim_beam_arr[:,1] *= pwf
     #sim_beam_arr[:,2] *= pwf
     #sim_beam_arr[:,3] *= pwf
@@ -902,15 +908,16 @@ if __name__ == "__main__" and END == True:
 
     workdir = '/big_scratch/cr/xspec_2022/'
     os.makedirs(workdir,exist_ok=True)
-    if True:
-          file_out = workdir + 'spectrum_blrc5p1.pkl'
-          file_out_small = workdir + 'spectrum_blrc5p1_small.pkl'
-    elif False:
-          file_out = workdir + 'spectrum_blrd5p1_nosimpwf.pkl'
-          file_out_small = workdir + 'spectrum_blrc5p1_nosimpwf_small.pkl'
+    if NORMAL:
+        file_out = workdir + 'spectrum_blrc5p1.pkl'
+        file_out_small = workdir + 'spectrum_blrc5p1_small.pkl'
+    elif SIMONE:
+        file_out = workdir + 'spectrum_blrc5p1_1simpwf.pkl'
+        file_out_small = workdir + 'spectrum_blrc5p1_1simpwf_small.pkl'
     else:
-          file_out = workdir + 'spectrum_blrc5p1_1simpwf.pkl'
-          file_out_small = workdir + 'spectrum_blrc5p1_1simpwf_small.pkl'
+        file_out = workdir + 'spectrum_blrd5p1_nosimpwf.pkl'
+        file_out_small = workdir + 'spectrum_blrc5p1_nosimpwf_small.pkl'
+
 
     #mask_file='/home/pc/hiell/mapcuts/apodization/apod_mask.npy'
     #mask = np.load(mask_file)
