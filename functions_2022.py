@@ -18,7 +18,7 @@ import time
 
 from astropy.io import fits
 print('what')
-
+SHTPTSRC=False
 PREPCAL= False
 PREP= False
 PREPLR= False
@@ -50,6 +50,7 @@ my_parser.add_argument('-nulllr', action='store_true',dest='nulllr')
 my_parser.add_argument('-nulllrsplit', action='store_true',dest='nulllrsplit')
 my_parser.add_argument('-coadd', action='store_true',dest='coadd')
 my_parser.add_argument('-sht', action='store_true',dest='sht')
+my_parser.add_argument('-shtptsrc', action='store_true',dest='shtptsrc')
 my_parser.add_argument('-shtlr', action='store_true',dest='shtlr')
 my_parser.add_argument('-cal', action='store_true',dest='cal')
 my_parser.add_argument('-fullcal', action='store_true',dest='fullcal')
@@ -70,6 +71,7 @@ COADD=args.coadd
 CAL = args.cal
 FULLCAL = args.fullcal
 SHT = args.sht
+SHTPTSRC = args.shtptsrc
 SHTLR = args.shtlr
 TEST= args.test
 KTEST= args.ktest
@@ -1969,6 +1971,35 @@ if __name__ == "__main__" and COADD == True:
     #create_bundle_maps_and_coadds(220,nbundles=200)
 
 
+if __name__ == "__main__" and SHTPTSRC == True:
+
+    workdir = '/big_scratch/cr/xspec_2022/data_v5_ptsrc/'
+    os.makedirs(workdir,exist_ok=True)
+    print(workdir)
+    dir='/sptgrid/analysis/highell_TT_19-20/v5/coadds/'
+    
+    rlist = create_real_coadd_list_v5(dir, freqs=['90','150','220'], nbundle=200)
+
+    lmax = 15000
+    nside= 8192
+    mask_file = '/sptlocal/user/creichardt/hiell2022/mask_0p4medwt.pkl'
+    with open(mask_file,'rb') as fp:
+        mask  = pkl.load(fp)
+    #mask = None
+    processedshtfile = workdir + 'shts_processed.bin'
+    spec.take_and_reformat_shts(rlist, processedshtfile,
+                            nside,lmax,
+                            cmbweighting = True, 
+                            mask  = mask,
+                            kmask = None,
+                            ell_reordering=None,
+                            no_reorder=False,
+                            ram_limit = None,
+                            npmapformat=False,
+                            pklmapformat=False,
+                            apply_mask_norm=False,
+                            lr=True
+                            ) 
 
 if __name__ == "__main__" and SHTLR == True:
 
