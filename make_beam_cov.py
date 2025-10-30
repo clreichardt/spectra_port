@@ -269,7 +269,7 @@ if __name__ == "__main__":
         spec_vec[5,:] = fg_Dls[5,:] 
 
         for j in range(6):
-            ratio = 1 + amps[i,j]*evec
+            ratio = 1 + amps_tf[i,j]*evec
             spec_vec[j,:] *= ratio
 
             #IV
