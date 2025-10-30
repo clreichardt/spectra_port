@@ -566,9 +566,9 @@ if __name__ == "__main__" and FULLCAL == True:
         mask  = pkl.load(fp)
 
     #may need to reformat theoryfiles
-    theoryfiles = ['/sptlocal/user/creichardt/hiell2022/sim_field_dls_90ghz.txt',
-                   '/sptlocal/user/creichardt/hiell2022/sim_field_dls_150ghz.txt',
-                   '/sptlocal/user/creichardt/hiell2022/sim_field_dls_220ghz.txt']
+    theoryfiles = ['/sptlocal/user/creichardt/hiell2022/sim_fieldv2_dls_90ghz.txt',
+                   '/sptlocal/user/creichardt/hiell2022/sim_fieldv2_dls_150ghz.txt',
+                   '/sptlocal/user/creichardt/hiell2022/sim_fieldv2_dls_220ghz.txt']
 
     
     dir='/sptgrid/analysis/highell_TT_19-20/v5/obs_shts/'
@@ -932,9 +932,9 @@ if __name__ == "__main__" and END == True:
     #               '/sptlocal/user/creichardt/hiell2022/sim_dls_150ghz.txt',
     #               '/sptlocal/user/creichardt/hiell2022/sim_dls_220ghz.txt']
     #see redo_theory for the creation of this file - intended to handle difference in Poisson term across full sky vs 3g patch
-    theoryfiles = ['/sptlocal/user/creichardt/hiell2022/sim_field_dls_90ghz.txt',
-                   '/sptlocal/user/creichardt/hiell2022/sim_field_dls_150ghz.txt',
-                   '/sptlocal/user/creichardt/hiell2022/sim_field_dls_220ghz.txt']
+    theoryfiles = ['/sptlocal/user/creichardt/hiell2022/sim_fieldv2_dls_90ghz.txt',
+                   '/sptlocal/user/creichardt/hiell2022/sim_fieldv2_dls_150ghz.txt',
+                   '/sptlocal/user/creichardt/hiell2022/sim_fieldv2_dls_220ghz.txt']
 
     
     dir='/sptgrid/analysis/highell_TT_19-20/v5/obs_shts/'
@@ -1980,7 +1980,7 @@ if __name__ == "__main__" and SHTPTSRC == True:
     
     rlist = create_real_coadd_list_v5(dir, freqs=['90','150','220'], nbundle=200)
 
-    lmax = 15000
+    lmax = 13000
     nside= 8192
     mask_file = '/sptlocal/user/creichardt/hiell2022/mask_0p4medwt.pkl'
     with open(mask_file,'rb') as fp:

@@ -24,13 +24,13 @@ if __name__ == '__main__':
 
     print("initiating files")
     dlfile='/big_scratch/cr/xspec_2022/spectrum_blrc5p1_small.pkl' #input
-    covfile = '/big_scratch/cr/xspec_2022/covariance_blrc5p1_recal.pkl'  #output
+    covfile = '/big_scratch/cr/xspec_2022/covariance_blrc5p1_recal_v2.pkl'  #output
 
-    dlfile='/big_scratch/cr/xspec_2022/spectrum_blrc5p1_nosimpwf_small.pkl' #input
-    covfile = '/big_scratch/cr/xspec_2022/covariance_blrc5p1_nosimpwf_recal.pkl'  #output
+    #dlfile='/big_scratch/cr/xspec_2022/spectrum_blrc5p1_nosimpwf_small.pkl' #input
+    #covfile = '/big_scratch/cr/xspec_2022/covariance_blrc5p1_nosimpwf_recal.pkl'  #output
 
-    dlfile='/big_scratch/cr/xspec_2022/spectrum_blrc5p1_1simpwf_small.pkl' #input
-    covfile = '/big_scratch/cr/xspec_2022/covariance_blrc5p1_1simpwf_recal.pkl'  #output
+    #dlfile='/big_scratch/cr/xspec_2022/spectrum_blrc5p1_1simpwf_small.pkl' #input
+    #covfile = '/big_scratch/cr/xspec_2022/covariance_blrc5p1_1simpwf_recal.pkl'  #output
 
     
     

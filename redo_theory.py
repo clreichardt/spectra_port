@@ -22,6 +22,8 @@ import pickle as pkl
 import matplotlib.pyplot as plt
 import time
 import scipy
+
+from scipy.ndimage import gaussian_filter1d
 from spectra_port import unbiased_multispec, utils, covariance_functions
 sys.modules['unbiased_multispec'] = unbiased_multispec
 sys.modules['covariance_functions'] = covariance_functions
@@ -66,12 +68,13 @@ modratio90 = np.ones(nlp)
 modratio150 = np.ones(nlp)
 modells = np.ones(nlp)
 
-modratio90[:nl] = 0.998*scipy.signal.medfilt(ratio90,11)
-modratio90[:455]=1.0
+modratio90[:nl] = gaussian_filter1d(ratio90,5,mode='nearest')
+modratio90[:785]=1.0
 #last two already 1
 
-modratio150[:nl] = 0.998*scipy.signal.medfilt(ratio150,11)
-modratio150[:455]=1.0
+modratio150[:nl] = gaussian_filter1d(ratio150,5,mode='nearest')
+
+modratio150[:785]=1.0
 #last two already 1
 
 modells[:nl]=ellkern
@@ -86,9 +89,9 @@ o150 = np.interp(oell,modells,modratio150)
 theoryfiles = ['/sptlocal/user/creichardt/hiell2022/sim_dls_90ghz.txt',
                '/sptlocal/user/creichardt/hiell2022/sim_dls_150ghz.txt',
               '/sptlocal/user/creichardt/hiell2022/sim_dls_220ghz.txt']
-otheoryfiles = ['/sptlocal/user/creichardt/hiell2022/sim_field_dls_90ghz.txt',
-               '/sptlocal/user/creichardt/hiell2022/sim_field_dls_150ghz.txt',
-               '/sptlocal/user/creichardt/hiell2022/sim_field_dls_220ghz.txt']
+otheoryfiles = ['/sptlocal/user/creichardt/hiell2022/sim_fieldv2_dls_90ghz.txt',
+               '/sptlocal/user/creichardt/hiell2022/sim_fieldv2_dls_150ghz.txt',
+               '/sptlocal/user/creichardt/hiell2022/sim_fieldv2_dls_220ghz.txt']
 
 dl90 = np.loadtxt(theoryfiles[0])
 dl150 = np.loadtxt(theoryfiles[1])
@@ -103,3 +106,4 @@ dl150[:,1] *= o150
 np.savetxt(otheoryfiles[0],dl90,fmt = ['%.0f', '%.8e'])
 np.savetxt(otheoryfiles[1],dl150,fmt = ['%.0f', '%.8e'])
 np.savetxt(otheoryfiles[2],dl220,fmt = ['%.0f', '%.8e']) #unchanged
+np.savez('/sptlocal/user/creichardt/hiell2022/tf_scaling_modes.npz',ratio150=modratio150,ratio90=modratio90)

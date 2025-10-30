@@ -148,12 +148,12 @@ def reformat_multifield_shts(shtfilelist, processedshtfilebase,
         #have lmax+1 m=0's, followed by lmax m=1's.... (if does do l=0,m=0)
         # healpy has indexing routines, but they only take 1 at a time...
         #make dummy vec for use
-        dummy_vec = np.zeros(lmax+1,dtype=np.int)
+        dummy_vec = np.zeros(lmax+1,dtype=np.int64)
         k=0
         for i in np.arange(lmax+1):
             dummy_vec[i] = k
             k=k+lmax-i
-        ell_reordering = np.zeros(size,dtype=np.int)
+        ell_reordering = np.zeros(size,dtype=np.int64)
         k=0
         for i in range(lmax+1):
             ell_reordering[k:k+i+1] = dummy_vec[0:i+1] + i
@@ -252,12 +252,12 @@ def reformat_shts(shtfilelist, processedshtfile,
         #have lmax+1 m=0's, followed by lmax m=1's.... (if does do l=0,m=0)
         # healpy has indexing routines, but they only take 1 at a time...
         #make dummy vec for use
-        dummy_vec = np.zeros(lmax+1,dtype=np.int)
+        dummy_vec = np.zeros(lmax+1,dtype=np.int64)
         k=0
         for i in np.arange(lmax+1):
             dummy_vec[i] = k
             k=k+lmax-i
-        ell_reordering = np.zeros(size,dtype=np.int)
+        ell_reordering = np.zeros(size,dtype=np.int64)
         k=0
         for i in range(lmax+1):
             ell_reordering[k:k+i+1] = dummy_vec[0:i+1] + i
@@ -369,12 +369,12 @@ def take_and_reformat_shts(mapfilelist, processedshtfile,
         #have lmax+1 m=0's, followed by lmax m=1's.... (if does do l=0,m=0)
         # healpy has indexing routines, but they only take 1 at a time...
         #make dummy vec for use
-        dummy_vec = np.zeros(lmax+1,dtype=np.int)
+        dummy_vec = np.zeros(lmax+1,dtype=np.int64)
         k=0
         for i in np.arange(lmax+1):
             dummy_vec[i] = k
             k=k+lmax-i
-        ell_reordering = np.zeros(size,dtype=np.int)
+        ell_reordering = np.zeros(size,dtype=np.int64)
         k=0
         for i in range(lmax+1):
             ell_reordering[k:k+i+1] = dummy_vec[0:i+1] + i
@@ -452,7 +452,7 @@ def get_first_index_ell(l):
     if type(l) is int:
         return int(l*(l+1)/2)
     elif type(l) is np.ndarray:
-        return (l*(l+1)/2).astype(np.int)
+        return (l*(l+1)/2).astype(np.int64)
     else:
         pdb.set_trace()
         return -1

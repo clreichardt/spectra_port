@@ -161,8 +161,8 @@ if __name__ == '__main__':
     #covfile='/big_scratch/cr/xspec_2022/covariance_blrc5p1.pkl'
     #odir='/home/creichardt/highell_dls_blv3rc4_fieldpwf_extra1p1/'
     #covfile='/big_scratch/cr/xspec_2022/covariance_blv3rc4.pkl'
-    odir='/home/creichardt/highell_dls_blrc5p1_recal/'
-    covfile='/big_scratch/cr/xspec_2022/covariance_blrc5p1_recal.pkl'
+    odir='/home/creichardt/highell_dls_blrc5p1_recal_v2/'
+    covfile='/big_scratch/cr/xspec_2022/covariance_blrc5p1_recal_v2.pkl'
 
     if ONESIMPWF:
         print("using onesimpwf data products, binning, and calibration")
