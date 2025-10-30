@@ -252,7 +252,7 @@ if __name__ == "__main__":
         print('status',i,frac_beam_cov[10,10])
 
     #Next do the Tf error modes (apply to all power)
-    with open('/home/creichardt/tf_error_modes.npz',allow_pickle=True) as fp:
+    with np.load('/home/creichardt/tf_error_modes.npz',allow_pickle=True) as fp:
         ell_tf   = fp['ell']
         modes_tf = fp['modes']
         amps_tf  = fp['amps']
