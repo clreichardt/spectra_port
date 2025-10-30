@@ -3,12 +3,6 @@ import pdb
 
 
 '''
-30 Oct 2025 -- 
-Changes compared to make_beam_cov_v0_rc5p1
-1) Added new modes representing variation in transfer function estimation -- as source of additional 'beam-like' error
-2) Doubling all but CIB modes, based on conversations with Nick H. saying x2 is not crazy, and there was a sqrt(2) factor that might be the wrong way. However CIB he thought was already conservative.
-
-
 Aug 19, 2025 -- Added new modes from NDH
 
 This set of code is intended to create a fractional beam covariance matrix for bandpowers.
@@ -163,7 +157,7 @@ if __name__ == "__main__":
 
     
     #get inputs 5/6 - BPWF
-    dir = '/home/creichardt/highell_dls_blrc5p1_recal_v2/'
+    dir = '/home/creichardt/highell_dls_blrc5p1_recal/'
     win_file = dir+'windowfunc.bin'
     with open(win_file, "rb") as fp:
         line = fp.readline()
@@ -208,8 +202,6 @@ if __name__ == "__main__":
     tsz_beam_arr = load_beam_array('/home/creichardt/beam_rc5.1_noslope/tsz/B_ell.npz',  lmax)
     rg_beam_arr  = load_beam_array('/home/creichardt/beam_rc5.1_noslope/sync/B_ell.npz', lmax)
 
-    noncibfactor = 2.0
-
     #now only evectors are on different ell-spacing
 
     bps0 = apply_bpwf(win_arr,fg_Dls)
@@ -221,9 +213,9 @@ if __name__ == "__main__":
     #First do the common error modes
     neval = norm_evecs.shape[1]
     for i in range(neval):
-        this_evec090 = noncibfactor*np.interp(beam_arr[:,0],ell_cov,norm_evecs[:nc,i])
-        this_evec150 = noncibfactor*np.interp(beam_arr[:,0],ell_cov,norm_evecs[nc:2*nc,i])
-        this_evec220 = noncibfactor*np.interp(beam_arr[:,0],ell_cov,norm_evecs[2*nc:3*nc,i])
+        this_evec090 = np.interp(beam_arr[:,0],ell_cov,norm_evecs[:nc,i])
+        this_evec150 = np.interp(beam_arr[:,0],ell_cov,norm_evecs[nc:2*nc,i])
+        this_evec220 = np.interp(beam_arr[:,0],ell_cov,norm_evecs[2*nc:3*nc,i])
 
 
         ratio090 = 1+this_evec090/beam_arr[:,1]
@@ -250,39 +242,6 @@ if __name__ == "__main__":
 
         frac_beam_cov += np.matmul(ratio_bps, ratio_bps.T) 
         print('status',i,frac_beam_cov[10,10])
-
-    #Next do the Tf error modes (apply to all power)
-    with open('/home/creichardt/tf_error_modes.npz',allow_pickle=True) as fp:
-        ell_tf   = fp['ell']
-        modes_tf = fp['modes']
-        amps_tf  = fp['amps']
-        nmode = modes_tf.shape[0]
-
-    for i in range(nmode):
-        evec = np.interp(beam_arr[:,0],ell_tf,modes_tf[i,:])
-
-        spec_vec[0,:] = fg_Dls[0,:] 
-        spec_vec[1,:] = fg_Dls[1,:] 
-        spec_vec[2,:] = fg_Dls[2,:]
-        spec_vec[3,:] = fg_Dls[3,:] 
-        spec_vec[4,:] = fg_Dls[4,:] 
-        spec_vec[5,:] = fg_Dls[5,:] 
-
-        for j in range(6):
-            ratio = 1 + amps[i,j]*evec
-            spec_vec[j,:] *= ratio
-
-            #IV
-            new_bps = apply_bpwf(win_arr,spec_vec)
-            
-            #V
-            ratio_bps = (new_bps/bps0 - 1.0).reshape([-1,1]) #promote to right dimensions to do matrix multiply below
-            
-            #VI
-
-            frac_beam_cov += np.matmul(ratio_bps, ratio_bps.T) 
-        print('status',i,frac_beam_cov[10,10])
-    
         
     #Now other modes
     #need to treat tsz and cib specially due to tsz-cib
@@ -297,9 +256,9 @@ if __name__ == "__main__":
         this_fg_Dls  = list_fgs[j]
         bps1 = apply_bpwf(win_arr,this_fg_Dls)
         for i in range(loc_neval):
-            this_evec090 = noncibfactor*np.interp(beam[:,0],ell_cov,evec[:nc,i])
-            this_evec150 = noncibfactor*np.interp(beam[:,0],ell_cov,evec[nc:2*nc,i])
-            this_evec220 = noncibfactor*np.interp(beam[:,0],ell_cov,evec[2*nc:3*nc,i])
+            this_evec090 = np.interp(beam[:,0],ell_cov,evec[:nc,i])
+            this_evec150 = np.interp(beam[:,0],ell_cov,evec[nc:2*nc,i])
+            this_evec220 = np.interp(beam[:,0],ell_cov,evec[2*nc:3*nc,i])
 
 
             ratio090 = 1+this_evec090/beam[:,1]
@@ -339,9 +298,9 @@ if __name__ == "__main__":
     i1d=[0,3,5]
     for i in range(loc_neval):
             
-            this_evec090 = noncibfactor*np.interp(beam[:,0],ell_cov,evec[:nc,i])
-            this_evec150 = noncibfactor*np.interp(beam[:,0],ell_cov,evec[nc:2*nc,i])
-            this_evec220 = noncibfactor*np.interp(beam[:,0],ell_cov,evec[2*nc:3*nc,i])
+            this_evec090 = np.interp(beam[:,0],ell_cov,evec[:nc,i])
+            this_evec150 = np.interp(beam[:,0],ell_cov,evec[nc:2*nc,i])
+            this_evec220 = np.interp(beam[:,0],ell_cov,evec[2*nc:3*nc,i])
 
 
             ratio090 = 1+this_evec090/beam[:,1]
