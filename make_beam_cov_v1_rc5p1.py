@@ -3,11 +3,6 @@ import pdb
 
 
 '''
-20 Dec 2025 -- 
-1) drop the doubling of all but CIB
-2) use NDH's latext beam cov
-
-
 30 Oct 2025 -- 
 Changes compared to make_beam_cov_v0_rc5p1
 1) Added new modes representing variation in transfer function estimation -- as source of additional 'beam-like' error
@@ -146,19 +141,18 @@ def load_beam_array(file,lmax):
 
 if __name__ == "__main__":
     #1, and inputs 1/2
-    bdir = '/home/creichardt/beam_rc5.1_noslope/dec2025_ell15000_cov/'
 
     #Common error modes
     norm_evecs, ell_cov, cov = load_beam_evecs('/home/creichardt/beam_rc5.1_noslope/agn_cov.npz',threshold=1e-4)
         
     #CMB error modes:
-    cmb_norm_evecs, cmb_ell_cov, _ = load_beam_evecs(bdir+'CMB/cov.npz',subtract_cov=cov,threshold=1e-3)
+    cmb_norm_evecs, cmb_ell_cov, _ = load_beam_evecs('/home/creichardt/beam_rc5.1_noslope/cmb/cov.npz',subtract_cov=cov,threshold=1e-3)
     #CIB error modes:
-    cib_norm_evecs, cib_ell_cov, _ = load_beam_evecs(bdir+'CIB/cov.npz',subtract_cov=cov,threshold=1e-3)
+    cib_norm_evecs, cib_ell_cov, _ = load_beam_evecs('/home/creichardt/beam_rc5.1_noslope/cmb/cov.npz',subtract_cov=cov,threshold=1e-3)
     #tSZ error modes:
-    tsz_norm_evecs, tsz_ell_cov, _ = load_beam_evecs(bdir+'tSZ/cov.npz',subtract_cov=cov,threshold=1e-3)
+    tsz_norm_evecs, tsz_ell_cov, _ = load_beam_evecs('/home/creichardt/beam_rc5.1_noslope/cmb/cov.npz',subtract_cov=cov,threshold=1e-3)
     #RG error modes:
-    rg_norm_evecs, rg_ell_cov, _ = load_beam_evecs(bdir+'RG/cov.npz',subtract_cov=cov,threshold=1e-3)
+    rg_norm_evecs, rg_ell_cov, _ = load_beam_evecs('/home/creichardt/beam_rc5.1_noslope/cmb/cov.npz',subtract_cov=cov,threshold=1e-3)
 
     assert ell_cov[0] == cmb_ell_cov[0] == cib_ell_cov[0]== tsz_ell_cov[0]== rg_ell_cov[0]
     assert ell_cov.shape[0] == cmb_ell_cov.shape[0] == cib_ell_cov.shape[0]== tsz_ell_cov.shape[0]== rg_ell_cov.shape[0]
@@ -214,7 +208,7 @@ if __name__ == "__main__":
     tsz_beam_arr = load_beam_array('/home/creichardt/beam_rc5.1_noslope/tsz/B_ell.npz',  lmax)
     rg_beam_arr  = load_beam_array('/home/creichardt/beam_rc5.1_noslope/sync/B_ell.npz', lmax)
 
-    noncibfactor = 1.0
+    noncibfactor = 2.0
 
     #now only evectors are on different ell-spacing
 
