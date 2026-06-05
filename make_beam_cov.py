@@ -6,6 +6,8 @@ import pdb
 20 Dec 2025 -- 
 1) drop the doubling of all but CIB
 2) use NDH's latext beam cov
+3) fix paths
+4) less conservative Tf error (0.5xcov)
 
 
 30 Oct 2025 -- 
@@ -149,7 +151,7 @@ if __name__ == "__main__":
     bdir = '/home/creichardt/beam_rc5.1_noslope/dec2025_ell15000_cov/'
 
     #Common error modes
-    norm_evecs, ell_cov, cov = load_beam_evecs('/home/creichardt/beam_rc5.1_noslope/agn_cov.npz',threshold=1e-4)
+    norm_evecs, ell_cov, cov = load_beam_evecs(bdir+'agn_cov.npz',threshold=1e-4)
         
     #CMB error modes:
     cmb_norm_evecs, cmb_ell_cov, _ = load_beam_evecs(bdir+'CMB/cov.npz',subtract_cov=cov,threshold=1e-3)
@@ -261,7 +263,7 @@ if __name__ == "__main__":
     with np.load('/home/creichardt/tf_error_modes.npz',allow_pickle=True) as fp:
         ell_tf   = fp['ell']
         modes_tf = fp['modes']
-        amps_tf  = fp['amps']
+        amps_tf  = fp['amps']*2**(-0.5) #2025.12.20 -- being less conservative here
         nmode = modes_tf.shape[0]
 
     for i in range(nmode):
