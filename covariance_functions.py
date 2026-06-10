@@ -26,7 +26,7 @@ class covariance:
     nf = 0
     nspec = 0
     nb = 0 
-    def __init__(self,spec,theory_dls,calibration_factors,factors=np.asarray([2.86,1.06,0.61]),extra=0.0,revised_dls=None, poisson_fac=1.):
+    def __init__(self,spec,theory_dls,calibration_factors,factors=np.asarray([2.86,1.06,0.61]),extra=0.0,revised_dls=None, poisson_fac=1.,sz_dls=None,sz_NG_cov=None):
         self.nf = factors.shape[0]
         self.nspec = (self.nf * (self.nf+1))//2
         self.nb = spec['sample_cov'].shape[1]
@@ -84,7 +84,7 @@ class covariance:
         print("Finished corr matrix")
         #We need diagonals, there will be 21 of these for 3 freqs
         #this is supposed to be 2S**2
-        diagonals_signal = self.fit_signal_diagonals(sample_cov,theory_dls,revised_dls = revised_dls)
+        diagonals_signal, diagonals_sz = self.fit_signal_diagonals(sample_cov,theory_dls,revised_dls = revised_dls,sz_dls = sz_dls)
         #pdb.set_trace()
         print("Finished signal diag")
         raw_diags = self.get_diags(meas_cov)
@@ -98,8 +98,17 @@ class covariance:
         self.simple_cov = self.construct_cov(diagonals_signal,diagonals_noise,self.offdiagonal_single_block,extra=extra)
         #and combine with poisson terms
         self.cov = self.simple_cov + self.poisson_offdiagonals * poisson_fac**2 # scale Poisson but
+        #add SZ offdiagonal estimate
+        if (sz_dls is not None) and (sz_NG_cov is not None):
+            self.extra_sz_cov = self.construct_sz_cov(diagonals_sz, sz_NG_cov)
+            self.cov = self.cov + self.extra_sz_cov
+        else:
+            diagonals_sz=None
+            sz_NG_cov=None
         self.diagonals_signal = diagonals_signal
         self.diagonals_noise = diagonals_noise
+        self.diagonals_sz = diagonals_sz
+        self.sz_NG_cov = sz_NG_Cov
         self.raw_noise_diags = raw_diags
         self.raw_noise_diags_est1 = raw_diags1
         #Cov should be my final cov estimate. 
