@@ -130,6 +130,25 @@ class covariance:
                     cov[i,:,j,:] *= 1+extra
         return cov
     
+    def construct_sz_cov(self,diagonals_sz, sz_NG_cov):
+        cov = np.zeros([self.nspec,self.nb,self.nspec,self.nb])
+
+        I = np.identity(self.nb)
+        #sz_NG_cov has been divided by the Gaussian cov in sims
+        #so I subtract the identity, then multiply to get extra cov
+        rev_corr = sz_NG_cov - I
+
+        for i in range(self.nspec):
+            for j in range(i,self.nspec):
+                sqrtdiag = np.sqrt( diagonals_sz[self.get_1d_index(i,j),:])
+                sqrtdiag2d = np.tile(sqrtdiag,[self.nb,1])
+                cc = sqrtdiag2d* sqrtdiag2d.T * rev_corr
+                cov[i,:,j,:] = cc#np.matmul(diag.T, np.matmul(offdiagonal_single_block,diag))
+                #pdb.set_trace()
+                if i != j:
+                    cov[j,:,i,:] = cov[i,:,j,:].T
+        return cov
+                
     def get_diags(self,cov):
         ncross = (self.nspec * (self.nspec+1))//2
         odiag = np.zeros([ncross,self.nb])
@@ -477,7 +496,7 @@ class covariance:
         
         
 
-    def fit_single_block_signal(self,cov,i_block,j_block, theory_dls,fit_range = [30,190], use_range = [40,259],revised_dls=None ):
+    def fit_single_block_signal(self,cov,i_block,j_block, theory_dls,fit_range = [30,190], use_range = [40,259],revised_dls=None, sz_dls=None ):
         if revised_dls is None or revised_dls.shape[0] != theory_dls.shape[0]:
             revised_dls=theory_dls
 
@@ -488,6 +507,8 @@ class covariance:
 
         theory = self.get_theory_cov(theory_dls,i_block,j_block)
         revised_theory = self.get_theory_cov(revised_dls,i_block,j_block)
+        if sz_dls is not None:
+            sz_theory = self.get_theory_cov(sz_dls,i_block,j_block)
         # theory is eg (150x150)(90x90)+ (90x150)**2
         
         observed = np.diag(cov[i_block,:,j_block,:])
@@ -522,27 +543,47 @@ class covariance:
                  
         #having fit using the inout sims, return scaled version with same prefactor
         out = prefactor * revised_theory
-        return out
+        #also optionally get SZ only portion
+        sz_out = None
+        if sz_dls is not None:
+            sz_out = prefactor * sz_theory
+        
+        return out, sz_out
 
 
 
-    def fit_signal_diagonals(self,sample_cov,theory_dls,fit_range = [30,190], use_range = [40,259] ,revised_dls=None):
+    def fit_signal_diagonals(self,sample_cov,theory_dls,fit_range = [30,190], use_range = [40,259] ,revised_dls=None, sz_dls=None):
 
         nspec = sample_cov.shape[0]
         nb = sample_cov.shape[1]
         ncross = nspec * (nspec+1)//2
         diagonals = np.zeros([ncross,nb])
-        for i in range(nspec):
-            for j in range(nspec):
-                k = self.get_1d_index(i,j,nspec)
-                diagonals[k,:] = self.fit_single_block_signal(sample_cov,i,j,theory_dls,fit_range=fit_range,use_range=use_range,revised_dls=revised_dls)
-                if False:
-                    plt.plot(diagonals[k,40:120])
-                    plt.plot(np.diag(sample_cov[i,:,j,:])[40:120])
-                    plt.title('signal: {}'.format(k))
-                    plt.show()
+        sz_diagonals = None
+        if sz_dls is not None:
+            sz_diagonals = np.zeros([ncross,nb])
+            for i in range(nspec):
+                for j in range(nspec):
+                    k = self.get_1d_index(i,j,nspec)
+                    diagonals[k,:], sz_diagonals[k,:] = self.fit_single_block_signal(sample_cov,i,j,theory_dls,fit_range=fit_range,
+                                                                                    use_range=use_range,revised_dls=revised_dls,sz_dls=sz_dls)
+                    if False:
+                        plt.plot(diagonals[k,40:120])
+                        plt.plot(np.diag(sample_cov[i,:,j,:])[40:120])
+                        plt.title('signal: {}'.format(k))
+                        plt.show()
+        else:
+            for i in range(nspec):
+                for j in range(nspec):
+                    k = self.get_1d_index(i,j,nspec)
+                    diagonals[k,:], _ = self.fit_single_block_signal(sample_cov,i,j,theory_dls,fit_range=fit_range,
+                                                                                    use_range=use_range,revised_dls=revised_dls,sz_dls=sz_dls)
+                    if False:
+                        plt.plot(diagonals[k,40:120])
+                        plt.plot(np.diag(sample_cov[i,:,j,:])[40:120])
+                        plt.title('signal: {}'.format(k))
+                        plt.show()
                 
-        return diagonals
+        return diagonals, sz_diagonals
 
 
     def corr_matrix(self,cov):

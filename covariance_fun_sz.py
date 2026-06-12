@@ -86,16 +86,18 @@ if __name__ == '__main__':
     bestfit_fac = 7.1/2.86**2
     revised_fgtheory_dls  = bestfit_fac * rg_dls_interp + norgfgtheory_dls
 
-
+    pdb.set_trace()
 
     nlc = ellcov.shape[0]
     theory_dls = np.zeros([6,nlc])
     revised_theory_dls = np.zeros([6,nlc])
+    sz_theory_dls = np.zeros([6,nlc])
     for i in range(6):
         theory_dls[i,:] = covariance_functions.bin_spectra(cmb_dls + fgtheory_dls[i,:],spec['banddef'])
     for i in range(6):
         revised_theory_dls[i,:] = covariance_functions.bin_spectra(cmb_dls + revised_fgtheory_dls[i,:],spec['banddef'])
-    
+    for i in range(6):
+        sz_theory_dls[i,:] = covariance_functions.bin_spectra(sz_dls[i,:],spec['banddef'])
     #calibration_factors = np.asarray([ (0.9087)**-0.5, (0.9909)**-0.5, (0.9744)**-0.5 ])
     #change to below when reran with latest PWFs/Tfs on 2023 Sep 08
     #calibration_factors = np.asarray([ (0.9017)**-0.5, (0.9833)**-0.5, (0.9703)**-0.5 ])
@@ -112,7 +114,7 @@ if __name__ == '__main__':
     
     print("initiating cov")
 
-    cov_obj = covariance_functions.covariance(spec,theory_dls, calibration_factors,poisson_fac=bestfit_fac,revised_dls = revised_theory_dls,sz_NG_cov = cov_sz)
+    cov_obj = covariance_functions.covariance(spec,theory_dls, calibration_factors,poisson_fac=bestfit_fac,revised_dls = revised_theory_dls,sz_NG_cov = cov_sz,sz_dls=sz_theory_dls)
     #cov_obj = covariance_functions.covariance(spec,theory_dls, calibration_factors,extra=0.1)        
     nn = cov_obj.cov.shape[0]*cov_obj.cov.shape[1]
     eval,evec = np.linalg.eig(cov_obj.cov.reshape([nn,nn]))
