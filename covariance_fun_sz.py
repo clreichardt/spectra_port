@@ -34,17 +34,22 @@ if __name__ == '__main__':
     lsz = None
     cov_sz = None
     if True:  #do SZ
-        with open('/home/creichardt/NGSZcov.npz') as data:
+        with np.load('/home/creichardt/NGSZcov.npz') as data:
+
             lsz =data['lcov']
             cov_sz = data['cov_renorm_NG']
+            cov_sz = cov_sz[:-1,:-1] #cut last bin
         covfile = '/big_scratch/cr/xspec_2022/covariance_blrc5p1_recal_v2_NGSZ.pkl'  #output
 
         #np.savez('SZ_dls.npz',dl_sz=dl_sz,lsz=l_sz)
         #need sz theory
         # from /home/creichardt/cmb_models/fg_models/suxp*
-        with open('/home/creichardt/SZ_dls.npz') as data:
+        with np.load('/home/creichardt/SZ_dls.npz') as data:
             lszB =data['lsz']
             dls_sz = data['dl_sz']
+            ntmp = dls_sz.shape[0]
+            sz_dls = np.zeros([6,ntmp+10])
+            sz_dls[:,10:]=dls_sz.T
         
 
     
@@ -86,7 +91,7 @@ if __name__ == '__main__':
     bestfit_fac = 7.1/2.86**2
     revised_fgtheory_dls  = bestfit_fac * rg_dls_interp + norgfgtheory_dls
 
-    pdb.set_trace()
+
 
     nlc = ellcov.shape[0]
     theory_dls = np.zeros([6,nlc])
@@ -98,6 +103,9 @@ if __name__ == '__main__':
         revised_theory_dls[i,:] = covariance_functions.bin_spectra(cmb_dls + revised_fgtheory_dls[i,:],spec['banddef'])
     for i in range(6):
         sz_theory_dls[i,:] = covariance_functions.bin_spectra(sz_dls[i,:],spec['banddef'])
+    #print(spec['banddef'].shape)
+    #print(cov_sz.shape)
+    #pdb.set_trace()
     #calibration_factors = np.asarray([ (0.9087)**-0.5, (0.9909)**-0.5, (0.9744)**-0.5 ])
     #change to below when reran with latest PWFs/Tfs on 2023 Sep 08
     #calibration_factors = np.asarray([ (0.9017)**-0.5, (0.9833)**-0.5, (0.9703)**-0.5 ])

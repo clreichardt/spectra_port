@@ -101,6 +101,7 @@ class covariance:
         #add SZ offdiagonal estimate
         if (sz_dls is not None) and (sz_NG_cov is not None):
             self.extra_sz_cov = self.construct_sz_cov(diagonals_sz, sz_NG_cov)
+            #pdb.set_trace() #-- #have NaNs
             self.cov = self.cov + self.extra_sz_cov
         else:
             diagonals_sz=None
@@ -108,7 +109,7 @@ class covariance:
         self.diagonals_signal = diagonals_signal
         self.diagonals_noise = diagonals_noise
         self.diagonals_sz = diagonals_sz
-        self.sz_NG_cov = sz_NG_Cov
+        self.sz_NG_cov = sz_NG_cov
         self.raw_noise_diags = raw_diags
         self.raw_noise_diags_est1 = raw_diags1
         #Cov should be my final cov estimate. 
@@ -140,9 +141,13 @@ class covariance:
 
         for i in range(self.nspec):
             for j in range(i,self.nspec):
-                sqrtdiag = np.sqrt( diagonals_sz[self.get_1d_index(i,j),:])
+                sign = np.sign(diagonals_sz[self.get_1d_index(i,j),100])
+                
+                sqrtdiag = np.sqrt( sign * diagonals_sz[self.get_1d_index(i,j),:])
+
                 sqrtdiag2d = np.tile(sqrtdiag,[self.nb,1])
-                cc = sqrtdiag2d* sqrtdiag2d.T * rev_corr
+                cc = sign* sqrtdiag2d* sqrtdiag2d.T * rev_corr
+                #pdb.set_trace() #think this has nan's for 90x220 equivalents
                 cov[i,:,j,:] = cc#np.matmul(diag.T, np.matmul(offdiagonal_single_block,diag))
                 #pdb.set_trace()
                 if i != j:

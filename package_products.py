@@ -23,18 +23,20 @@ my_parser.add_argument('-nolowl', action='store_true',dest='nolowl')
 my_parser.add_argument('-nohighl', action='store_true',dest='nohighl')
 my_parser.add_argument('-nomidl', action='store_true',dest='nomidl')
 my_parser.add_argument('-calib', action='store_true',dest='calib')
+my_parser.add_argument('-szcov', action='store_true',dest='szcov')
 
 args = my_parser.parse_args()
 
+SZCOV  = args.szcov
+CALIB  = args.calib
+NOMIDL = args.nomidl
+NOLOWL = args.nolowl
+NOHIGHL= args.nohighl
 
-CALIB = args.calib
-NOMIDL=args.nomidl
-NOLOWL=args.nolowl
-NOHIGHL=args.nohighl
+SZPOL    = args.szpol
+NOSIMPWF = args.nosimpwf
+ONESIMPWF= args.onesimpwf
 
-SZPOL=args.szpol
-NOSIMPWF=args.nosimpwf
-ONESIMPWF=args.onesimpwf
 ANYTRUE = False
 for key in args.__dict__.keys():
     ANYTRUE = ANYTRUE or  args.__dict__[key]
@@ -164,6 +166,10 @@ if __name__ == '__main__':
     odir='/home/creichardt/highell_dls_blrc5p1_recal_v2/'
     covfile='/big_scratch/cr/xspec_2022/covariance_blrc5p1_recal_v2.pkl'
 
+    if SZCOV:
+        odir='/home/creichardt/highell_dls_blrc5p1_recal_v2_ngsz/'
+        covfile='/big_scratch/cr/xspec_2022/covariance_blrc5p1_recal_v2_NGSZ.pkl'
+    
     if ONESIMPWF:
         print("using onesimpwf data products, binning, and calibration")
         pdb.set_trace()
