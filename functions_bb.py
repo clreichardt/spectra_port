@@ -59,8 +59,8 @@ def generate_null_file_list(base_path,out_base_path,freq,null):
     map2filelist = ['']*nbundle
     shtfilelist  = ['']*nbundle
     for i in range(nbundle):
-        map1filelist[i] = base_path+stub1.format(i,freq)
-        map2filelist[i] = base_path+stub2.format(i,freq)
+        map1filelist[i] = base_path+null+'/'+stub1.format(i,freq)
+        map2filelist[i] = base_path+null+'/'+stub2.format(i,freq)
         shtfilelist[i]  = out_base_path+outstub.format(null,i,freq)
     return map1filelist, map2filelist, shtfilelist
 
@@ -76,10 +76,13 @@ if __name__ == "__main__" and NULLSHT is True:
     out_base_path='/scratch/cr/bb_nulls/'
 
     freqs=['095','150','220']
-    nulls = ['azimuth','moon','sun','year']
-    lrnull = 'scan'
+    freqs=['095']
+    nulls = ['azimuth','moon','sun','year','scan']
+
     nulls = ['sun'] # for testing
 
+    mask_file='/sptlocal/user/creichardt/bb2020/puremask8192_0p5medwt_500mJy_nodisk_15arcmin.npz'
+    mask = np.load(mask_file)['mask']
     for freq in freqs:
         for null in nulls:
             print("On {} GHz and {}:".format(freq,null))
@@ -88,5 +91,5 @@ if __name__ == "__main__" and NULLSHT is True:
             naspec.take_null_shts(map1filelist, map2filelist, shtfilelist,
                                 nside,lmax,
                                 purify_b = True,
-                                mask  = None
+                                mask  = mask
                                 )

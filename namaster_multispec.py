@@ -1,6 +1,7 @@
 import os
 os.environ['OMP_NUM_THREADS'] = "6"
 import numpy as np
+import healpy as hp
 #from spt3g import core,maps, calibration
 from spectra_port import  unbiased_multispec
 import time
@@ -9,6 +10,9 @@ import pymaster as nmt
 AlmType = np.dtype(np.complex64)
 
 
+ind_T=0
+ind_Q=1
+ind_U=2
 
 def load_qu(path):
     """Load Q/U from a FITS map, handling either a (Q,U) or (T,Q,U) layout."""
@@ -19,6 +23,16 @@ def load_qu(path):
     Q[Q == hp.UNSEEN] = 0.0
     U[U == hp.UNSEEN] = 0.0
     return Q, U
+
+
+def load_q(path,U=False):
+    """Load Q/U from a FITS map, handling either a (Q,U) or (T,Q,U) layout."""
+    ind=1
+    if U:
+        ind=2
+    Q = hp.read_map(path, field=ind,dtype=np.float32)
+    Q[Q == hp.UNSEEN] = 0.0
+    return Q
 
 
 def take_null_shts(map1filelist, map2filelist, shtfilelist,
@@ -32,20 +46,28 @@ def take_null_shts(map1filelist, map2filelist, shtfilelist,
         assert len(map1filelist) == len(map2filelist) == len(shtfilelist)
         nf = len(map1filelist)
         for i in range(nf):
-            Q,U = load_qu(map1filelist[i])
-            Q2,U2 = load_qu(map2filelist[i])
+
+            Q = load_q(map1filelist[i])
+            Q2 = load_q(map2filelist[i])
             Q = 0.5*(Q-Q2)
+            del Q2
+            U = load_q(map1filelist[i],U=True)
+            U2 = load_q(map2filelist[i],U=True)
             U = 0.5*(U-U2)
-            del Q2,U2
+            del U2
+
             if mask is None:
                 mask = np.ones(Q.shape[0],dtype=np.float64)
-            assert Q.shape[0] == 12*nside**2
 
+            print('done with load')
             field = nmt.NmtField(mask, [Q, -U], purify_e=False, purify_b=purify_b, lmax=lmax, lite=True)
+            print('field init done')
             _, alm_B = field.get_alms() #first one is alm_E which we don't need for nulls
+            print('sht done')
+            del field
             with open(shtfilelist[i],'wb') as fp:
                 (alm_B.astype(AlmType)).tofile(fp)
-
+            del alm_B
             newtime=time.time()
             timeinminutes = (newtime - oldtime)/60.0
             oldtime=newtime
@@ -62,6 +84,7 @@ def take_null_shts(map1filelist, map2filelist, shtfilelist,
 
             field = nmt.NmtField(mask, [Q, -U], purify_e=False, purify_b=purify_b, lmax=lmax, lite=True)
             _, alm_B = field.get_alms() #first one is alm_E which we don't need for nulls
+            del field
             with open(shtfilelist[i],'wb') as fp:
                 (alm_B.astype(AlmType)).tofile(fp)
 
