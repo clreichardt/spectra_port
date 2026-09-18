@@ -14,6 +14,26 @@ ind_T=0
 ind_Q=1
 ind_U=2
 
+
+def load_q(path,U=False):
+    """Load Q/U from a FITS map, handling either a (Q,U) or (T,Q,U) layout."""
+    ind=1
+    if U:
+        ind=2
+    Q = hp.read_map(path, field=ind,dtype=np.float32)
+    Q[Q == hp.UNSEEN] = 0.0
+    return Q
+
+def load_q_cut(path,U=False):
+    """Load Q/U from a FITS map, handling either a (Q,U) or (T,Q,U) layout."""
+    ind=1
+    if U:
+        ind=2
+    with fits.open(path) as hdul:
+        ind = hdu[0].data
+        q = hdu[ind+1].data
+    return ind,q
+
 def load_qu(path):
     """Load Q/U from a FITS map, handling either a (Q,U) or (T,Q,U) layout."""
     field_maps = hp.read_map(path, field=None, partial=False)

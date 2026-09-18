@@ -87,9 +87,22 @@ if __name__ == "__main__" and NULLSHT is True:
         for null in nulls:
             print("On {} GHz and {}:".format(freq,null))
             map1filelist, map2filelist, shtfilelist = generate_null_file_list(base_path,out_base_path,freq,null)
+            oldtime=time.time()
+            q = load_q(map1filelist[0],U=False)
+            newtime=time.time()
+            timeinminutes = (newtime - oldtime)/60.0
 
+            print('hp load time (min):',timeinminutes)
+            oldtime=newtime
+            ind,q = load_q_cut(map1filelist[0],U=False)
+            newtime=time.time()
+            timeinminutes = (newtime - oldtime)/60.0
+            print('fits load time (min):',timeinminutes)
+            oldtime=newtime
+            '''
             naspec.take_null_shts(map1filelist, map2filelist, shtfilelist,
                                 nside,lmax,
                                 purify_b = True,
                                 mask  = mask
                                 )
+                                '''
