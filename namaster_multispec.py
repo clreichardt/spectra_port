@@ -3,9 +3,10 @@ os.environ['OMP_NUM_THREADS'] = "6"
 import numpy as np
 import healpy as hp
 #from spt3g import core,maps, calibration
-from spectra_port import  unbiased_multispec
+
 import time
 import pymaster as nmt
+import astropy.io.fits as fits
 
 AlmType = np.dtype(np.complex64)
 
@@ -14,6 +15,14 @@ ind_T=0
 ind_Q=1
 ind_U=2
 
+def printinplace(myString):
+    '''                                                                         
+    Print in place -- ie overwriting the last one, not on a new line            
+    '''
+    digits = len(myString)
+    delete = "\b" * (digits)
+    print("{0}{1:{2}}".format(delete, myString, digits), end="")
+    sys.stdout.flush()
 
 def load_q(path,U=False):
     """Load Q/U from a FITS map, handling either a (Q,U) or (T,Q,U) layout."""
@@ -26,12 +35,13 @@ def load_q(path,U=False):
 
 def load_q_cut(path,U=False):
     """Load Q/U from a FITS map, handling either a (Q,U) or (T,Q,U) layout."""
-    ind=1
+    jnd=1
     if U:
-        ind=2
+        jnd=2
     with fits.open(path) as hdul:
-        ind = hdu[0].data
-        q = hdu[ind+1].data
+
+        ind = hdul[1].data.field(0)
+        q = hdul[1].data.field(1+jnd)
     return ind,q
 
 def load_qu(path):
@@ -62,25 +72,30 @@ def take_null_shts(map1filelist, map2filelist, shtfilelist,
                           ):
     oldtime = time.time()
     count=0
+    fullU = np.zeros(12*8192**2,dtype=np.float64)
+    fullQ = np.zeros(12*8192**2,dtype=np.float64)
     if map2filelist is not None:
         assert len(map1filelist) == len(map2filelist) == len(shtfilelist)
         nf = len(map1filelist)
         for i in range(nf):
-
-            Q = load_q(map1filelist[i])
-            Q2 = load_q(map2filelist[i])
-            Q = 0.5*(Q-Q2)
-            del Q2
-            U = load_q(map1filelist[i],U=True)
-            U2 = load_q(map2filelist[i],U=True)
-            U = 0.5*(U-U2)
-            del U2
+            fullQ[:]=0.0
+            ind,polmap = load_q_cut(map1filelist[i])
+            fullQ[ind]=0.5*polmap
+            ind,polmap = load_q_cut(map1filelist[i])
+            fullQ[ind]-=0.5*polmap
+            fullU[:]=0.0
+            ind,polmap = load_q_cut(map1filelist[i],U=True)
+            fullU[ind]=-0.5*polmap
+            ind,polmap = load_q_cut(map1filelist[i],U=True)
+            fullU[ind]+=0.5*polmap
+            del ind,polmap
 
             if mask is None:
-                mask = np.ones(Q.shape[0],dtype=np.float64)
+                mask = np.ones(12*8192**2,dtype=np.float64)
 
             print('done with load')
-            field = nmt.NmtField(mask, [Q, -U], purify_e=False, purify_b=purify_b, lmax=lmax, lite=True)
+            #note U already multiplied by -1 above
+            field = nmt.NmtField(mask, [fullQ, fullU], purify_e=False, purify_b=purify_b, lmax=lmax,lmax_mask=lmax, lite=True)
             print('field init done')
             _, alm_B = field.get_alms() #first one is alm_E which we don't need for nulls
             print('sht done')
@@ -91,7 +106,7 @@ def take_null_shts(map1filelist, map2filelist, shtfilelist,
             newtime=time.time()
             timeinminutes = (newtime - oldtime)/60.0
             oldtime=newtime
-            unbiased_multispec.printinplace('SHT map: {}  Last one took: {:.1f} minutes'.format(count,timeinminutes))
+            printinplace('SHT map: {}  Last one took: {:.1f} minutes'.format(count,timeinminutes))
             count += 1
             
     else:  #LR nulls don't have a 2nd map list
@@ -100,7 +115,7 @@ def take_null_shts(map1filelist, map2filelist, shtfilelist,
         for i in range(nf):
             Q,U = load_qu(map1filelist[i])
             if mask is None:
-                mask = np.ones(Q.shape[0],dtype=np.float64)
+                mask = np.ones(Q.shape[0],dtype=np.float32)
 
             field = nmt.NmtField(mask, [Q, -U], purify_e=False, purify_b=purify_b, lmax=lmax, lite=True)
             _, alm_B = field.get_alms() #first one is alm_E which we don't need for nulls
@@ -111,6 +126,6 @@ def take_null_shts(map1filelist, map2filelist, shtfilelist,
             newtime=time.time()
             timeinminutes = (newtime - oldtime)/60.0
             oldtime=newtime
-            unbiased_multispec.printinplace('SHT map: {}  Last one took: {:.1f} minutes'.format(count,timeinminutes))
+            printinplace('SHT map: {}  Last one took: {:.1f} minutes'.format(count,timeinminutes))
             count += 1
 

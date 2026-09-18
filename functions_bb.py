@@ -6,13 +6,13 @@ import sys
 sys.path.append('/home/creichardt/spt3g_software/build')
 import healpy as hp
 print('imported healpy')
-import unbiased_multispec as spec
+#import unbiased_multispec as spec
 import namaster_multispec as naspec
 import utils
-import end_to_end
-from spt3g import core,maps, calibration
+#import end_to_end
+#from spt3g import core,maps, calibration
 import argparse
-import pickle as pkl
+#import pickle as pkl
 import pdb
 import time
 
@@ -87,14 +87,15 @@ if __name__ == "__main__" and NULLSHT is True:
         for null in nulls:
             print("On {} GHz and {}:".format(freq,null))
             map1filelist, map2filelist, shtfilelist = generate_null_file_list(base_path,out_base_path,freq,null)
-            oldtime=time.time()
-            q = load_q(map1filelist[0],U=False)
+            '''oldtime=time.time()
+            #q = naspec.load_q(map1filelist[0],U=False)
             newtime=time.time()
             timeinminutes = (newtime - oldtime)/60.0
 
             print('hp load time (min):',timeinminutes)
             oldtime=newtime
-            ind,q = load_q_cut(map1filelist[0],U=False)
+            ind,q = naspec.load_q_cut(map1filelist[0],U=False)
+            print(np.min(ind),np.max(ind),np.max(ind)-np.min(ind),12*8192**2)
             newtime=time.time()
             timeinminutes = (newtime - oldtime)/60.0
             print('fits load time (min):',timeinminutes)
@@ -105,4 +106,4 @@ if __name__ == "__main__" and NULLSHT is True:
                                 purify_b = True,
                                 mask  = mask
                                 )
-                                '''
+
