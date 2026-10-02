@@ -24,12 +24,12 @@ if SPARTAN:
     base_path='/data/gpfs/projects/punim1199/'
     out_base_path='/data/gpfs/projects/punim1199/bb_nulls/'
     mask_path='/data/gpfs/projects/punim1199/'
-    null_base_path='/data/gpfs/projects/punim1199/bb_nulls/'
+    null_base_path='/data/gpfs/projects/punim1199/bb_midl/'
 else:
     base_path='/sptgrid/analysis/spt3g_d1_midell_tqu_healpix/real_data_maps/pre_null/'
     out_base_path='/sptlocal/user/creichardt/bb_nulls/'
     mask_path='/sptlocal/user/creichardt/bb2020/'
-    null_base_path='/sptlocal/user/creichardt/bb_nulls/'
+    null_base_path='/big_scratch/cr/bb_midl/'
 
 
 
@@ -178,10 +178,10 @@ if __name__ == "__main__" and REFORMATNULL is True:
     lmax=4500
 
     freqs=['095','150','220']
-    freqs=['095']
+    #freqs=['095']
     nulls = ['azimuth','moon','sun','year','scan']
 
-    nulls = ['sun'] # for testing
+    #nulls = ['sun'] # for testing
 
     mask_file=mask_path+'puremask8192_0p5medwt_500mJy_nodisk_15arcmin.npz'
     mask = np.load(mask_file)['mask']
@@ -189,7 +189,7 @@ if __name__ == "__main__" and REFORMATNULL is True:
     for freq in freqs:
         for null in nulls:
             print("Reformatting null shts for {} GHz, {}:".format(freq,null))
-            processedshtfile = reformat_null_shts(freq, null, out_base_path,
+            reformat_null_shts(freq, null, out_base_path,
                                                    lmax, mask,
                                                    cmbweighting=True)
 
@@ -199,13 +199,13 @@ if __name__ == "__main__" and NULL is True:
     lmax = 4500
 
     freqs = ['095','150','220']
-    nulls = ['azimuth','moon','scan','sun','year']
+    nulls = ['azimuth','moon','sun','year','scan']
 
     banddef = np.arange(0,lmax+500,500)
 
     for freq in freqs:
         for null in nulls:
             print("On {} GHz and {}:".format(freq,null))
-            null_spectrum = compute_null_spectrum(freq, null, out_base_path, null_base_path,
+            compute_null_spectrum(freq, null, out_base_path, null_base_path,
                                                    lmax, banddef)
 
