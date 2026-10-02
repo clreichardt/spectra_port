@@ -24,10 +24,12 @@ if SPARTAN:
     base_path='/data/gpfs/projects/punim1199/'
     out_base_path='/data/gpfs/projects/punim1199/bb_nulls/'
     mask_path='/data/gpfs/projects/punim1199/'
+    null_base_path='/data/gpfs/projects/punim1199/bb_nulls/'
 else:
     base_path='/sptgrid/analysis/spt3g_d1_midell_tqu_healpix/real_data_maps/pre_null/'
     out_base_path='/sptlocal/user/creichardt/bb_nulls/'
     mask_path='/sptlocal/user/creichardt/bb2020/'
+    null_base_path='/sptlocal/user/creichardt/bb_nulls/'
 
 
 
@@ -106,7 +108,7 @@ def reformat_null_shts(freq, null, out_base_path,
     return processedshtfile
 
 
-def compute_null_spectrum(freq, null, out_base_path,
+def compute_null_spectrum(freq, null, out_base_path, null_base_path,
                            lmax, banddef, nbundle=25):
     '''
     Computes the binned cross-spectrum and covariance across bundles from an
@@ -123,8 +125,9 @@ def compute_null_spectrum(freq, null, out_base_path,
     spectrum,cov,cov1,cov2 = naspec.process_all_cross_spectra(allspectra, banddef.shape[0]-1,
                                                                1, nbundle, auto=False)
 
-    result = {'spectrum':spectrum,'cov':cov,'cov1':cov1,'cov2':cov2,'nmodes':nmodes,'banddef':banddef}
-    outfile = out_base_path+'null_spectrum_{}_{}ghz.npz'.format(null,freq)
+    result = {'spectrum':spectrum,'cov':cov,'cov1':cov1,'cov2':cov2,
+              'allspectra':allspectra,'nmodes':nmodes,'banddef':banddef}
+    outfile = null_base_path+'null_spectrum_{}_{}ghz.npz'.format(null,freq)
     np.savez(outfile,**result)
     return result
 
@@ -203,6 +206,6 @@ if __name__ == "__main__" and NULL is True:
     for freq in freqs:
         for null in nulls:
             print("On {} GHz and {}:".format(freq,null))
-            null_spectrum = compute_null_spectrum(freq, null, out_base_path,
+            null_spectrum = compute_null_spectrum(freq, null, out_base_path, null_base_path,
                                                    lmax, banddef)
 
