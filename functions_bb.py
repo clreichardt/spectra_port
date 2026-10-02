@@ -18,6 +18,19 @@ import time
 
 from astropy.io import fits
 
+SPARTAN=True
+
+if SPARTAN:
+    base_path='/data/gpfs/projects/punim1199/'
+    out_base_path='/data/gpfs/projects/punim1199/bb_nulls/'
+    mask_path='/data/gpfs/projects/punim1199/'
+else:
+    base_path='/sptgrid/analysis/spt3g_d1_midell_tqu_healpix/real_data_maps/pre_null/'
+    out_base_path='/scratch/cr/bb_nulls/'
+    mask_path='/sptlocal/user/creichardt/bb2020/'
+
+    
+
 NULLSHT=False
 
 my_parser = argparse.ArgumentParser()
@@ -72,8 +85,7 @@ def generate_null_file_list(base_path,out_base_path,freq,null):
 if __name__ == "__main__" and NULLSHT is True:
     lmax=4500
     nside=8192
-    base_path='/sptgrid/analysis/spt3g_d1_midell_tqu_healpix/real_data_maps/pre_null/'
-    out_base_path='/scratch/cr/bb_nulls/'
+
 
     freqs=['095','150','220']
     freqs=['095']
@@ -81,7 +93,7 @@ if __name__ == "__main__" and NULLSHT is True:
 
     nulls = ['sun'] # for testing
 
-    mask_file='/sptlocal/user/creichardt/bb2020/puremask8192_0p5medwt_500mJy_nodisk_15arcmin.npz'
+    mask_file=mask_path+'puremask8192_0p5medwt_500mJy_nodisk_15arcmin.npz'
     mask = np.load(mask_file)['mask']
     for freq in freqs:
         for null in nulls:

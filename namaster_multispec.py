@@ -1,5 +1,5 @@
 import os
-os.environ['OMP_NUM_THREADS'] = "6"
+#os.environ['OMP_NUM_THREADS'] = "6"
 import numpy as np
 import healpy as hp
 #from spt3g import core,maps, calibration
@@ -7,6 +7,8 @@ import healpy as hp
 import time
 import pymaster as nmt
 import astropy.io.fits as fits
+import sys
+from pathlib import Path
 
 AlmType = np.dtype(np.complex64)
 
@@ -66,9 +68,10 @@ def load_q(path,U=False):
 
 
 def take_null_shts(map1filelist, map2filelist, shtfilelist,
-                           nside,lmax,
-                           purify_b = True,
-                           mask  = None
+                   nside,lmax,
+                   purify_b = True,
+                   mask  = None,
+                   istart=0
                           ):
     oldtime = time.time()
     count=0
@@ -77,7 +80,9 @@ def take_null_shts(map1filelist, map2filelist, shtfilelist,
     if map2filelist is not None:
         assert len(map1filelist) == len(map2filelist) == len(shtfilelist)
         nf = len(map1filelist)
-        for i in range(nf):
+        for i in range(istart,nf):
+            if Path(shtfilelist[i]).is_file():
+                continue #next loop
             fullQ[:]=0.0
             ind,polmap = load_q_cut(map1filelist[i])
             fullQ[ind]=0.5*polmap
