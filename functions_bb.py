@@ -26,19 +26,25 @@ if SPARTAN:
     mask_path='/data/gpfs/projects/punim1199/'
 else:
     base_path='/sptgrid/analysis/spt3g_d1_midell_tqu_healpix/real_data_maps/pre_null/'
-    out_base_path='/scratch/cr/bb_nulls/'
+    out_base_path='/sptlocal/user/creichardt/bb_nulls/'
     mask_path='/sptlocal/user/creichardt/bb2020/'
 
-    
+
 
 NULLSHT=False
+REFORMATNULL=False
+NULL=False
 
 my_parser = argparse.ArgumentParser()
 my_parser.add_argument('-nullsht', action='store_true',dest='nullsht')
+my_parser.add_argument('-reformatnull', action='store_true',dest='reformatnull')
+my_parser.add_argument('-null', action='store_true',dest='null')
 
 args = my_parser.parse_args()
 
 NULLSHT=args.nullsht
+REFORMATNULL=args.reformatnull
+NULL=args.null
 
 #####################################################################################################
 # Utility functions. Not expected to be called outside this file
@@ -76,6 +82,51 @@ def generate_null_file_list(base_path,out_base_path,freq,null):
         map2filelist[i] = base_path+null+'/'+stub2.format(i,freq)
         shtfilelist[i]  = out_base_path+outstub.format(null,i,freq)
     return map1filelist, map2filelist, shtfilelist
+
+
+def reformat_null_shts(freq, null, out_base_path,
+                        lmax, mask,
+                        cmbweighting=True,
+                        kmask=None):
+    '''
+    Reformats the per-bundle purified-B alm files written by naspec.take_null_shts
+    (cmbweighting, kmask, partial-sky mask normalization, ell-reordering) into a single
+    binary file. Returns the path to that file.
+    '''
+    _, _, shtfilelist = generate_null_file_list(base_path, out_base_path, freq, null)
+
+    processedshtfile = out_base_path+'processed_null_{}_{}ghz.bin'.format(null,freq)
+    naspec.reformat_shts(shtfilelist, processedshtfile,
+                          lmax,
+                          cmbweighting=cmbweighting,
+                          mask=mask,
+                          kmask=kmask,
+                          ell_reordering=None,
+                          no_reorder=False)
+    return processedshtfile
+
+
+def compute_null_spectrum(freq, null, out_base_path,
+                           lmax, banddef, nbundle=25):
+    '''
+    Computes the binned cross-spectrum and covariance across bundles from an
+    already-reformatted null sht file (see reformat_null_shts).
+
+    Cross- (not auto-) spectra are used: each bundle's alm is already the null
+    (half-difference) map, so cross-correlating distinct bundles cancels noise bias.
+    '''
+    processedshtfile = out_base_path+'processed_null_{}_{}ghz.bin'.format(null,freq)
+
+    setdef = np.arange(nbundle,dtype=np.int32).reshape(nbundle,1)
+    allspectra, nmodes = naspec.take_all_cross_spectra(processedshtfile, lmax,
+                                                        setdef, banddef, auto=False)
+    spectrum,cov,cov1,cov2 = naspec.process_all_cross_spectra(allspectra, banddef.shape[0]-1,
+                                                               1, nbundle, auto=False)
+
+    result = {'spectrum':spectrum,'cov':cov,'cov1':cov1,'cov2':cov2,'nmodes':nmodes,'banddef':banddef}
+    outfile = out_base_path+'null_spectrum_{}_{}ghz.npz'.format(null,freq)
+    np.savez(outfile,**result)
+    return result
 
 
 #####################################################################################################
@@ -118,4 +169,40 @@ if __name__ == "__main__" and NULLSHT is True:
                                 purify_b = True,
                                 mask  = mask
                                 )
+
+
+if __name__ == "__main__" and REFORMATNULL is True:
+    lmax=4500
+
+    freqs=['095','150','220']
+    freqs=['095']
+    nulls = ['azimuth','moon','sun','year','scan']
+
+    nulls = ['sun'] # for testing
+
+    mask_file=mask_path+'puremask8192_0p5medwt_500mJy_nodisk_15arcmin.npz'
+    mask = np.load(mask_file)['mask']
+
+    for freq in freqs:
+        for null in nulls:
+            print("Reformatting null shts for {} GHz, {}:".format(freq,null))
+            processedshtfile = reformat_null_shts(freq, null, out_base_path,
+                                                   lmax, mask,
+                                                   cmbweighting=True)
+
+
+if __name__ == "__main__" and NULL is True:
+    print('doing null')
+    lmax = 4500
+
+    freqs = ['095','150','220']
+    nulls = ['azimuth','moon','scan','sun','year']
+
+    banddef = np.arange(0,lmax+500,500)
+
+    for freq in freqs:
+        for null in nulls:
+            print("On {} GHz and {}:".format(freq,null))
+            null_spectrum = compute_null_spectrum(freq, null, out_base_path,
+                                                   lmax, banddef)
 
