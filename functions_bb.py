@@ -12,6 +12,7 @@ import utils
 #import end_to_end
 #from spt3g import core,maps, calibration
 import argparse
+import scipy.stats
 #import pickle as pkl
 import pdb
 import time
@@ -29,24 +30,27 @@ else:
     base_path='/sptgrid/analysis/spt3g_d1_midell_tqu_healpix/real_data_maps/pre_null/'
     out_base_path='/sptlocal/user/creichardt/bb_nulls/'
     mask_path='/sptlocal/user/creichardt/bb2020/'
-    null_base_path='/big_scratch/cr/bb_midl/'
+    null_base_path='/sptlocal/user/creichardt/bb_midl/'
 
 
 
 NULLSHT=False
 REFORMATNULL=False
 NULL=False
+PRINTSTATS=False
 
 my_parser = argparse.ArgumentParser()
 my_parser.add_argument('-nullsht', action='store_true',dest='nullsht')
 my_parser.add_argument('-reformatnull', action='store_true',dest='reformatnull')
 my_parser.add_argument('-null', action='store_true',dest='null')
+my_parser.add_argument('-printstats', action='store_true',dest='printstats')
 
 args = my_parser.parse_args()
 
 NULLSHT=args.nullsht
 REFORMATNULL=args.reformatnull
 NULL=args.null
+PRINTSTATS=args.printstats
 
 #####################################################################################################
 # Utility functions. Not expected to be called outside this file
@@ -132,6 +136,37 @@ def compute_null_spectrum(freq, null, out_base_path, null_base_path,
     return result
 
 
+def null_spectrum_chisq(freq, null, null_base_path, lmin=0, lmax=np.inf):
+    '''
+    Loads the null spectrum written by compute_null_spectrum and returns
+    (chisq, dof) using only the diagonal of cov1.
+    Only bins lying entirely within [lmin, lmax] (per the saved banddef) are used.
+    Bins with non-positive variance (eg. fully masked bins) are excluded.
+    '''
+    infile = null_base_path+'null_spectrum_{}_{}ghz.npz'.format(null,freq)
+    data = np.load(infile)
+    spectrum = data['spectrum'].flatten()
+    var = np.diag(data['cov1'])
+    banddef = data['banddef']
+    inrange = (banddef[:-1] >= lmin) & (banddef[1:] <= lmax)
+    good = inrange & (var > 0)
+    chisq = np.sum(spectrum[good]**2/var[good])
+    dof = int(np.sum(good))
+    return chisq, dof
+
+
+def chisq_ptes(chisq, dof, ncovdof):
+    '''
+    Returns (PTE assuming a chisq distribution, PTE assuming an F-distribution).
+    The F-distribution accounts for the variance being estimated from data;
+    ncovdof is the number of degrees of freedom in that estimate.
+    '''
+    pte_chisq = scipy.stats.chi2.sf(chisq, dof)
+    pte_myf = scipy.stats.chi2.sf(chisq * (ncovdof/(ncovdof-2)), dof)
+    pte_f = scipy.stats.f.sf(chisq/dof, dof, ncovdof)
+    return pte_chisq, pte_myf, pte_f
+
+
 #####################################################################################################
 # Top level calls, chosen with argparser
 #####################################################################################################
@@ -209,3 +244,53 @@ if __name__ == "__main__" and NULL is True:
             compute_null_spectrum(freq, null, out_base_path, null_base_path,
                                                    lmax, banddef)
 
+
+if __name__ == "__main__" and PRINTSTATS is True:
+    lmin = 0     # use bins with lower edge >= lmin
+    lmax = 4500  # use bins with upper edge <= lmax
+    nbundle = 25
+    ncovdof = nbundle - 1 # dof of the bundle-based variance estimate, for F-distribution PTEs
+    freqs = ['095','150','220']
+    nulls = ['moon','azimuth','sun','year','scan']
+
+    # chisq and dof for each (freq, null) test
+    results = {}
+    for freq in freqs:
+        for null in nulls:
+            results[freq,null] = null_spectrum_chisq(freq, null, null_base_path,
+                                                     lmin=lmin, lmax=lmax)
+
+    print('Using bins within ell = [{}, {}]; F-distribution denominator dof = {}'.format(lmin,lmax,ncovdof))
+    hdrfmt = '{:>6s} {:>10s} {:>10s} {:>5s} {:>10s} {:>10s} {:>10s}'
+    rowfmt = '{:>6s} {:>10s} {:10.2f} {:5d} {:10.4f} {:10.4f} {:10.4f}'
+    def print_row(freq, null, chisq, dof):
+        print(rowfmt.format(freq,null,chisq,dof,*chisq_ptes(chisq,dof,ncovdof)))
+    def print_sum(freq, null, keys):
+        print_row(freq, null, sum(results[k][0] for k in keys), sum(results[k][1] for k in keys))
+
+    print('\nIndividual null tests:')
+    print(hdrfmt.format('freq','null','chisq','dof','PTE(chi2)','PTE(myF)','PTE(F)'))
+    for freq in freqs:
+        for null in nulls:
+            print_row(freq, null, *results[freq,null])
+
+    print('\nAll null tests, single frequency:')
+    print(hdrfmt.format('freq','null','chisq','dof','PTE(chi2)','PTE(myF)','PTE(F)'))
+    for freq in freqs:
+        print_sum(freq, 'all', [(freq,null) for null in nulls])
+
+    print('\nAll frequencies, single null test:')
+    print(hdrfmt.format('freq','null','chisq','dof','PTE(chi2)','PTE(myF)','PTE(F)'))
+    for null in nulls:
+        print_sum('all', null, [(freq,null) for freq in freqs])
+
+    print('\nEnsemble (all frequencies, all null tests):')
+    print(hdrfmt.format('freq','null','chisq','dof','PTE(chi2)','PTE(myF)','PTE(F)'))
+    print_sum('all', 'all', list(results.keys()))
+
+    print('\nDistribution of individual PTEs:')
+    ptes = np.asarray([chisq_ptes(chisq,dof,ncovdof) for chisq,dof in results.values()])
+    for j, label in enumerate(['chi2','myF','F']):
+        print('PTE({}): min = {:.4f}, N(<0.05) = {:d}/{:d}, KS vs uniform p = {:.4f}'.format(
+            label, np.min(ptes[:,j]), int(np.sum(ptes[:,j] < 0.05)), ptes.shape[0],
+            scipy.stats.kstest(ptes[:,j],'uniform').pvalue))
