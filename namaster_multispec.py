@@ -11,7 +11,7 @@ import sys
 import gc
 import pdb
 from pathlib import Path
-
+import pdb
 AlmType = np.dtype(np.complex64)
 
 
@@ -88,12 +88,12 @@ def take_null_shts(map1filelist, map2filelist, shtfilelist,
             fullQ[:]=0.0
             ind,polmap = load_q_cut(map1filelist[i])
             fullQ[ind]=0.5*polmap
-            ind,polmap = load_q_cut(map1filelist[i])
+            ind,polmap = load_q_cut(map2filelist[i])
             fullQ[ind]-=0.5*polmap
             fullU[:]=0.0
             ind,polmap = load_q_cut(map1filelist[i],U=True)
             fullU[ind]=-0.5*polmap
-            ind,polmap = load_q_cut(map1filelist[i],U=True)
+            ind,polmap = load_q_cut(map2filelist[i],U=True)
             fullU[ind]+=0.5*polmap
             del ind,polmap
 

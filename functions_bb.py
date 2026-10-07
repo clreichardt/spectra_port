@@ -18,7 +18,7 @@ import time
 
 from astropy.io import fits
 
-SPARTAN=True
+SPARTAN=False
 
 if SPARTAN:
     base_path='/data/gpfs/projects/punim1199/'
@@ -179,7 +179,7 @@ if __name__ == "__main__" and REFORMATNULL is True:
 
     freqs=['095','150','220']
     #freqs=['095']
-    nulls = ['azimuth','moon','sun','year','scan']
+    nulls = ['azimuth','moon','year','scan','sun']
 
     #nulls = ['sun'] # for testing
 
@@ -199,7 +199,7 @@ if __name__ == "__main__" and NULL is True:
     lmax = 4500
 
     freqs = ['095','150','220']
-    nulls = ['azimuth','moon','sun','year','scan']
+    nulls = ['moon','azimuth','sun','year','scan']
 
     banddef = np.arange(0,lmax+500,500)
 
