@@ -3,7 +3,7 @@ import os
 import numpy as np
 import healpy as hp
 #from spt3g import core,maps, calibration
-
+import pdb
 import time
 import pymaster as nmt
 import astropy.io.fits as fits
@@ -95,17 +95,21 @@ def take_null_shts(map1filelist, map2filelist, shtfilelist,
             fullU[ind]=-0.5*polmap
             ind,polmap = load_q_cut(map2filelist[i],U=True)
             fullU[ind]+=0.5*polmap
+            print(np.var(fullQ[ind]),np.var(fullU[ind]))
             del ind,polmap
 
             if mask is None:
                 mask = np.ones(12*8192**2,dtype=np.float64)
 
             print('done with load')
+            
             #note U already multiplied by -1 above
             field = nmt.NmtField(mask, [fullQ, fullU], purify_e=False, purify_b=purify_b, lmax=lmax,lmax_mask=lmax, lite=True)
             print('field init done')
             _, alm_B = field.get_alms() #first one is alm_E which we don't need for nulls
             print('sht done')
+            print(np.max(np.abs(alm_B)))
+            #pdb.set_trace()
             del field
             with open(shtfilelist[i],'wb') as fp:
                 (alm_B.astype(AlmType)).tofile(fp)
