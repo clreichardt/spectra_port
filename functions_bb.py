@@ -166,7 +166,20 @@ def chisq_ptes(chisq, dof, ncovdof):
     pte_f = scipy.stats.f.sf(chisq/dof, dof, ncovdof)
     return pte_chisq, pte_myf, pte_f
 
-
+def midl_notch_mask(lmax):
+    """Boolean mask over the alm array selecting the rectangular (ell, m) notch."""
+    NOTCH_ELL_MIN = 500
+    NOTCH_ELL_MAX = 680
+    NOTCH_M_MIN = 350
+    NOTCH_M_MAX = 425
+    size = hp.sphtfunc.Alm.getsize(lmax)
+    ell, m = hp.Alm.getlm(lmax)
+    kmask = np.ones(size)
+    kmask[np.logical_and(ell >= NOTCH_ELL_MIN,
+            np.logical_and(ell <= NOTCH_ELL_MAX,    
+            np.logical_and(m <= NOTCH_M_MAX,m >= NOTCH_M_MIN)
+            ))] = 0
+    return kmask
 #####################################################################################################
 # Top level calls, chosen with argparser
 #####################################################################################################
@@ -221,11 +234,13 @@ if __name__ == "__main__" and REFORMATNULL is True:
     mask_file=mask_path+'puremask8192_0p5medwt_500mJy_nodisk_15arcmin.npz'
     mask = np.load(mask_file)['mask']
 
+    kmask = midl_notch_mask(lmax)
+
     for freq in freqs:
         for null in nulls:
             print("Reformatting null shts for {} GHz, {}:".format(freq,null))
             reformat_null_shts(freq, null, out_base_path,
-                                                   lmax, mask,
+                                                   lmax, mask,kmask=kmask,
                                                    cmbweighting=True)
 
 
