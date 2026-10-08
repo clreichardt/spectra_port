@@ -162,7 +162,7 @@ def chisq_ptes(chisq, dof, ncovdof):
     ncovdof is the number of degrees of freedom in that estimate.
     '''
     pte_chisq = scipy.stats.chi2.sf(chisq, dof)
-    pte_myf = scipy.stats.chi2.sf(chisq * (ncovdof/(ncovdof-2)), dof)
+    pte_myf = scipy.stats.chi2.sf(chisq * ((ncovdof-2)/(ncovdof)), dof) #note ncovdof = nbundles-1
     pte_f = scipy.stats.f.sf(chisq/dof, dof, ncovdof)
     return pte_chisq, pte_myf, pte_f
 
@@ -246,7 +246,7 @@ if __name__ == "__main__" and NULL is True:
 
 
 if __name__ == "__main__" and PRINTSTATS is True:
-    lmin = 0     # use bins with lower edge >= lmin
+    lmin = 500     # use bins with lower edge >= lmin
     lmax = 4500  # use bins with upper edge <= lmax
     nbundle = 25
     ncovdof = nbundle - 1 # dof of the bundle-based variance estimate, for F-distribution PTEs
